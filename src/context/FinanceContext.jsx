@@ -35,6 +35,7 @@ export function FinanceProvider({ children }) {
   const [finDocs, setFinDocs] = useState(() => ls.get(KEYS.finDocs, []))
   const [ledger, setLedger] = useState(() => ls.get(KEYS.finTxns, []))
   const [templates, setTemplates] = useState(() => ls.get(KEYS.finTemplates, []))
+  const [employees, setEmployees] = useState(() => ls.get(KEYS.employees, []))
 
   useEffect(() => {
     ls.set(KEYS.finAccounts, accounts)
@@ -51,6 +52,9 @@ export function FinanceProvider({ children }) {
   useEffect(() => {
     ls.set(KEYS.finTemplates, templates)
   }, [templates])
+  useEffect(() => {
+    ls.set(KEYS.employees, employees)
+  }, [employees])
 
   // ── Masters ──
   const saveAccount = useCallback((acc) => {
@@ -213,12 +217,33 @@ export function FinanceProvider({ children }) {
   }, [])
   const deleteTemplate = useCallback((id) => setTemplates((prev) => prev.filter((t) => t.id !== id)), [])
 
+  // ── Employees ──
+  const saveEmployee = useCallback(
+    (emp) => {
+      setEmployees((prev) => {
+        const i = prev.findIndex((e) => e.id === emp.id)
+        if (i >= 0) {
+          const c = [...prev]
+          c[i] = emp
+          return c
+        }
+        return [...prev, emp]
+      })
+      addAudit('Employee saved', emp.empId, emp.name)
+    },
+    [addAudit],
+  )
+  const deleteEmployee = useCallback((id) => setEmployees((prev) => prev.filter((e) => e.id !== id)), [])
+
   const value = {
     accounts,
     heads,
     finDocs,
     ledger,
     templates,
+    employees,
+    saveEmployee,
+    deleteEmployee,
     saveAccount,
     deleteAccount,
     saveHead,

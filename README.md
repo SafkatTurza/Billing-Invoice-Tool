@@ -77,8 +77,22 @@ A centralized company-finance module alongside billing:
 - **Reusable templates** for requisitions and vouchers, and a **Monthly
   Expenditure report** exportable to Excel and print/PDF.
 
-Later phases (planned): salary sheets & payslips, income/investment records, the
-auto-generated actual-expense summary, and the full reports pack.
+### Salary & Payslips (Phase B)
+
+- **Employees** master (EMP-001 IDs) — name, department, designation, base
+  salary, employment type, and bank details (profile only, never on the payslip).
+- **Salary Sheet** ("Employee Remuneration Requisition") pre-filled from active
+  employees, with **configurable earning/deduction components** (e.g. Loyalty
+  Bonus as a deduction, so 150,000 − 6,300 = 143,700), a Total Remuneration row,
+  and the same 3-signature approval chain (Prepared → Checked → **Authorised**).
+  On approval the salary posts to the ledger and monthly expenditure.
+- **Payslips** ("Payroll Receipt Copy") generated per employee from an approved
+  sheet — teal-header layout with Salary / Final Salary blocks, Messages, and
+  Authorized/Received By — with editable payment date and remarks, printable to
+  PDF.
+
+Later phases (planned): income/investment records, the auto-generated
+actual-expense summary, and the full reports pack (cash flow, P&L, aging).
 - **Dashboard** — role-aware. Document count cards, financial summary grouped by
   currency (never mixed/converted), quick-create, and recent documents. The
   financial summary and restricted document types are hidden for Business Team.

@@ -25,6 +25,10 @@ import MonthlyReport from './pages/finance/MonthlyReport.jsx'
 import FinanceDocList from './pages/finance/FinanceDocList.jsx'
 import FinanceDocEditor from './pages/finance/FinanceDocEditor.jsx'
 import FinanceDocPreview from './pages/finance/FinanceDocPreview.jsx'
+import Employees from './pages/finance/Employees.jsx'
+import SalarySheetEditor from './pages/finance/SalarySheetEditor.jsx'
+import SalarySheetPreview from './pages/finance/SalarySheetPreview.jsx'
+import Payslip from './pages/finance/Payslip.jsx'
 import { canAccessDocType, can } from './lib/roles.js'
 
 // SRS current.png: below 1280px the app shows a "Desktop Required" screen.
@@ -123,6 +127,13 @@ function AppRoutes({ isSetupComplete, currentUser }) {
           <Route key="fin-ledger" path="finance/ledger" element={<Ledger />} />,
           <Route key="fin-expenses" path="finance/expenses" element={<DailyExpenses />} />,
           <Route key="fin-reports" path="finance/reports" element={<MonthlyReport />} />,
+          <Route key="fin-employees" path="finance/employees" element={<Employees />} />,
+          // Salary sheets (dedicated editor/preview) + payslips
+          <Route key="sal-list" path="finance/salary-sheet" element={<FinanceDocList type="salary-sheet" />} />,
+          <Route key="sal-new" path="finance/salary-sheet/new" element={<SalarySheetEditor />} />,
+          <Route key="sal-edit" path="finance/salary-sheet/:id/edit" element={<SalarySheetEditor />} />,
+          <Route key="sal-view" path="finance/salary-sheet/:id" element={<SalarySheetPreview />} />,
+          <Route key="sal-payslip" path="finance/salary-sheet/:id/payslip/:lineId" element={<Payslip />} />,
           ...['requisition', 'payment-voucher', 'debit-voucher'].flatMap((t) => [
             <Route key={t} path={`finance/${t}`} element={<FinanceDocList type={t} />} />,
             <Route key={t + '-new'} path={`finance/${t}/new`} element={<FinanceDocEditor type={t} />} />,

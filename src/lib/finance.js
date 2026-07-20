@@ -38,6 +38,14 @@ export const FIN_TYPES = {
     prefix: 'EXP',
     approvable: false, // recorded directly by Accounts; still needs a head/account
   },
+  'salary-sheet': {
+    label: 'Salary Sheet',
+    plural: 'Salary Sheets',
+    prefix: 'SAL',
+    companyPrefixed: true, // → DCS-SAL
+    approvable: true,
+    slots: ['Prepared By', 'Checked By', 'Authorised By'], // Authorised By = management (last)
+  },
 }
 
 // For approvable docs, which slot is the management/final one. Requisition's
