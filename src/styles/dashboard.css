@@ -1,0 +1,84 @@
+.dash-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.count-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.count-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+.count-card .cc-top { display: flex; justify-content: space-between; align-items: center; }
+.count-card .cc-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+.count-card .cc-num { font-size: 30px; font-weight: 800; color: var(--navy); margin-top: 12px; line-height: 1; }
+.count-card .cc-label { color: var(--text-muted); font-size: 13px; margin-top: 5px; }
+
+.fin-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.fin-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+.fin-card h4 { font-size: 14px; color: var(--navy); font-weight: 700; }
+.fin-card .fc-sub { color: var(--text-muted); font-size: 12px; margin-bottom: 12px; }
+.fin-line { display: flex; justify-content: space-between; padding: 7px 0; font-size: 13.5px; }
+.fin-line + .fin-line { border-top: 1px dashed var(--border); }
+.fin-line .fl-label { color: var(--text-muted); }
+.fin-line .fl-val { font-weight: 700; }
+.fin-line .fl-val.green { color: var(--green); }
+
+.quick-create {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+.qc-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  font-weight: 600;
+  color: var(--text);
+  transition: border-color 0.12s, background 0.12s;
+}
+.qc-btn:hover { border-color: var(--navy); background: #fafbff; }
+.qc-btn .qc-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: #eef1f8;
+  color: var(--navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 28px 0 14px;
+}
+.section-head h3 { font-size: 16px; font-weight: 700; color: var(--navy); }
