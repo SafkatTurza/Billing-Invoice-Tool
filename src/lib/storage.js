@@ -18,6 +18,13 @@ export const KEYS = {
   notifs: 'dcs_notifs',
   counters: 'dcs_counters',
   session: 'dcs_session', // localStorage token (30-day)
+  // ── Finance module ──
+  finAccounts: 'dcs_fin_accounts', // cash/bank/MFS accounts
+  finHeads: 'dcs_fin_heads', // chart of account heads
+  finDocs: 'dcs_fin_docs', // requisitions, vouchers, expenses (one array + type)
+  finTxns: 'dcs_fin_txns', // ledger (posted transactions)
+  finTemplates: 'dcs_fin_templates', // reusable document templates
+  employees: 'dcs_employees', // salary (Phase B)
 }
 
 export const ls = {

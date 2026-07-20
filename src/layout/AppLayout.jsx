@@ -21,7 +21,7 @@ const PURCHASES = [
 export default function AppLayout() {
   const { currentUser, docs } = useApp()
   const role = currentUser.role
-  const [groups, setGroups] = useState({ sales: true, purchases: true })
+  const [groups, setGroups] = useState({ sales: true, purchases: true, finance: true })
   const toggle = (id) => setGroups((g) => ({ ...g, [id]: !g[id] }))
 
   const liveDocs = docs.filter((d) => !d.deleted)
@@ -81,6 +81,43 @@ export default function AppLayout() {
               </button>
               {groups.purchases && PURCHASES.map((d) => <NavDoc key={d.type} d={d} sub />)}
               <NavDoc d={{ type: 'money-receipt', label: 'Money Receipt', icon: Icon.receipt }} />
+            </>
+          )}
+
+          {can(role, 'financeView') && (
+            <>
+              <button className="nav-group-toggle" onClick={() => toggle('finance')}>
+                <Icon.money width={16} height={16} />
+                Finance
+                <span className={`arr${groups.finance ? ' open' : ''}`}>
+                  <Icon.chevron width={13} height={13} />
+                </span>
+              </button>
+              {groups.finance && (
+                <>
+                  <NavLink to="/finance" end className="nav-item sub">
+                    <Icon.dashboard width={16} height={16} /> Overview
+                  </NavLink>
+                  <NavLink to="/finance/requisition" className="nav-item sub">
+                    <Icon.invoice width={16} height={16} /> Requisitions
+                  </NavLink>
+                  <NavLink to="/finance/payment-voucher" className="nav-item sub">
+                    <Icon.money width={16} height={16} /> Payment Vouchers
+                  </NavLink>
+                  <NavLink to="/finance/debit-voucher" className="nav-item sub">
+                    <Icon.receipt width={16} height={16} /> Debit Vouchers
+                  </NavLink>
+                  <NavLink to="/finance/expenses" className="nav-item sub">
+                    <Icon.po width={16} height={16} /> Daily Expenses
+                  </NavLink>
+                  <NavLink to="/finance/ledger" className="nav-item sub">
+                    <Icon.audit width={16} height={16} /> Ledger
+                  </NavLink>
+                  <NavLink to="/finance/reports" className="nav-item sub">
+                    <Icon.estimate width={16} height={16} /> Monthly Report
+                  </NavLink>
+                </>
+              )}
             </>
           )}
 

@@ -388,6 +388,11 @@ export function AppProvider({ children }) {
     [users, addAudit],
   )
 
+  // Store a user's own signature image (base64) — used to sign/approve docs.
+  const setUserSignature = useCallback((userId, dataUrl) => {
+    setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, signatureImg: dataUrl } : u)))
+  }, [])
+
   const adminResetPassword = useCallback(
     (userId, tempPassword) => {
       setUsers((prev) =>
@@ -562,6 +567,15 @@ export function AppProvider({ children }) {
       users,
       security,
       counters: ls.get(KEYS.counters, {}),
+      // Finance module (read straight from storage — owned by FinanceContext).
+      finance: {
+        accounts: ls.get(KEYS.finAccounts, []),
+        heads: ls.get(KEYS.finHeads, []),
+        finDocs: ls.get(KEYS.finDocs, []),
+        finTxns: ls.get(KEYS.finTxns, []),
+        finTemplates: ls.get(KEYS.finTemplates, []),
+        employees: ls.get(KEYS.employees, []),
+      },
     }
   }, [companies, docs, clients, vendors, style, users, security])
 
@@ -576,6 +590,17 @@ export function AppProvider({ children }) {
       if (data.users) setUsers(data.users)
       if (data.security) setSecurity(data.security)
       if (data.counters) ls.set(KEYS.counters, data.counters)
+      // Finance stores are owned by FinanceContext; write to storage and let a
+      // reload pick them up (import already replaces the whole dataset).
+      if (data.finance) {
+        const f = data.finance
+        if (f.accounts) ls.set(KEYS.finAccounts, f.accounts)
+        if (f.heads) ls.set(KEYS.finHeads, f.heads)
+        if (f.finDocs) ls.set(KEYS.finDocs, f.finDocs)
+        if (f.finTxns) ls.set(KEYS.finTxns, f.finTxns)
+        if (f.finTemplates) ls.set(KEYS.finTemplates, f.finTemplates)
+        if (f.employees) ls.set(KEYS.employees, f.employees)
+      }
       addAudit('Data import', '', 'All data replaced from backup file')
     },
     [addAudit],
@@ -618,6 +643,7 @@ export function AppProvider({ children }) {
     changePassword,
     adminResetPassword,
     setUserStatus,
+    setUserSignature,
     // docs
     saveDocument,
     deleteDocument,

@@ -32,6 +32,13 @@ const MATRIX = {
     forceUnlock: true,
     fullDashboard: true,
     approveEstimate: true,
+    // Finance
+    financeView: true,
+    financeManage: true, // create/edit finance docs, record expenses
+    financeApprove: true, // sign non-final approval slots
+    financeFinalApprove: true, // management (CEO/MD) final signature
+    manageFinanceMasters: true, // accounts, heads, templates
+    financeReports: true,
   },
   [ROLES.ADMIN]: {
     createInvoice: true,
@@ -53,6 +60,13 @@ const MATRIX = {
     forceUnlock: true,
     fullDashboard: true,
     approveEstimate: true,
+    // Finance — Admin is management (final approver)
+    financeView: true,
+    financeManage: true,
+    financeApprove: true,
+    financeFinalApprove: true,
+    manageFinanceMasters: true,
+    financeReports: true,
   },
   [ROLES.ACCOUNTS]: {
     createInvoice: true,
@@ -74,6 +88,13 @@ const MATRIX = {
     forceUnlock: false,
     fullDashboard: true,
     approveEstimate: false,
+    // Finance — Accounts prepares & records, but is NOT the final approver
+    financeView: true,
+    financeManage: true,
+    financeApprove: true, // can sign preparer/checker slots
+    financeFinalApprove: false, // cannot give management sign-off
+    manageFinanceMasters: false,
+    financeReports: true,
   },
   [ROLES.BUSINESS]: {
     createInvoice: true,
@@ -95,6 +116,13 @@ const MATRIX = {
     forceUnlock: false,
     fullDashboard: false, // limited
     approveEstimate: false,
+    // Finance — hidden for Business Team
+    financeView: false,
+    financeManage: false,
+    financeApprove: false,
+    financeFinalApprove: false,
+    manageFinanceMasters: false,
+    financeReports: false,
   },
 }
 

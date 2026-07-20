@@ -18,6 +18,13 @@ import DocumentPreview from './pages/DocumentPreview.jsx'
 import Settings from './pages/Settings.jsx'
 import AuditLog from './pages/AuditLog.jsx'
 import RecycleBin from './pages/RecycleBin.jsx'
+import FinanceDashboard from './pages/finance/FinanceDashboard.jsx'
+import Ledger from './pages/finance/Ledger.jsx'
+import DailyExpenses from './pages/finance/DailyExpenses.jsx'
+import MonthlyReport from './pages/finance/MonthlyReport.jsx'
+import FinanceDocList from './pages/finance/FinanceDocList.jsx'
+import FinanceDocEditor from './pages/finance/FinanceDocEditor.jsx'
+import FinanceDocPreview from './pages/finance/FinanceDocPreview.jsx'
 import { canAccessDocType, can } from './lib/roles.js'
 
 // SRS current.png: below 1280px the app shows a "Desktop Required" screen.
@@ -109,6 +116,20 @@ function AppRoutes({ isSetupComplete, currentUser }) {
               <Route key={type + '-view'} path={`${type}/:id`} element={<DocumentPreview type={type} />} />,
             ],
         )}
+
+        {/* Finance module */}
+        {can(role, 'financeView') && [
+          <Route key="fin-dash" path="finance" element={<FinanceDashboard />} />,
+          <Route key="fin-ledger" path="finance/ledger" element={<Ledger />} />,
+          <Route key="fin-expenses" path="finance/expenses" element={<DailyExpenses />} />,
+          <Route key="fin-reports" path="finance/reports" element={<MonthlyReport />} />,
+          ...['requisition', 'payment-voucher', 'debit-voucher'].flatMap((t) => [
+            <Route key={t} path={`finance/${t}`} element={<FinanceDocList type={t} />} />,
+            <Route key={t + '-new'} path={`finance/${t}/new`} element={<FinanceDocEditor type={t} />} />,
+            <Route key={t + '-edit'} path={`finance/${t}/:id/edit`} element={<FinanceDocEditor type={t} />} />,
+            <Route key={t + '-view'} path={`finance/${t}/:id`} element={<FinanceDocPreview type={t} />} />,
+          ]),
+        ]}
 
         {can(role, 'auditLog') && <Route path="audit" element={<AuditLog />} />}
         {can(role, 'recycleBin') && <Route path="recycle-bin" element={<RecycleBin />} />}

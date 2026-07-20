@@ -51,6 +51,34 @@ you're forced to set your own password on first login.
 - **In-form conveniences** — quick-add client/vendor without leaving the form,
   auto-generated client codes (`DCS26-RE-SHL-001`), signature-label presets, and
   auto-growing description fields.
+
+### Finance & Expense Management (Phase A)
+
+A centralized company-finance module alongside billing:
+
+- **Cash/Bank accounts** and a **chart of account heads** (Settings) — running
+  balances update from the ledger.
+- **Requisitions** (Proposed → Checked → Authorised) and **Payment / Debit
+  Vouchers** (Accountant → Checked → Managing Director/Director → Received)
+  rendered in the DreamCore letterhead, matching the company's real formats.
+- **Signature-overlay approval chain** — each user stores their own signature
+  (draw or upload) in *Settings → My Account* and applies it, with a date they
+  set, to their slot. Signing is strictly in order and **management (CEO/MD)
+  signs last**; a document becomes **Approved** only when the management
+  signature is applied.
+- **Approved-only accounting** — only approved vouchers (and recorded daily
+  expenses) post to the **ledger** and count on the **Finance Dashboard** and
+  **Monthly Expenditure report**; pending items are listed separately and never
+  inflate the figures. Billing income (paid invoices) shows alongside expenses.
+- **File attachments** — bills, receipts, and scanned voucher copies attach to
+  any finance document. Stored in **IndexedDB** (not localStorage), capped at
+  **2 MB/file** with automatic image compression, multiple files per document,
+  and a storage-usage meter (built for ~50–60 scans/month).
+- **Reusable templates** for requisitions and vouchers, and a **Monthly
+  Expenditure report** exportable to Excel and print/PDF.
+
+Later phases (planned): salary sheets & payslips, income/investment records, the
+auto-generated actual-expense summary, and the full reports pack.
 - **Dashboard** — role-aware. Document count cards, financial summary grouped by
   currency (never mixed/converted), quick-create, and recent documents. The
   financial summary and restricted document types are hidden for Business Team.
