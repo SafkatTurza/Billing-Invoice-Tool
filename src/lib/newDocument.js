@@ -13,6 +13,7 @@ export function newDocument(type, company) {
   const base = {
     id: uid(),
     type,
+    companyId: company?.id || 'co-1',
     docNumber: previewDocNumber(type), // provisional; committed at first save
     autoNumber: true, // becomes false if the user edits the number manually
     date: todayISO(),
@@ -89,6 +90,18 @@ export function newDocument(type, company) {
     chequeNo: '',
     refNo: '',
     transactionDate: '',
+  }
+}
+
+// Footer snapshot from a company (used when creating a doc or switching company).
+export function companyFooter(company) {
+  return {
+    logo: company?.logo || '',
+    name: company?.name || '',
+    address: company?.address || '',
+    email: company?.email || '',
+    phone: company?.phone || '',
+    website: company?.website || '',
   }
 }
 

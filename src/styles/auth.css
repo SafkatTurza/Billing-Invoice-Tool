@@ -103,6 +103,22 @@
 }
 .checkbox-row input { width: 16px; height: 16px; accent-color: var(--navy); cursor: pointer; }
 
+.auth-links {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16px;
+}
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--navy);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px;
+}
+.link-btn:hover { text-decoration: underline; }
+
 .auth-error {
   background: #fdecec;
   border: 1px solid #f5c2c2;

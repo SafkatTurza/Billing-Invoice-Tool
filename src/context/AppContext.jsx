@@ -2,8 +2,8 @@ import { createContext, useContext, useState, useEffect, useCallback, useMemo } 
 import { ls, ss, KEYS } from '../lib/storage.js'
 import { ROLES } from '../lib/roles.js'
 import { uid } from '../lib/format.js'
-import { hashPassword } from '../lib/security.js'
-import { commitDocNumber } from '../lib/numbering.js'
+import { hashPassword, hashAnswer } from '../lib/security.js'
+import { commitDocNumber, generateUsername } from '../lib/numbering.js'
 
 const AppContext = createContext(null)
 
@@ -13,14 +13,27 @@ export function useApp() {
   return ctx
 }
 
-const DEFAULT_STYLE = { brandColor: '#1E2D5A', documentFont: 'Arial' }
+const DEFAULT_STYLE = { brandColor: '#1E2D5A', documentFont: 'Arial', template: 'modern' }
 const DEFAULT_COMPANY = {
+  id: 'co-1',
   logo: '',
   name: 'DreamCore Studio',
+  code: '',
   email: '',
   phone: '',
   website: '',
   address: '',
+  brandColor: '',
+  bank: { bankName: '', accountName: '', accountNumber: '', branch: '', routing: '', swift: '' },
+}
+
+// Seed the companies array — migrate a legacy single dcs_co if present.
+function loadCompanies() {
+  const arr = ls.get(KEYS.companies, null)
+  if (Array.isArray(arr) && arr.length) return arr
+  const legacy = ls.get(KEYS.company, null)
+  if (legacy) return [{ ...DEFAULT_COMPANY, ...legacy, id: legacy.id || 'co-1' }]
+  return [DEFAULT_COMPANY]
 }
 
 // Resolve which session token is active. localStorage token (30-day) wins,
@@ -39,7 +52,9 @@ function readSession() {
 }
 
 export function AppProvider({ children }) {
-  const [company, setCompanyState] = useState(() => ls.get(KEYS.company, DEFAULT_COMPANY))
+  const [companies, setCompanies] = useState(loadCompanies)
+  // `company` = primary company (first) — used by sidebar, setup, defaults.
+  const company = companies[0] || DEFAULT_COMPANY
   const [docs, setDocs] = useState(() => ls.get(KEYS.docs, []))
   const [clients, setClients] = useState(() => ls.get(KEYS.clients, []))
   const [vendors, setVendors] = useState(() => ls.get(KEYS.vendors, []))
@@ -62,8 +77,10 @@ export function AppProvider({ children }) {
   // NB: wrap ls.set in a block — it returns a boolean, and an effect that
   // returns a non-function makes React throw "destroy is not a function".
   useEffect(() => {
-    ls.set(KEYS.company, company)
-  }, [company])
+    ls.set(KEYS.companies, companies)
+    // keep legacy dcs_co mirrored to the primary company for compatibility
+    ls.set(KEYS.company, companies[0] || DEFAULT_COMPANY)
+  }, [companies])
   useEffect(() => {
     ls.set(KEYS.docs, docs)
   }, [docs])
@@ -138,6 +155,8 @@ export function AppProvider({ children }) {
     (username, password, remember) => {
       const user = users.find((u) => u.username === username)
       if (!user) return { ok: false, error: 'Invalid username or password.' }
+      if (user.status === 'Pending')
+        return { ok: false, error: 'This account is still awaiting admin approval.' }
       if (user.status === 'Deactivated')
         return { ok: false, error: 'This account has been deactivated. Contact your Administrator.' }
       if (user.locked)
@@ -198,9 +217,29 @@ export function AppProvider({ children }) {
     setSession(null)
   }, [currentUser, addAudit])
 
+  // Auto-logout when a persistent (30-day) session reaches its expiry.
+  useEffect(() => {
+    if (!session?.expires) return
+    const ms = session.expires - Date.now()
+    if (ms <= 0) {
+      logout()
+      return
+    }
+    const t = setTimeout(logout, ms)
+    return () => clearTimeout(t)
+  }, [session, logout])
+
+  // Extend a persistent session by another 30 days (Addendum 17.3).
+  const extendSession = useCallback(() => {
+    if (!session?.expires) return
+    const token = { ...session, expires: Date.now() + 30 * 24 * 60 * 60 * 1000 }
+    ls.set(KEYS.session, token)
+    setSession(token)
+  }, [session])
+
   // First-launch super admin creation (Addendum 17.4)
   const createSuperAdmin = useCallback(
-    ({ fullName, department, username, password }) => {
+    ({ fullName, department, username, password, securityQuestion, securityAnswer }) => {
       const user = {
         id: uid(),
         fullName,
@@ -210,6 +249,8 @@ export function AppProvider({ children }) {
         systemPassword: password, // kept until first change to enforce "cannot reuse" rule
         role: ROLES.SUPER_ADMIN,
         status: 'Active',
+        securityQuestion: securityQuestion || '',
+        securityAnswerHash: securityAnswer ? hashAnswer(securityAnswer) : '',
         locked: false,
         failedAttempts: 0,
         mustChangePassword: true,
@@ -252,6 +293,76 @@ export function AppProvider({ children }) {
       return user
     },
     [addAudit, notify],
+  )
+
+  // Self-signup — creates a Pending account awaiting admin approval (17.4 alt).
+  const signup = useCallback(
+    ({ fullName, department, email, password, securityQuestion, securityAnswer }) => {
+      const username = generateUsername()
+      const user = {
+        id: uid(),
+        fullName,
+        department: department || '',
+        email: email || '',
+        username,
+        passwordHash: hashPassword(password),
+        systemPassword: null,
+        role: '', // assigned on approval
+        status: 'Pending',
+        securityQuestion,
+        securityAnswerHash: hashAnswer(securityAnswer),
+        locked: false,
+        failedAttempts: 0,
+        mustChangePassword: false,
+        createdBy: 'Self signup',
+        createdAt: new Date().toISOString(),
+        lastLogin: null,
+        passwordChangedAt: null,
+        previousHash: null,
+      }
+      setUsers((prev) => [...prev, user])
+      addAudit('Signup request', username, fullName)
+      notify(`New signup awaiting approval: ${fullName}`)
+      return username
+    },
+    [addAudit, notify],
+  )
+
+  // Approve a Pending account: assign a role and activate it.
+  const approveUser = useCallback(
+    (userId, role) => {
+      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role, status: 'Active' } : u)))
+      const u = users.find((x) => x.id === userId)
+      addAudit('User approved', u?.username || userId, `${role} — ${u?.fullName || ''}`)
+      notify(`${u?.fullName || 'User'} approved as ${role}`)
+    },
+    [users, addAudit, notify],
+  )
+
+  // Forgot-password recovery: set a chosen password (security-question verified
+  // in the UI). Unlocks the account; no forced change since the user chose it.
+  const recoverPassword = useCallback(
+    (userId, newPassword) => {
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === userId
+            ? {
+                ...u,
+                previousHash: u.passwordHash,
+                passwordHash: hashPassword(newPassword),
+                systemPassword: null,
+                mustChangePassword: false,
+                locked: false,
+                failedAttempts: 0,
+                passwordChangedAt: new Date().toISOString(),
+              }
+            : u,
+        ),
+      )
+      const u = users.find((x) => x.id === userId)
+      addAudit('Password recovered (security question)', u?.username || userId, '')
+    },
+    [users, addAudit],
   )
 
   const changePassword = useCallback(
@@ -380,11 +491,51 @@ export function AppProvider({ children }) {
     [],
   )
 
-  // ── Settings mutators (with audit) ───────────────────────────────────
+  // ── Company management (multi-company) ───────────────────────────────
+  const findCompany = useCallback(
+    (doc) => {
+      const id = doc?.companyId
+      return companies.find((c) => c.id === id) || companies[0] || DEFAULT_COMPANY
+    },
+    [companies],
+  )
+
+  // Update the primary company (used by the legacy single-company Settings tab).
   const setCompany = useCallback(
     (next) => {
-      setCompanyState(next)
+      setCompanies((prev) => {
+        if (!prev.length) return [{ ...DEFAULT_COMPANY, ...next }]
+        const copy = [...prev]
+        copy[0] = { ...copy[0], ...next }
+        return copy
+      })
       addAudit('Company info changed', next.name || '', '')
+    },
+    [addAudit],
+  )
+
+  const addCompany = useCallback(
+    (co) => {
+      const withId = { ...DEFAULT_COMPANY, ...co, id: co.id || 'co-' + uid() }
+      setCompanies((prev) => [...prev, withId])
+      addAudit('Company added', withId.name || '', '')
+      return withId
+    },
+    [addAudit],
+  )
+
+  const updateCompany = useCallback(
+    (id, changes) => {
+      setCompanies((prev) => prev.map((c) => (c.id === id ? { ...c, ...changes } : c)))
+      addAudit('Company info changed', changes.name || id, '')
+    },
+    [addAudit],
+  )
+
+  const deleteCompany = useCallback(
+    (id) => {
+      setCompanies((prev) => (prev.length <= 1 ? prev : prev.filter((c) => c.id !== id)))
+      addAudit('Company removed', id, '')
     },
     [addAudit],
   )
@@ -392,7 +543,7 @@ export function AppProvider({ children }) {
   const setStyle = useCallback(
     (next) => {
       setStyleState(next)
-      addAudit('Brand style changed', '', `Color ${next.brandColor}, Font ${next.documentFont}`)
+      addAudit('Brand style changed', '', `Color ${next.brandColor}, Font ${next.documentFont}, Template ${next.template}`)
     },
     [addAudit],
   )
@@ -402,7 +553,8 @@ export function AppProvider({ children }) {
     return {
       version: 'DCS-v6',
       exportedAt: new Date().toISOString(),
-      company,
+      company: companies[0],
+      companies,
       docs,
       clients,
       vendors,
@@ -411,11 +563,12 @@ export function AppProvider({ children }) {
       security,
       counters: ls.get(KEYS.counters, {}),
     }
-  }, [company, docs, clients, vendors, style, users, security])
+  }, [companies, docs, clients, vendors, style, users, security])
 
   const importAll = useCallback(
     (data) => {
-      if (data.company) setCompanyState(data.company)
+      if (Array.isArray(data.companies) && data.companies.length) setCompanies(data.companies)
+      else if (data.company) setCompanies([{ ...DEFAULT_COMPANY, ...data.company, id: data.company.id || 'co-1' }])
       if (data.docs) setDocs(data.docs)
       if (data.clients) setClients(data.clients)
       if (data.vendors) setVendors(data.vendors)
@@ -431,6 +584,7 @@ export function AppProvider({ children }) {
   const value = {
     // state
     company,
+    companies,
     docs,
     clients,
     vendors,
@@ -440,9 +594,15 @@ export function AppProvider({ children }) {
     auditLog,
     inAppNotifs,
     currentUser,
+    sessionExpiry: session?.expires || null,
+    extendSession,
     isSetupComplete: users.length > 0,
     // setters
     setCompany,
+    addCompany,
+    updateCompany,
+    deleteCompany,
+    findCompany,
     setClients,
     setVendors,
     setStyle,
@@ -451,6 +611,9 @@ export function AppProvider({ children }) {
     login,
     logout,
     createSuperAdmin,
+    signup,
+    approveUser,
+    recoverPassword,
     addUser,
     changePassword,
     adminResetPassword,

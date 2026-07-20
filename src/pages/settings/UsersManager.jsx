@@ -8,16 +8,20 @@ import Modal from '../../components/Modal.jsx'
 import { Icon } from '../../components/Icons.jsx'
 import { formatDateTime } from '../../lib/format.js'
 
-const STATUS_COLOR = { Active: 'var(--green)', Deactivated: 'var(--text-faint)' }
+const STATUS_COLOR = { Active: 'var(--green)', Deactivated: 'var(--text-faint)', Pending: 'var(--amber)' }
 
 export default function UsersManager() {
-  const { users, currentUser, addUser, adminResetPassword, setUserStatus } = useApp()
+  const { users, currentUser, addUser, adminResetPassword, setUserStatus, approveUser } = useApp()
   const toast = useToast()
   const roles = assignableRoles(currentUser.role)
 
   const [showAdd, setShowAdd] = useState(false)
   const [form, setForm] = useState({ fullName: '', department: '', role: roles[0] || ROLES.ACCOUNTS })
   const [creds, setCreds] = useState(null) // { username, password }
+  const [approving, setApproving] = useState(null) // pending user being approved
+  const [approveRole, setApproveRole] = useState(roles[0] || ROLES.ACCOUNTS)
+
+  const pendingCount = users.filter((u) => u.status === 'Pending').length
 
   const create = () => {
     if (!form.fullName.trim()) {
@@ -61,7 +65,14 @@ export default function UsersManager() {
           <h3 className="page-title" style={{ fontSize: 18 }}>
             Users
           </h3>
-          <p className="page-sub">Manage user accounts, roles, and access.</p>
+          <p className="page-sub">
+            Manage user accounts, roles, and access.
+            {pendingCount > 0 && (
+              <span className="badge badge-amber" style={{ marginLeft: 8 }}>
+                {pendingCount} pending approval
+              </span>
+            )}
+          </p>
         </div>
         <button
           className="btn btn-primary"
@@ -96,7 +107,7 @@ export default function UsersManager() {
                 {u.locked && <span className="badge badge-red" style={{ marginLeft: 8 }}>Locked</span>}
               </td>
               <td className="mono small">{u.username}</td>
-              <td>{u.role}</td>
+              <td>{u.role || <span className="muted">—</span>}</td>
               <td className="muted">{u.department || '—'}</td>
               <td>
                 <span className="user-status-dot" style={{ background: STATUS_COLOR[u.status] }} />
@@ -104,21 +115,35 @@ export default function UsersManager() {
               </td>
               <td className="small muted">{u.lastLogin ? formatDateTime(u.lastLogin) : 'Never'}</td>
               <td className="text-right nowrap">
-                {canManage(u) && (
-                  <div className="row gap-8" style={{ justifyContent: 'flex-end' }}>
-                    <button className="btn btn-ghost btn-sm" onClick={() => resetPw(u)}>
-                      Reset Password
+                {u.status === 'Pending' ? (
+                  (currentUser.role === ROLES.SUPER_ADMIN || currentUser.role === ROLES.ADMIN) && (
+                    <button
+                      className="btn btn-teal btn-sm"
+                      onClick={() => {
+                        setApproving(u)
+                        setApproveRole(roles[0] || ROLES.ACCOUNTS)
+                      }}
+                    >
+                      <Icon.check width={14} height={14} /> Approve
                     </button>
-                    {u.status === 'Active' ? (
-                      <button className="btn btn-danger btn-sm" onClick={() => setUserStatus(u.id, 'Deactivated')}>
-                        Deactivate
+                  )
+                ) : (
+                  canManage(u) && (
+                    <div className="row gap-8" style={{ justifyContent: 'flex-end' }}>
+                      <button className="btn btn-ghost btn-sm" onClick={() => resetPw(u)}>
+                        Reset Password
                       </button>
-                    ) : (
-                      <button className="btn btn-ghost btn-sm" onClick={() => setUserStatus(u.id, 'Active')}>
-                        Reactivate
-                      </button>
-                    )}
-                  </div>
+                      {u.status === 'Active' ? (
+                        <button className="btn btn-danger btn-sm" onClick={() => setUserStatus(u.id, 'Deactivated')}>
+                          Deactivate
+                        </button>
+                      ) : (
+                        <button className="btn btn-ghost btn-sm" onClick={() => setUserStatus(u.id, 'Active')}>
+                          Reactivate
+                        </button>
+                      )}
+                    </div>
+                  )
                 )}
               </td>
             </tr>
@@ -214,6 +239,45 @@ export default function UsersManager() {
               </div>
             </>
           )}
+        </Modal>
+      )}
+
+      {approving && (
+        <Modal
+          title="Approve Account"
+          onClose={() => setApproving(null)}
+          footer={
+            <>
+              <button className="btn btn-ghost" onClick={() => setApproving(null)}>
+                Cancel
+              </button>
+              <button
+                className="btn btn-teal"
+                onClick={() => {
+                  approveUser(approving.id, approveRole)
+                  toast.success(`${approving.fullName} approved as ${approveRole}.`)
+                  setApproving(null)
+                }}
+              >
+                <Icon.check width={16} height={16} /> Approve
+              </button>
+            </>
+          }
+        >
+          <p className="muted" style={{ marginBottom: 12 }}>
+            Approve <b>{approving.fullName}</b> ({approving.username}) and assign a role. The user can
+            then sign in with the password they chose at signup.
+          </p>
+          <div className="field">
+            <label>Assign Role</label>
+            <select className="select" value={approveRole} onChange={(e) => setApproveRole(e.target.value)}>
+              {roles.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+          </div>
         </Modal>
       )}
     </div>

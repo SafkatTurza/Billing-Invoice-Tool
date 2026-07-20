@@ -5,6 +5,11 @@ import { useToast } from '../../components/Toast.jsx'
 import { Icon } from '../../components/Icons.jsx'
 
 const FONTS = ['Arial', 'Times New Roman', 'Calibri', 'Georgia', 'Trebuchet MS']
+const TEMPLATES = [
+  { id: 'modern', label: 'Modern', desc: 'Solid brand banner with total on the right.' },
+  { id: 'simple', label: 'Simple', desc: 'Clean white header with corner accents.' },
+  { id: 'flexible', label: 'Flexible', desc: 'Diagonal two-tone banner, boxed total.' },
+]
 
 export default function DocumentStyle() {
   const { style, setStyle, currentUser } = useApp()
@@ -71,6 +76,25 @@ export default function DocumentStyle() {
         <span className="small muted">Applies to PDF output only — the app UI always uses Inter/Arial.</span>
       </div>
 
+      <div className="field">
+        <label>Document Template</label>
+        <div className="template-grid">
+          {TEMPLATES.map((tpl) => (
+            <button
+              key={tpl.id}
+              type="button"
+              className={`template-card${(form.template || 'modern') === tpl.id ? ' active' : ''}`}
+              disabled={!editable}
+              onClick={() => setForm((f) => ({ ...f, template: tpl.id }))}
+            >
+              <TemplateThumb id={tpl.id} brand={form.brandColor} />
+              <div className="tc-name">{tpl.label}</div>
+              <div className="tc-desc">{tpl.desc}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Live preview */}
       <div
         style={{
@@ -99,6 +123,29 @@ export default function DocumentStyle() {
           <Icon.check width={16} height={16} /> Save Style
         </button>
       )}
+    </div>
+  )
+}
+
+// Tiny visual preview of each template's header treatment.
+function TemplateThumb({ id, brand }) {
+  const bc = brand || '#1E2D5A'
+  return (
+    <div className="tc-thumb">
+      {id === 'modern' && <div style={{ height: 16, background: bc }} />}
+      {id === 'simple' && (
+        <div style={{ height: 26, position: 'relative', background: '#fff', borderBottom: '2px solid ' + bc }}>
+          <div style={{ position: 'absolute', top: 0, right: 0, width: 30, height: 10, background: bc }} />
+        </div>
+      )}
+      {id === 'flexible' && (
+        <div style={{ height: 16, background: `linear-gradient(105deg, ${bc} 0%, ${bc} 56%, #0d9488 56%)` }} />
+      )}
+      <div style={{ padding: '6px 8px' }}>
+        <div style={{ height: 4, width: '55%', background: '#e2e8f0', borderRadius: 2, marginBottom: 4 }} />
+        <div style={{ height: 4, width: '80%', background: '#eef1f5', borderRadius: 2, marginBottom: 4 }} />
+        <div style={{ height: 4, width: '40%', background: '#eef1f5', borderRadius: 2 }} />
+      </div>
     </div>
   )
 }

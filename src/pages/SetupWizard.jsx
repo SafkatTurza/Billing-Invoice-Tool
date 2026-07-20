@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext.jsx'
 import { generateUsername } from '../lib/numbering.js'
-import { generatePassword } from '../lib/security.js'
+import { generatePassword, SECURITY_QUESTIONS } from '../lib/security.js'
 import { Icon } from '../components/Icons.jsx'
 import '../styles/auth.css'
 
@@ -11,11 +11,13 @@ export default function SetupWizard() {
   const [step, setStep] = useState('form') // form | credentials
   const [fullName, setFullName] = useState('')
   const [department, setDepartment] = useState('Management')
+  const [question, setQuestion] = useState(SECURITY_QUESTIONS[0])
+  const [answer, setAnswer] = useState('')
   const [creds, setCreds] = useState(null)
 
   const submit = (e) => {
     e.preventDefault()
-    if (!fullName.trim()) return
+    if (!fullName.trim() || !answer.trim()) return
     // Generate credentials and show them first. The actual account is only
     // created on "Continue" — otherwise setup completes immediately and the
     // wizard unmounts before the credentials can be shown.
@@ -29,6 +31,8 @@ export default function SetupWizard() {
       department,
       username: creds.username,
       password: creds.password,
+      securityQuestion: question,
+      securityAnswer: answer,
     })
     // App re-renders to the Login screen since setup is now complete.
   }
@@ -61,6 +65,27 @@ export default function SetupWizard() {
                   className="input"
                   value={department}
                   onChange={(e) => setDepartment(e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <label>
+                  Security Question <span className="req">*</span>
+                </label>
+                <select className="select" value={question} onChange={(e) => setQuestion(e.target.value)}>
+                  {SECURITY_QUESTIONS.map((q) => (
+                    <option key={q}>{q}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label>
+                  Your Answer <span className="req">*</span>
+                </label>
+                <input
+                  className="input"
+                  placeholder="Lets you recover a forgotten password"
+                  value={answer}
+                  onChange={(e) => setAnswer(e.target.value)}
                 />
               </div>
               <div className="auth-note">

@@ -1,6 +1,18 @@
 import { uid } from '../../lib/format.js'
 import { Icon } from '../Icons.jsx'
 
+const SIG_LABELS = [
+  'Prepared By',
+  'Reviewed By',
+  'Approved By',
+  'Authorized By',
+  'Checked By',
+  'Received By',
+  'Verified By',
+  'Authorized Signature',
+  'Custom',
+]
+
 // Dynamic signature blocks (SRS 4.4).
 export default function Signatures({ doc, patch }) {
   const sigs = doc.signatures || []
@@ -32,7 +44,29 @@ export default function Signatures({ doc, patch }) {
             </div>
             <div className="field">
               <label>Label</label>
-              <input className="input" value={s.label} onChange={(e) => update(s.id, { label: e.target.value })} />
+              <select
+                className="select"
+                value={SIG_LABELS.includes(s.label) ? s.label : 'Custom'}
+                onChange={(e) => {
+                  const v = e.target.value
+                  update(s.id, { label: v === 'Custom' ? '' : v })
+                }}
+              >
+                {SIG_LABELS.map((l) => (
+                  <option key={l} value={l}>
+                    {l}
+                  </option>
+                ))}
+              </select>
+              {!SIG_LABELS.slice(0, -1).includes(s.label) && (
+                <input
+                  className="input"
+                  style={{ marginTop: 6 }}
+                  placeholder="Custom label"
+                  value={s.label}
+                  onChange={(e) => update(s.id, { label: e.target.value })}
+                />
+              )}
             </div>
             <div className="field">
               <label>Name</label>

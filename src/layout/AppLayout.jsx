@@ -3,21 +3,26 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext.jsx'
 import { can, canAccessDocType, canSeeDocument } from '../lib/roles.js'
 import { Icon } from '../components/Icons.jsx'
-import { PREFIX } from '../lib/numbering.js'
+import { SessionExpiryBanner } from '../components/Banners.jsx'
 import { formatMoney, formatDateTime } from '../lib/format.js'
 import '../styles/layout.css'
 
-const DOC_TYPES = [
-  { type: 'invoices', label: 'Invoices', icon: Icon.invoice },
+// Sidebar groups mirror the original Paynox layout: Sales & Payments
+// (Estimates before Invoices) and Purchases (PO/WO) + Money Receipt.
+const SALES = [
   { type: 'estimates', label: 'Estimates', icon: Icon.estimate },
+  { type: 'invoices', label: 'Invoices', icon: Icon.invoice },
+]
+const PURCHASES = [
   { type: 'purchase-orders', label: 'Purchase Orders', icon: Icon.po },
   { type: 'work-orders', label: 'Work Orders', icon: Icon.wo },
-  { type: 'money-receipt', label: 'Money Receipts', icon: Icon.receipt },
 ]
 
 export default function AppLayout() {
-  const { currentUser, company, docs } = useApp()
+  const { currentUser, docs } = useApp()
   const role = currentUser.role
+  const [groups, setGroups] = useState({ sales: true, purchases: true })
+  const toggle = (id) => setGroups((g) => ({ ...g, [id]: !g[id] }))
 
   const liveDocs = docs.filter((d) => !d.deleted)
   const counts = useMemo(() => {
@@ -28,66 +33,76 @@ export default function AppLayout() {
     return c
   }, [liveDocs, currentUser])
 
+  const NavDoc = ({ d, sub }) =>
+    canAccessDocType(role, d.type) ? (
+      <NavLink to={`/${d.type}`} className={`nav-item${sub ? ' sub' : ''}`}>
+        <d.icon width={17} height={17} />
+        {d.label}
+        {counts[d.type] ? <span className="count">{counts[d.type]}</span> : null}
+      </NavLink>
+    ) : null
+
+  const isBT = role === 'Business Team'
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
         <div className="sidebar-brand">
-          <div className="mark">
-            {company.logo ? <img src={company.logo} alt="" /> : 'D'}
-          </div>
+          <div className="mark">P</div>
           <div className="name">
-            {company.name || 'DCS Billing'}
-            <span>Billing System</span>
+            Paynox
+            <span>© Paynox · by Safkat Turza</span>
           </div>
         </div>
 
-        <nav className="nav-group">
+        <nav className="nav-scroll">
           <NavLink to="/dashboard" className="nav-item">
-            <Icon.dashboard width={18} height={18} />
+            <Icon.dashboard width={17} height={17} />
             Dashboard
           </NavLink>
-        </nav>
 
-        <div className="nav-group">
-          <div className="nav-group-label">Documents</div>
-          {DOC_TYPES.filter((d) => canAccessDocType(role, d.type)).map((d) => (
-            <NavLink key={d.type} to={`/${d.type}`} className="nav-item">
-              <d.icon width={18} height={18} />
-              {d.label}
-              {counts[d.type] ? <span className="count">{counts[d.type]}</span> : null}
+          <button className="nav-group-toggle" onClick={() => toggle('sales')}>
+            <Icon.estimate width={16} height={16} />
+            Sales &amp; Payments
+            <span className={`arr${groups.sales ? ' open' : ''}`}>
+              <Icon.chevron width={13} height={13} />
+            </span>
+          </button>
+          {groups.sales && SALES.map((d) => <NavDoc key={d.type} d={d} sub />)}
+
+          {!isBT && (
+            <>
+              <button className="nav-group-toggle" onClick={() => toggle('purchases')}>
+                <Icon.po width={16} height={16} />
+                Purchases
+                <span className={`arr${groups.purchases ? ' open' : ''}`}>
+                  <Icon.chevron width={13} height={13} />
+                </span>
+              </button>
+              {groups.purchases && PURCHASES.map((d) => <NavDoc key={d.type} d={d} sub />)}
+              <NavDoc d={{ type: 'money-receipt', label: 'Money Receipt', icon: Icon.receipt }} />
+            </>
+          )}
+
+          {can(role, 'recycleBin') && (
+            <NavLink to="/recycle-bin" className="nav-item">
+              <Icon.trash width={17} height={17} />
+              Recycle Bin
             </NavLink>
-          ))}
-        </div>
+          )}
 
-        {(can(role, 'auditLog') || can(role, 'recycleBin')) && (
-          <div className="nav-group">
-            <div className="nav-group-label">Administration</div>
-            {can(role, 'auditLog') && (
-              <NavLink to="/audit" className="nav-item">
-                <Icon.audit width={18} height={18} />
-                Audit Log
-              </NavLink>
-            )}
-            {can(role, 'recycleBin') && (
-              <NavLink to="/recycle-bin" className="nav-item">
-                <Icon.trash width={18} height={18} />
-                Recycle Bin
-              </NavLink>
-            )}
-          </div>
-        )}
+          <div className="nav-divider" />
 
-        <div className="nav-group">
           <NavLink to="/settings" className="nav-item">
-            <Icon.settings width={18} height={18} />
+            <Icon.settings width={17} height={17} />
             Settings
           </NavLink>
-        </div>
+        </nav>
 
         <div className="sidebar-foot">
           <div className="sidebar-user">
             <div className="avatar">{initials(currentUser.fullName)}</div>
-            <div>
+            <div style={{ minWidth: 0 }}>
               <div className="u-name">{currentUser.fullName}</div>
               <div className="u-role">{currentUser.role}</div>
             </div>
@@ -98,10 +113,42 @@ export default function AppLayout() {
       <div className="main">
         <Topbar />
         <main className="content">
+          <ExpiryWatcher />
           <Outlet />
         </main>
       </div>
     </div>
+  )
+}
+
+// Warns 5 minutes before a 30-day session expires (Addendum 17.3).
+function ExpiryWatcher() {
+  const { sessionExpiry, extendSession } = useApp()
+  const [minutes, setMinutes] = useState(null)
+  const [dismissed, setDismissed] = useState(false)
+
+  useEffect(() => {
+    if (!sessionExpiry) return
+    const tick = () => {
+      const left = sessionExpiry - Date.now()
+      if (left <= 5 * 60 * 1000 && left > 0) setMinutes(Math.ceil(left / 60000))
+      else setMinutes(null)
+    }
+    tick()
+    const iv = setInterval(tick, 15000)
+    return () => clearInterval(iv)
+  }, [sessionExpiry])
+
+  if (minutes == null || dismissed) return null
+  return (
+    <SessionExpiryBanner
+      minutes={minutes}
+      onExtend={() => {
+        extendSession()
+        setDismissed(false)
+      }}
+      onDismiss={() => setDismissed(true)}
+    />
   )
 }
 

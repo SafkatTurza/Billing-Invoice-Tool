@@ -1,10 +1,11 @@
-# DCS Billing System
+# Paynox — DCS Billing System
 
-A standalone, browser-based billing application for **DreamCore Studio**, rebuilt
-from the *DCS Billing System v6* design and the project's SRS (v2.3) + Addendum
-(v3.1). It creates, manages, and exports professional billing documents —
-Invoices, Estimates, Purchase Orders, Work Orders, and Money Receipts — with
-role-based access, a role-aware dashboard, and print-to-PDF output.
+A standalone, browser-based billing application (**Paynox**) for **DreamCore
+Studio**, rebuilt from the *DCS Billing System v6* design and the project's SRS
+(v2.3) + Addendum (v3.1). It creates, manages, and exports professional billing
+documents — Invoices, Estimates, Purchase Orders, Work Orders, and Money
+Receipts — with role-based access, a role-aware dashboard, and print-to-PDF
+output.
 
 Unlike the original single-file `Babel-in-browser` prototype, this is a proper
 buildable **Vite + React** project. It keeps the design's client-only,
@@ -32,6 +33,24 @@ you're forced to set your own password on first login.
 - **Auth & roles** — Super Admin, Admin, Accounts, Business Team with the full
   permission matrix from the Addendum (document access, revenue visibility,
   estimate cross-visibility, user management scope, failed-login lockout).
+- **Self-signup & recovery** — request-an-account flow (creates a Pending user
+  that an admin approves and assigns a role), plus forgot-password recovery via
+  a security question set at setup/signup.
+- **Multi-company** — several company profiles, each with its own logo, brand
+  color, and bank; documents record the issuing company and resolve their
+  footer/brand from it.
+- **Excel & Word export** — every document exports to `.xlsx` (Summary / Line
+  Items / Signatures) and `.docx`, generated fully in-browser (no companion
+  server needed).
+- **Three PDF templates** — Modern, Simple, and Flexible skins, selectable in
+  Document Style and applied to all document types.
+- **Soft document-locking** — a document opened for editing is locked for other
+  users (view-only + request-to-edit), with 30-minute auto-release and admin
+  force-unlock; plus per-user draft recovery and a 5-minute session-expiry
+  warning.
+- **In-form conveniences** — quick-add client/vendor without leaving the form,
+  auto-generated client codes (`DCS26-RE-SHL-001`), signature-label presets, and
+  auto-growing description fields.
 - **Dashboard** — role-aware. Document count cards, financial summary grouped by
   currency (never mixed/converted), quick-create, and recent documents. The
   financial summary and restricted document types are hidden for Business Team.
@@ -77,9 +96,11 @@ keys from the Addendum. **Settings → Data Backup** exports everything to
 
 ## Notes on scope
 
-This build covers the core billing system and the security/roles model. Some
-Addendum features are represented in a lightweight form suited to a client-only
-app (e.g. security-alert emails are recorded in the Audit Log rather than sent,
-since no email backend exists in the standalone version) and a few areas remain
-as a natural next phase: soft document-locking / conflict resolution, and the
-planned Payroll module (which the SRS itself marks as designed-but-not-built).
+This build covers the full billing system, the security/roles model, and the
+richer feature set from the shipped Paynox v6 (multi-company, exports, PDF
+templates, locking, drafts, signup/recovery). A few things remain deliberately
+lightweight for a client-only app: security-alert emails are recorded in the
+Audit Log rather than sent (no email backend exists in the standalone version),
+and the DOCX/Excel export runs in-browser instead of via the original's local
+python-docx server. The planned Payroll module — which the SRS itself marks as
+designed-but-not-built — is the natural next phase.

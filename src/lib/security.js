@@ -27,6 +27,15 @@ export function generatePassword() {
   return chars.join('')
 }
 
+export const SECURITY_QUESTIONS = [
+  'What was the name of your first school?',
+  "What is your mother's maiden name?",
+  'What was the name of your first pet?',
+  'In what city were you born?',
+  'What was your childhood nickname?',
+  'What is the name of your favorite teacher?',
+]
+
 // Simple deterministic hash (djb2) — enough to avoid plaintext storage.
 export function hashPassword(pw) {
   let h = 5381
@@ -39,6 +48,14 @@ export function hashPassword(pw) {
 
 export function verifyPassword(pw, hash) {
   return hashPassword(pw) === hash
+}
+
+// Security-answer hash (normalized: trimmed + lowercased).
+export function hashAnswer(a) {
+  return hashPassword((a || '').trim().toLowerCase())
+}
+export function verifyAnswer(a, hash) {
+  return hashAnswer(a) === hash
 }
 
 // Password rules — Addendum 18.1.

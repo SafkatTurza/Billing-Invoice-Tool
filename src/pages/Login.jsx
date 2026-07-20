@@ -1,13 +1,16 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext.jsx'
+import { ls } from '../lib/storage.js'
 import { Icon } from '../components/Icons.jsx'
 import '../styles/auth.css'
 
-export default function Login() {
+const REMEMBER_KEY = 'dcs_remembered_un'
+
+export default function Login({ onGoSignup, onGoForgot }) {
   const { login } = useApp()
-  const [username, setUsername] = useState('')
+  const [username, setUsername] = useState(() => ls.get(REMEMBER_KEY, '') || '')
   const [password, setPassword] = useState('')
-  const [remember, setRemember] = useState(false)
+  const [remember, setRemember] = useState(() => !!ls.get(REMEMBER_KEY, ''))
   const [error, setError] = useState('')
 
   const submit = (e) => {
@@ -16,7 +19,12 @@ export default function Login() {
     const res = login(username.trim(), password, remember)
     if (!res.ok) {
       setError(res.error)
+      return
     }
+    // Remember the username (not the 30-day session — that's the checkbox's
+    // other job) so it pre-fills next time.
+    if (remember) ls.set(REMEMBER_KEY, username.trim())
+    else ls.remove(REMEMBER_KEY)
     // On success, App re-renders based on currentUser / mustChangePassword.
   }
 
@@ -25,10 +33,10 @@ export default function Login() {
       <div className="auth-card">
         <div className="auth-head">
           <div className="auth-logo" style={{ marginBottom: 0 }}>
-            <div className="mark">D</div>
+            <div className="mark">P</div>
             <div className="name" style={{ color: '#fff' }}>
-              DCS Billing
-              <span style={{ color: '#b8c1dd' }}>DreamCore Studio</span>
+              Paynox
+              <span style={{ color: '#b8c1dd' }}>DCS Billing System</span>
             </div>
           </div>
         </div>
@@ -66,6 +74,20 @@ export default function Login() {
             <button className="btn btn-primary" style={{ width: '100%' }} type="submit">
               <Icon.logout width={16} height={16} style={{ transform: 'scaleX(-1)' }} /> Log In
             </button>
+            {(onGoSignup || onGoForgot) && (
+              <div className="auth-links">
+                {onGoForgot && (
+                  <button type="button" className="link-btn" onClick={onGoForgot}>
+                    Forgot password?
+                  </button>
+                )}
+                {onGoSignup && (
+                  <button type="button" className="link-btn" onClick={onGoSignup}>
+                    Request an account
+                  </button>
+                )}
+              </div>
+            )}
           </form>
         </div>
       </div>

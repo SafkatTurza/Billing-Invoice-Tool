@@ -6,6 +6,8 @@ import { Icon } from './components/Icons.jsx'
 
 import SetupWizard from './pages/SetupWizard.jsx'
 import Login from './pages/Login.jsx'
+import Signup from './pages/Signup.jsx'
+import Forgot from './pages/Forgot.jsx'
 import ChangePassword from './pages/ChangePassword.jsx'
 import AppLayout from './layout/AppLayout.jsx'
 
@@ -58,6 +60,14 @@ export default function App() {
   )
 }
 
+// Toggles between the three unauthenticated screens.
+function AuthGate() {
+  const [view, setView] = useState('login') // login | signup | forgot
+  if (view === 'signup') return <Signup onBack={() => setView('login')} />
+  if (view === 'forgot') return <Forgot onBack={() => setView('login')} />
+  return <Login onGoSignup={() => setView('signup')} onGoForgot={() => setView('forgot')} />
+}
+
 function AppRoutes({ isSetupComplete, currentUser }) {
   // Not set up yet → first-launch wizard.
   if (!isSetupComplete) {
@@ -68,13 +78,9 @@ function AppRoutes({ isSetupComplete, currentUser }) {
     )
   }
 
-  // Not logged in → login screen.
+  // Not logged in → login / signup / forgot.
   if (!currentUser) {
-    return (
-      <Routes>
-        <Route path="*" element={<Login />} />
-      </Routes>
-    )
+    return <AuthGate />
   }
 
   // Logged in but must change password (first login / after admin reset).

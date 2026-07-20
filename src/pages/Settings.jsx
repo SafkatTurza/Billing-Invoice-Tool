@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext.jsx'
 import { can } from '../lib/roles.js'
-import CompanyProfile from './settings/CompanyProfile.jsx'
+import CompanyManager from './settings/CompanyManager.jsx'
 import PartyList from './settings/PartyList.jsx'
 import DocumentStyle from './settings/DocumentStyle.jsx'
 import DataBackup from './settings/DataBackup.jsx'
@@ -18,7 +18,7 @@ export default function Settings() {
 
   // Tabs available to this role.
   const tabs = [
-    { id: 'company', label: 'Company Profile', show: true },
+    { id: 'company', label: 'Companies', show: true },
     { id: 'clients', label: 'Client List', show: true },
     { id: 'vendors', label: 'Vendor List', show: true },
     { id: 'style', label: 'Document Style', show: true },
@@ -49,7 +49,7 @@ export default function Settings() {
         </div>
 
         <div className="settings-panel">
-          {active === 'company' && <CompanyProfile />}
+          {active === 'company' && <CompanyManager />}
           {active === 'clients' && <PartyList kind="client" />}
           {active === 'vendors' && <PartyList kind="vendor" />}
           {active === 'style' && <DocumentStyle />}

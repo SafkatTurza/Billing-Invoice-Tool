@@ -1,18 +1,35 @@
 import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
 import { metaFor } from '../../lib/docmeta.js'
+import { CLIENT_FIELDS, genClientCode, commitClientSeq } from '../../lib/clientCode.js'
+import { uid } from '../../lib/format.js'
+import Modal from '../Modal.jsx'
+import { useToast } from '../Toast.jsx'
 import { Icon } from '../Icons.jsx'
 
 // Client/Vendor selector that auto-fills party fields (SRS 3.2 dropdown flow).
 export default function PartyPicker({ type, doc, patch }) {
   const app = useApp()
+  const toast = useToast()
   const meta = metaFor(type)
-  const list = meta.partySource === 'vendors' ? app.vendors : app.clients
+  const isVendor = meta.partySource === 'vendors'
+  const list = isVendor ? app.vendors : app.clients
+  const setList = isVendor ? app.setVendors : app.setClients
   const selected = list.find((p) => p.id === doc.partyId)
   const [contactIdx, setContactIdx] = useState('')
+  const [quickOpen, setQuickOpen] = useState(false)
 
-  const selectParty = (id) => {
-    const p = list.find((x) => x.id === id)
+  // Inline quick-create a party from the form (SRS 3.2 QuickPartyModal).
+  const quickSave = (party) => {
+    const saved = { ...party, id: uid(), contacts: [] }
+    setList([...list, saved])
+    selectParty(saved.id, [...list, saved])
+    setQuickOpen(false)
+    toast.success(`${isVendor ? 'Vendor' : 'Client'} added.`)
+  }
+
+  const selectParty = (id, fromList = list) => {
+    const p = fromList.find((x) => x.id === id)
     setContactIdx('')
     if (!p) {
       patch({ partyId: '', partyName: '' })
@@ -27,6 +44,7 @@ export default function PartyPicker({ type, doc, patch }) {
       vatNo: p.vatNo || '',
       taxId: p.taxId || '',
       tradeLicense: p.tradeLicense || '',
+      ...(p.code ? { clientCode: p.code } : {}),
       contactPerson: '',
       designation: '',
     })
@@ -51,15 +69,24 @@ export default function PartyPicker({ type, doc, patch }) {
 
       <div className="grid grid-2">
         <div className="field">
-          <label>Select {meta.partySource === 'vendors' ? 'Vendor' : 'Client'}</label>
-          <select className="select" value={doc.partyId || ''} onChange={(e) => selectParty(e.target.value)}>
-            <option value="">— Select or type manually —</option>
-            {list.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+          <label>Select {isVendor ? 'Vendor' : 'Client'}</label>
+          <div className="row gap-8">
+            <select
+              className="select grow"
+              value={doc.partyId || ''}
+              onChange={(e) => selectParty(e.target.value)}
+            >
+              <option value="">— Select or type manually —</option>
+              {list.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+            <button className="btn btn-ghost btn-sm" type="button" onClick={() => setQuickOpen(true)}>
+              <Icon.plus width={14} height={14} /> New
+            </button>
+          </div>
         </div>
         {selected?.contacts?.length > 0 && (
           <div className="field">
@@ -116,6 +143,107 @@ export default function PartyPicker({ type, doc, patch }) {
           <input className="input" value={doc.tradeLicense} onChange={(e) => patch({ tradeLicense: e.target.value })} />
         </div>
       </div>
+
+      {quickOpen && (
+        <QuickPartyModal
+          isVendor={isVendor}
+          company={app.company}
+          clients={app.clients}
+          onClose={() => setQuickOpen(false)}
+          onSave={quickSave}
+        />
+      )}
     </div>
+  )
+}
+
+// Inline modal to create a client/vendor without leaving the form.
+// For clients, auto-generates a client code (DCS26-RE-SHL-001).
+function QuickPartyModal({ isVendor, company, clients, onClose, onSave }) {
+  const [form, setForm] = useState({
+    name: '',
+    field: 'GEN',
+    address: '',
+    phone: '',
+    email: '',
+    code: '',
+  })
+  const upd = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+
+  const previewCode = !isVendor && form.name ? genClientCode(company, form.field, form.name, clients) : ''
+
+  const save = () => {
+    if (!form.name.trim()) return
+    const party = {
+      name: form.name.trim(),
+      address: form.address,
+      phone: form.phone,
+      email: form.email,
+      vatNo: '',
+      taxId: '',
+      tradeLicense: '',
+    }
+    if (!isVendor) {
+      party.field = form.field
+      party.code = previewCode
+      commitClientSeq(clients)
+    }
+    onSave(party)
+  }
+
+  return (
+    <Modal
+      title={`Quick Add ${isVendor ? 'Vendor' : 'Client'}`}
+      onClose={onClose}
+      footer={
+        <>
+          <button className="btn btn-ghost" onClick={onClose}>
+            Cancel
+          </button>
+          <button className="btn btn-primary" onClick={save}>
+            Add {isVendor ? 'Vendor' : 'Client'}
+          </button>
+        </>
+      }
+    >
+      <div className="field">
+        <label>
+          {isVendor ? 'Vendor' : 'Client'} Name <span className="req">*</span>
+        </label>
+        <input className="input" autoFocus value={form.name} onChange={(e) => upd('name', e.target.value)} />
+      </div>
+      {!isVendor && (
+        <div className="grid grid-2">
+          <div className="field">
+            <label>Industry / Field</label>
+            <select className="select" value={form.field} onChange={(e) => upd('field', e.target.value)}>
+              {CLIENT_FIELDS.map(([code, label]) => (
+                <option key={code} value={code}>
+                  {label} ({code})
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <label>Client Code (auto)</label>
+            <input className="input mono" value={previewCode} disabled placeholder="—" />
+          </div>
+        </div>
+      )}
+      <div className="grid grid-2">
+        <div className="field">
+          <label>Phone</label>
+          <input className="input" value={form.phone} onChange={(e) => upd('phone', e.target.value)} />
+        </div>
+        <div className="field">
+          <label>Email</label>
+          <input className="input" value={form.email} onChange={(e) => upd('email', e.target.value)} />
+        </div>
+      </div>
+      <div className="field">
+        <label>Address</label>
+        <textarea className="textarea" value={form.address} onChange={(e) => upd('address', e.target.value)} />
+      </div>
+    </Modal>
   )
 }

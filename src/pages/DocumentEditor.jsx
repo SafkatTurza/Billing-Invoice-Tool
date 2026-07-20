@@ -3,8 +3,19 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext.jsx'
 import { metaFor } from '../lib/docmeta.js'
 import { calcTotals } from '../lib/pricing.js'
-import { newDocument } from '../lib/newDocument.js'
+import { newDocument, companyFooter } from '../lib/newDocument.js'
 import { CURRENCIES, todayISO } from '../lib/format.js'
+import { can } from '../lib/roles.js'
+import {
+  checkDocLock,
+  acquireDocLock,
+  releaseDocLock,
+  touchDocLock,
+  forceReleaseDocLock,
+  saveDraft,
+  clearDraft,
+  getDraft,
+} from '../lib/locks.js'
 import { STATUS_OPTIONS } from '../components/StatusBadge.jsx'
 import { useToast } from '../components/Toast.jsx'
 import { Icon } from '../components/Icons.jsx'
@@ -14,12 +25,14 @@ import LineItems from '../components/editor/LineItems.jsx'
 import Totals from '../components/editor/Totals.jsx'
 import Milestones from '../components/editor/Milestones.jsx'
 import Signatures from '../components/editor/Signatures.jsx'
+import LockNotice from '../components/editor/LockNotice.jsx'
+import { DraftRecoveryBanner } from '../components/Banners.jsx'
 import '../styles/documents.css'
 
 export default function DocumentEditor({ type }) {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { docs, company, saveDocument, addAudit } = useApp()
+  const { docs, company, companies, currentUser, saveDocument, addAudit, notify } = useApp()
   const toast = useToast()
   const meta = metaFor(type)
 
@@ -31,6 +44,33 @@ export default function DocumentEditor({ type }) {
   const [saveState, setSaveState] = useState('saved') // saved | saving | unsaved
   const debounceRef = useRef(null)
   const firstRender = useRef(true)
+
+  // ── Soft-lock (Addendum 21) ──
+  const [lock, setLock] = useState(null) // set if locked by ANOTHER user
+  const [requested, setRequested] = useState(false)
+  const [draft, setDraft] = useState(null) // recoverable draft, if any
+  const heldLockRef = useRef(false)
+
+  useEffect(() => {
+    if (!id) return // new docs aren't lockable until saved
+    const existingLock = checkDocLock(id)
+    if (existingLock && existingLock.userId !== currentUser.id) {
+      setLock(existingLock)
+      return
+    }
+    // Acquire the lock for ourselves.
+    acquireDocLock(id, currentUser)
+    heldLockRef.current = true
+    // Offer draft recovery if a newer autosaved draft exists.
+    const d = getDraft(currentUser.id, type, id)
+    if (d && existing && new Date(d.savedAt) > new Date(existing.updatedAt || 0)) {
+      if (JSON.stringify(d.data) !== JSON.stringify(existing)) setDraft(d)
+    }
+    return () => {
+      if (heldLockRef.current) releaseDocLock(id, currentUser.id)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
 
   const patch = (changes) => setDoc((prev) => ({ ...prev, ...changes }))
 
@@ -64,6 +104,11 @@ export default function DocumentEditor({ type }) {
     debounceRef.current = setTimeout(() => {
       setSaveState('saving')
       persist()
+      // Draft safety net + keep our lock alive on activity.
+      if (id) {
+        saveDraft(currentUser.id, type, id, doc)
+        touchDocLock(id, currentUser)
+      }
       setTimeout(() => setSaveState('saved'), 300)
     }, 1500)
     return () => debounceRef.current && clearTimeout(debounceRef.current)
@@ -73,9 +118,41 @@ export default function DocumentEditor({ type }) {
   const saveNow = () => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     const saved = persist()
+    // Explicit save commits — clear the recovery draft.
+    if (saved) clearDraft(currentUser.id, type, saved.id)
     setSaveState('saved')
     toast.success(`${meta.singular} saved.`)
     return saved
+  }
+
+  // ── Lock-notice actions ──
+  const forceUnlock = () => {
+    forceReleaseDocLock(id)
+    acquireDocLock(id, currentUser)
+    heldLockRef.current = true
+    addAudit('Lock force-removed', doc.docNumber, `was held by ${lock.name}`)
+    setLock(null)
+  }
+  const requestEdit = () => {
+    notify(`${currentUser.fullName} requested to edit ${doc.docNumber}`, lock.userId, `/${type}/${id}/edit`)
+    setRequested(true)
+    toast.success('Edit request sent.')
+  }
+
+  // Blocked: another user holds the lock.
+  if (lock) {
+    return (
+      <LockNotice
+        lock={lock}
+        docNumber={doc.docNumber}
+        canForceUnlock={can(currentUser.role, 'forceUnlock')}
+        requested={requested}
+        onBack={() => navigate(`/${type}`)}
+        onViewOnly={() => navigate(`/${type}/${id}`)}
+        onRequestEdit={requestEdit}
+        onForceUnlock={forceUnlock}
+      />
+    )
   }
 
   const saveAndView = () => {
@@ -106,10 +183,44 @@ export default function DocumentEditor({ type }) {
         </div>
       </div>
 
+      {draft && (
+        <DraftRecoveryBanner
+          savedAt={draft.savedAt}
+          onRecover={() => {
+            setDoc(draft.data)
+            setDraft(null)
+            toast.success('Draft restored.')
+          }}
+          onDiscard={() => {
+            clearDraft(currentUser.id, type, id)
+            setDraft(null)
+          }}
+        />
+      )}
+
       {/* Document information */}
       <div className="form-section">
         <h3>Document Information</h3>
         <div className="grid grid-3">
+          {companies.length > 1 && (
+            <div className="field">
+              <label>Company (issuing)</label>
+              <select
+                className="select"
+                value={doc.companyId || company.id}
+                onChange={(e) => {
+                  const co = companies.find((c) => c.id === e.target.value)
+                  patch({ companyId: e.target.value, footer: companyFooter(co) })
+                }}
+              >
+                {companies.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name || 'Untitled Company'}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="field">
             <label>Document Number</label>
             <input

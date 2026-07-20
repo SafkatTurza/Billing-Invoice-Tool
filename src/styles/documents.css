@@ -150,6 +150,69 @@
   font-style: italic;
 }
 
+/* Lock screen */
+.lock-screen {
+  display: flex;
+  justify-content: center;
+  padding: 40px 20px;
+}
+.lock-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 34px;
+  max-width: 460px;
+  width: 100%;
+  text-align: center;
+}
+.lock-card .lock-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 14px;
+  background: #fdf0dd;
+  color: var(--amber);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+.lock-card h2 { font-size: 20px; font-weight: 700; color: var(--navy); }
+.lock-details {
+  text-align: left;
+  background: #fafbfc;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin: 20px 0;
+}
+.lock-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13.5px; }
+.lock-row + .lock-row { border-top: 1px dashed var(--border); }
+.lock-actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+
+/* Banners */
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+.banner-amber { background: #fdf0dd; color: #8a5a13; border: 1px solid #f3d9a0; }
+.banner-blue { background: #eaf2ff; color: #1e40af; border: 1px solid #c3d7f7; }
+.banner-x {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+  display: inline-flex;
+}
+.banner-x:hover { opacity: 1; }
+
 .sig-grid { display: grid; gap: 14px; }
 .sig-block {
   border: 1px solid var(--border);

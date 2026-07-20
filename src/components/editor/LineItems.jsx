@@ -1,6 +1,7 @@
 import { isAmountLocked, lineAmount } from '../../lib/pricing.js'
 import { formatMoney } from '../../lib/format.js'
 import { newLineItem } from '../../lib/newDocument.js'
+import AutoTextarea from '../AutoTextarea.jsx'
 import { Icon } from '../Icons.jsx'
 
 // Line items editor with the smart amount lock/unlock rules (SRS 4.2).
@@ -62,10 +63,11 @@ export default function LineItems({ doc, patch, showSpec }) {
                       value={it.name}
                       onChange={(e) => updateItem(it.id, { name: e.target.value })}
                     />
-                    <textarea
+                    <AutoTextarea
                       placeholder="Description (optional)"
-                      rows={1}
-                      style={{ marginTop: 6, minHeight: 34 }}
+                      className=""
+                      style={{ marginTop: 6 }}
+                      minHeight={34}
                       value={it.description}
                       onChange={(e) => updateItem(it.id, { description: e.target.value })}
                     />

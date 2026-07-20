@@ -4,7 +4,10 @@
 // user/security keys added by the Addendum).
 
 export const KEYS = {
-  company: 'dcs_co',
+  company: 'dcs_co', // legacy single-company (kept for migration)
+  companies: 'dcs_companies', // multi-company array
+  clientSeq: 'dcs_client_seq',
+  locks: 'dcs_locks',
   docs: 'dcs_docs',
   clients: 'dcs_clients',
   vendors: 'dcs_vendors',
