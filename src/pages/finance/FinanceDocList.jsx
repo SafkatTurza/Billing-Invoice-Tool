@@ -17,10 +17,15 @@ const STATUS_BADGE = {
 }
 
 export default function FinanceDocList({ type }) {
-  const { finDocs, deleteFinDoc } = useFinance()
+  const { finDocs, deleteFinDoc, duplicateFinDoc } = useFinance()
   const { currentUser } = useApp()
   const navigate = useNavigate()
   const meta = FIN_TYPES[type]
+
+  const onDuplicate = (id) => {
+    const clone = duplicateFinDoc(id)
+    if (clone) navigate(`/finance/${isVoucherType(clone.type) ? 'voucher' : clone.type}/${clone.id}/edit`)
+  }
 
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -130,6 +135,11 @@ export default function FinanceDocList({ type }) {
                       {canManage && d.status === FIN_STATUS.DRAFT && (
                         <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/finance/${type}/${d.id}/edit`)} title="Edit">
                           <Icon.edit width={14} height={14} />
+                        </button>
+                      )}
+                      {canManage && (
+                        <button className="btn btn-ghost btn-sm" onClick={() => onDuplicate(d.id)} title="Duplicate">
+                          <Icon.invoice width={14} height={14} />
                         </button>
                       )}
                       {can(currentUser.role, 'manageFinanceMasters') && (

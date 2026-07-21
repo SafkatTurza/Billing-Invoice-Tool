@@ -1,7 +1,9 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext.jsx'
+import { useFinance } from '../context/FinanceContext.jsx'
 import { can, canAccessDocType, canSeeDocument } from '../lib/roles.js'
+import { FIN_TYPES, isVoucherType, voucherLabel, voucherTotal } from '../lib/finance.js'
 import { Icon } from '../components/Icons.jsx'
 import { SessionExpiryBanner } from '../components/Banners.jsx'
 import { formatMoney, formatDateTime } from '../lib/format.js'
@@ -211,6 +213,8 @@ function initials(name = '') {
 // ── Top bar: global search + notifications + logout ──────────
 function Topbar() {
   const { docs, currentUser, inAppNotifs, logout, markNotifRead, clearNotifs } = useApp()
+  const { finDocs } = useFinance()
+  const canFinance = can(currentUser.role, 'financeView')
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [showResults, setShowResults] = useState(false)
@@ -251,6 +255,30 @@ function Topbar() {
     return g
   }, [results])
 
+  // Finance documents — searchable for any role with finance visibility.
+  const finResults = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q || !canFinance) return []
+    return finDocs
+      .filter((d) => !d.deleted)
+      .filter(
+        (d) =>
+          (d.docNumber || '').toLowerCase().includes(q) ||
+          (d.title || d.purpose || d.description || d.receivedFrom || d.party || '').toLowerCase().includes(q) ||
+          String(d.amount || d.total || '').includes(q),
+      )
+      .slice(0, 20)
+  }, [query, finDocs, canFinance])
+
+  const finGrouped = useMemo(() => {
+    const g = {}
+    for (const d of finResults) {
+      const key = isVoucherType(d.type) ? 'voucher' : d.type
+      ;(g[key] = g[key] || []).push(d)
+    }
+    return g
+  }, [finResults])
+
   // Notifications visible to this user: addressed to them or (admin-only) broadcasts.
   const myNotifs = useMemo(() => {
     const isAdmin = ['Super Admin', 'Admin'].includes(currentUser.role)
@@ -262,6 +290,12 @@ function Topbar() {
     setQuery('')
     setShowResults(false)
     navigate(`/${d.type}/${d.id}`)
+  }
+
+  const openFinResult = (d) => {
+    setQuery('')
+    setShowResults(false)
+    navigate(financeRouteFor(d))
   }
 
   return (
@@ -281,24 +315,39 @@ function Topbar() {
         />
         {showResults && query.trim() && (
           <div className="search-results">
-            {results.length === 0 ? (
+            {results.length === 0 && finResults.length === 0 ? (
               <div className="empty" style={{ padding: 24 }}>
                 No documents match “{query}”.
               </div>
             ) : (
-              Object.entries(grouped).map(([type, list]) => (
-                <div key={type}>
-                  <div className="search-group-label">{labelForType(type)}</div>
-                  {list.map((d) => (
-                    <div key={d.id} className="search-result" onClick={() => openResult(d)}>
-                      <span className="sr-num mono">{d.docNumber}</span>
-                      <span className="muted">{d.partyName || '—'}</span>
-                      <span className="grow" />
-                      <span className="small">{formatMoney(d.grandTotal, d.currency)}</span>
-                    </div>
-                  ))}
-                </div>
-              ))
+              <>
+                {Object.entries(grouped).map(([type, list]) => (
+                  <div key={type}>
+                    <div className="search-group-label">{labelForType(type)}</div>
+                    {list.map((d) => (
+                      <div key={d.id} className="search-result" onClick={() => openResult(d)}>
+                        <span className="sr-num mono">{d.docNumber}</span>
+                        <span className="muted">{d.partyName || '—'}</span>
+                        <span className="grow" />
+                        <span className="small">{formatMoney(d.grandTotal, d.currency)}</span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+                {Object.entries(finGrouped).map(([key, list]) => (
+                  <div key={'fin-' + key}>
+                    <div className="search-group-label">{finGroupLabel(key, list[0])}</div>
+                    {list.map((d) => (
+                      <div key={d.id} className="search-result" onClick={() => openFinResult(d)}>
+                        <span className="sr-num mono">{d.docNumber}</span>
+                        <span className="muted">{d.title || d.purpose || d.description || d.receivedFrom || d.party || '—'}</span>
+                        <span className="grow" />
+                        <span className="small">{formatMoney(finRowAmount(d), d.currency)}</span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </>
             )}
           </div>
         )}
@@ -372,4 +421,21 @@ function labelForType(type) {
       'money-receipt': 'Money Receipts',
     }[type] || type
   )
+}
+
+// Where a finance document opens from a global-search hit.
+function financeRouteFor(d) {
+  if (isVoucherType(d.type)) return `/finance/voucher/${d.id}`
+  if (d.type === 'requisition') return `/finance/requisition/${d.id}`
+  if (d.type === 'income') return `/finance/income/${d.id}`
+  if (d.type === 'salary-sheet') return `/finance/salary-sheet/${d.id}`
+  if (d.type === 'expense') return '/finance/expenses'
+  return '/finance'
+}
+function finGroupLabel(key, sample) {
+  if (key === 'voucher') return 'Vouchers'
+  return FIN_TYPES[key]?.plural || voucherLabel(sample)
+}
+function finRowAmount(d) {
+  return isVoucherType(d.type) ? voucherTotal(d) : Number(d.amount) || Number(d.total) || 0
 }

@@ -145,6 +145,17 @@ export const FIN_STATUS = {
   APPROVED: 'Approved',
   REJECTED: 'Rejected',
   RECORDED: 'Recorded', // for non-approvable expenses
+  REVERSED: 'Reversed', // approval/record undone; ledger entries voided
+}
+
+// A posted ledger row counts as a real expense/income only if it isn't an
+// internal account transfer (transfers post a matched out+in pair that would
+// otherwise double-count in cash-flow / P&L).
+export function isExpenseTxn(t) {
+  return t.status === 'posted' && t.direction === 'out' && t.linkType !== 'transfer'
+}
+export function isIncomeTxn(t) {
+  return t.status === 'posted' && t.direction === 'in' && t.linkType !== 'transfer'
 }
 
 function uid() {

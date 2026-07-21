@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
-import { FIN_STATUS } from '../../lib/finance.js'
+import { FIN_STATUS, isExpenseTxn } from '../../lib/finance.js'
 import { can } from '../../lib/roles.js'
 import { formatMoney, formatDate } from '../../lib/format.js'
 import { Icon } from '../../components/Icons.jsx'
@@ -38,7 +38,7 @@ export default function FinanceDashboard() {
 
   // Approved-only expenses → posted ledger 'out' this month.
   const monthOut = useMemo(
-    () => ledger.filter((t) => t.status === 'posted' && t.direction === 'out' && ym(t.txnDate) === thisMonth),
+    () => ledger.filter((t) => isExpenseTxn(t) && ym(t.txnDate) === thisMonth),
     [ledger, thisMonth],
   )
   const approvedExpense = sumByCurrency(monthOut, (t) => t.amount)

@@ -4,8 +4,10 @@ import { useApp } from '../../context/AppContext.jsx'
 import { newFinDoc } from '../../lib/finance.js'
 import { can } from '../../lib/roles.js'
 import { CURRENCIES, formatMoney, formatDate, todayISO } from '../../lib/format.js'
+import { FIN_STATUS } from '../../lib/finance.js'
 import AttachmentField from '../../components/AttachmentField.jsx'
 import Modal from '../../components/Modal.jsx'
+import ReverseModal from '../../components/finance/ReverseModal.jsx'
 import { useToast } from '../../components/Toast.jsx'
 import { Icon } from '../../components/Icons.jsx'
 
@@ -13,12 +15,13 @@ import { Icon } from '../../components/Icons.jsx'
 // chain — these are small operational cash spends). Still classified by head
 // and account so reports stay complete.
 export default function DailyExpenses() {
-  const { finDocs, heads, accounts, recordExpense } = useFinance()
+  const { finDocs, heads, accounts, recordExpense, reverseFinDoc } = useFinance()
   const { company, currentUser } = useApp()
   const toast = useToast()
   const canManage = can(currentUser.role, 'financeManage')
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState(null)
+  const [reverseDoc, setReverseDoc] = useState(null)
 
   const expenseHeads = heads.filter((h) => h.kind === 'expense')
   const rows = useMemo(
@@ -75,19 +78,33 @@ export default function DailyExpenses() {
                 <th>Head</th>
                 <th>Account</th>
                 <th className="text-right">Amount</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((d) => (
-                <tr key={d.id}>
+              {rows.map((d) => {
+                const reversed = d.status === FIN_STATUS.REVERSED
+                return (
+                <tr key={d.id} style={reversed ? { opacity: 0.55 } : undefined}>
                   <td className="mono small">{d.docNumber}</td>
                   <td className="small nowrap">{formatDate(d.date)}</td>
-                  <td>{d.description}</td>
+                  <td>
+                    {d.description}
+                    {reversed && <span className="badge badge-gray" style={{ marginLeft: 8 }}>Reversed</span>}
+                  </td>
                   <td className="small">{headName(d.headId)}</td>
                   <td className="small">{accName(d.accountId)}</td>
                   <td className="text-right nowrap ledger-out">{formatMoney(d.amount, d.currency)}</td>
+                  <td className="text-right nowrap">
+                    {canManage && !reversed && (
+                      <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)' }} onClick={() => setReverseDoc(d)} title="Reverse">
+                        <Icon.x width={14} height={14} />
+                      </button>
+                    )}
+                  </td>
                 </tr>
-              ))}
+                )
+              })}
             </tbody>
           </table>
         )}
@@ -161,6 +178,18 @@ export default function DailyExpenses() {
           </div>
           <AttachmentField label="Attach receipt (optional)" value={form.attachments} onChange={(a) => upd('attachments', a)} />
         </Modal>
+      )}
+
+      {reverseDoc && (
+        <ReverseModal
+          label={`expense ${reverseDoc.docNumber}`}
+          onCancel={() => setReverseDoc(null)}
+          onConfirm={(reason) => {
+            reverseFinDoc(reverseDoc.id, reason)
+            setReverseDoc(null)
+            toast.success('Expense reversed.')
+          }}
+        />
       )}
     </div>
   )

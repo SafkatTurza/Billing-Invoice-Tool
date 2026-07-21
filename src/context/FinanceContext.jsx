@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { ls, KEYS } from '../lib/storage.js'
 import { uid } from '../lib/format.js'
 import { useApp } from './AppContext.jsx'
-import { FIN_TYPES, FIN_STATUS, commitFinNumber } from '../lib/finance.js'
+import { FIN_TYPES, FIN_STATUS, commitFinNumber, isVoucherType } from '../lib/finance.js'
 
 const FinanceContext = createContext(null)
 export function useFinance() {
@@ -151,6 +151,100 @@ export function FinanceProvider({ children }) {
     [finDocs, currentUser, addAudit, voidTransactionsForDoc],
   )
 
+  // Restore a soft-deleted finance doc / purge it for good (Recycle Bin).
+  const restoreFinDoc = useCallback(
+    (id) => {
+      setFinDocs((prev) => prev.map((d) => (d.id === id ? { ...d, deleted: false, deletedAt: null, deletedBy: null } : d)))
+      addAudit('Finance doc restored', id, '')
+    },
+    [addAudit],
+  )
+  const permanentDeleteFinDoc = useCallback(
+    (id) => {
+      setFinDocs((prev) => prev.filter((d) => d.id !== id))
+      addAudit('Finance doc permanently deleted', id, '')
+    },
+    [addAudit],
+  )
+
+  // Duplicate any finance doc as a fresh draft — same content, cleared of its
+  // number, signatures, status and any reversal history.
+  const duplicateFinDoc = useCallback(
+    (id) => {
+      const src = finDocs.find((d) => d.id === id)
+      if (!src) return null
+      const clone = {
+        ...src,
+        // Legacy payment/debit vouchers duplicate into the unified type.
+        type: isVoucherType(src.type) ? 'voucher' : src.type,
+        id: uid(),
+        docNumber: undefined,
+        autoNumber: true,
+        status: FIN_STATUS.DRAFT,
+        signSlots: (src.signSlots || []).map((s) => ({ label: s.label, signed: false })),
+        deleted: false,
+        deletedAt: null,
+        deletedBy: null,
+        reversedAt: null,
+        reversedBy: null,
+        reversalReason: null,
+        createdAt: undefined,
+        updatedAt: undefined,
+      }
+      return saveFinDoc(clone)
+    },
+    [finDocs, saveFinDoc],
+  )
+
+  // Reverse an approved/recorded doc: void its ledger entries and mark it
+  // Reversed (kept for audit — never silently deleted).
+  const reverseFinDoc = useCallback(
+    (id, reason) => {
+      const doc = finDocs.find((d) => d.id === id)
+      if (!doc) return
+      voidTransactionsForDoc(id)
+      setFinDocs((prev) =>
+        prev.map((d) =>
+          d.id === id
+            ? {
+                ...d,
+                status: FIN_STATUS.REVERSED,
+                reversedAt: new Date().toISOString(),
+                reversedBy: currentUser?.fullName || 'Unknown',
+                reversalReason: reason || '',
+              }
+            : d,
+        ),
+      )
+      addAudit('Finance doc reversed', doc.docNumber, reason || '')
+      notify(`${FIN_TYPES[doc.type]?.label || 'Document'} ${doc.docNumber} reversed`)
+    },
+    [finDocs, currentUser, voidTransactionsForDoc, addAudit, notify],
+  )
+
+  // Internal account transfer (contra): one linked out+in pair. Not an
+  // approvable document — recorded straight to the ledger by Accounts.
+  const postTransfer = useCallback(
+    ({ fromAccountId, toAccountId, amount, currency, date, note }) => {
+      const transferId = 't-' + uid()
+      const fromName = accounts.find((a) => a.id === fromAccountId)?.name || 'account'
+      const toName = accounts.find((a) => a.id === toAccountId)?.name || 'account'
+      const amt = Number(amount) || 0
+      const common = {
+        txnDate: date,
+        currency: currency || 'BDT',
+        linkType: 'transfer',
+        linkId: transferId,
+        description: note || `Transfer: ${fromName} → ${toName}`,
+      }
+      postTransaction({ ...common, direction: 'out', amount: amt, accountId: fromAccountId, partyName: `To ${toName}` })
+      postTransaction({ ...common, direction: 'in', amount: amt, accountId: toAccountId, partyName: `From ${fromName}` })
+      addAudit('Account transfer', `${fromName} → ${toName}`, `${amt} ${currency}`)
+      return transferId
+    },
+    [accounts, postTransaction, addAudit],
+  )
+
   // When a doc reaches Approved, post it to the ledger (once).
   const onDocApproved = useCallback(
     (doc) => {
@@ -292,6 +386,11 @@ export function FinanceProvider({ children }) {
     deleteHead,
     saveFinDoc,
     deleteFinDoc,
+    restoreFinDoc,
+    permanentDeleteFinDoc,
+    duplicateFinDoc,
+    reverseFinDoc,
+    postTransfer,
     recordExpense,
     recordIncome,
     onDocApproved,

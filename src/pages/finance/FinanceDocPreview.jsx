@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
@@ -7,6 +8,7 @@ import { formatMoney, formatDate } from '../../lib/format.js'
 import { amountInWords } from '../../lib/amountInWords.js'
 import { AttachmentList } from '../../components/AttachmentField.jsx'
 import ApprovalChain from '../../components/finance/ApprovalChain.jsx'
+import ReverseModal from '../../components/finance/ReverseModal.jsx'
 import { useToast } from '../../components/Toast.jsx'
 import { Icon } from '../../components/Icons.jsx'
 import '../../styles/preview.css'
@@ -18,16 +20,18 @@ const STATUS_BADGE = {
   [FIN_STATUS.APPROVED]: 'badge-green',
   [FIN_STATUS.REJECTED]: 'badge-red',
   [FIN_STATUS.RECORDED]: 'badge-teal',
+  [FIN_STATUS.REVERSED]: 'badge-gray',
 }
 
 export default function FinanceDocPreview({ type }) {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { finDocs, saveFinDoc, onDocApproved } = useFinance()
+  const { finDocs, saveFinDoc, onDocApproved, reverseFinDoc, duplicateFinDoc } = useFinance()
   const { findCompany, currentUser } = useApp()
   const toast = useToast()
   const meta = FIN_TYPES[type]
   const canManage = can(currentUser.role, 'financeManage')
+  const [reverseOpen, setReverseOpen] = useState(false)
 
   const doc = finDocs.find((d) => d.id === id)
   if (!doc) {
@@ -54,6 +58,20 @@ export default function FinanceDocPreview({ type }) {
     }
   }
 
+  const onReverse = (reason) => {
+    reverseFinDoc(doc.id, reason)
+    setReverseOpen(false)
+    toast.success(`${meta.label} reversed — ledger entries voided.`)
+  }
+
+  const onDuplicate = () => {
+    const clone = duplicateFinDoc(doc.id)
+    if (clone) {
+      toast.success('Duplicated as a new draft.')
+      navigate(`/finance/${isVoucherType(clone.type) ? 'voucher' : clone.type}/${clone.id}/edit`)
+    }
+  }
+
   return (
     <div>
       <div className="preview-toolbar no-print">
@@ -75,14 +93,31 @@ export default function FinanceDocPreview({ type }) {
               <Icon.edit width={15} height={15} /> Edit
             </button>
           ) : null}
+          {canManage && (
+            <button className="btn btn-ghost" onClick={onDuplicate} title="Create a new draft from this document">
+              <Icon.invoice width={15} height={15} /> Duplicate
+            </button>
+          )}
+          {canManage && doc.status === FIN_STATUS.APPROVED && (
+            <button className="btn btn-ghost" style={{ color: 'var(--red)' }} onClick={() => setReverseOpen(true)}>
+              <Icon.x width={15} height={15} /> Reverse
+            </button>
+          )}
           <button className="btn btn-primary" onClick={() => window.print()}>
             <Icon.print width={15} height={15} /> Print / PDF
           </button>
         </div>
       </div>
 
-      {/* Approval chain (interactive) */}
-      {meta.approvable && (
+      {doc.status === FIN_STATUS.REVERSED && (
+        <div className="auth-error no-print" style={{ marginBottom: 18 }}>
+          <b>Reversed</b> by {doc.reversedBy || 'Unknown'} on {formatDate(doc.reversedAt)} — its ledger entries were voided.
+          {doc.reversalReason ? <div style={{ marginTop: 4 }}>Reason: {doc.reversalReason}</div> : null}
+        </div>
+      )}
+
+      {/* Approval chain (interactive) — hidden once reversed */}
+      {meta.approvable && doc.status !== FIN_STATUS.REVERSED && (
         <div className="card card-pad no-print" style={{ marginBottom: 18 }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--navy)', marginBottom: 4 }}>Approval Chain</h3>
           <p className="small muted mb-16">
@@ -116,6 +151,14 @@ export default function FinanceDocPreview({ type }) {
           <VoucherPaper doc={doc} company={company} />
         )}
       </div>
+
+      {reverseOpen && (
+        <ReverseModal
+          label={`${meta.label} ${doc.docNumber}`}
+          onCancel={() => setReverseOpen(false)}
+          onConfirm={onReverse}
+        />
+      )}
     </div>
   )
 }

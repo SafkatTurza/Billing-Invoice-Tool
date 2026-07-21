@@ -112,6 +112,24 @@ A centralized company-finance module alongside billing:
   - **Receivables Aging** — unpaid invoices bucketed 0–30 / 31–60 / 61–90 / 90+
     days past due.
 
+### Everyday essentials & corrections (Phase D)
+
+- **Account transfers (contra)** — move money between your own accounts (e.g.
+  Cash → Bank) from the Ledger. Posts a matched out+in pair and is **excluded**
+  from income/expense figures so it never distorts the dashboard, monthly report
+  or financial statements.
+- **Void / reverse** — reverse an approved voucher/requisition or a recorded
+  expense/income (reason required). The ledger entries are voided and the item
+  drops out of all figures, but the record is kept and marked **Reversed** for
+  audit.
+- **Duplicate-as-new** — clone any finance document into a fresh draft (number,
+  signatures and status cleared; legacy vouchers normalise to the unified type).
+- **Finance recycle bin** — deleted finance documents appear in a Finance section
+  of the Recycle Bin with 30-day retention, **Restore**, and permanent delete.
+- **Cross-finance search & filters** — the top-bar global search now spans finance
+  documents (routing to the right preview), and the Ledger adds date-range and
+  account-head filters.
+
 ### Finance access control (privacy)
 
 All finance **data entry** — requisitions/PRs, payment & debit vouchers, salary

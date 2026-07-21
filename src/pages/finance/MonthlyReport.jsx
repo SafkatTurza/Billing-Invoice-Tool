@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
-import { FIN_STATUS } from '../../lib/finance.js'
+import { FIN_STATUS, isExpenseTxn } from '../../lib/finance.js'
 import { formatMoney, formatDate } from '../../lib/format.js'
 import { useToast } from '../../components/Toast.jsx'
 import { Icon } from '../../components/Icons.jsx'
@@ -27,7 +27,7 @@ export default function MonthlyReport() {
   const approved = useMemo(
     () =>
       ledger
-        .filter((t) => t.status === 'posted' && t.direction === 'out' && (t.txnDate || '').slice(0, 7) === month)
+        .filter((t) => isExpenseTxn(t) && (t.txnDate || '').slice(0, 7) === month)
         .sort((a, b) => new Date(a.txnDate) - new Date(b.txnDate)),
     [ledger, month],
   )

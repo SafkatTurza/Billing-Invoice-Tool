@@ -42,8 +42,12 @@ export default function FinancialReports() {
   }
   const periodLabel = period === 'all' ? 'All time' : period === 'year' ? thisYear : formatDate(thisMonth + '-01').replace(/^\d+ /, '')
 
-  // Posted ledger entries in the selected period.
-  const posted = useMemo(() => ledger.filter((t) => t.status === 'posted' && inPeriod(t.txnDate)), [ledger, period])
+  // Posted ledger entries in the selected period. Internal account transfers are
+  // excluded — they'd double-count as both income and expense in cash-flow / P&L.
+  const posted = useMemo(
+    () => ledger.filter((t) => t.status === 'posted' && t.linkType !== 'transfer' && inPeriod(t.txnDate)),
+    [ledger, period],
+  )
 
   // Paid billing invoices → revenue (kept separate from recorded income).
   const paidInvoices = useMemo(

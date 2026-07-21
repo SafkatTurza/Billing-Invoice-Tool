@@ -2,11 +2,12 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
-import { newFinDoc } from '../../lib/finance.js'
+import { newFinDoc, FIN_STATUS } from '../../lib/finance.js'
 import { can } from '../../lib/roles.js'
 import { CURRENCIES, formatMoney, formatDate, todayISO } from '../../lib/format.js'
 import AttachmentField from '../../components/AttachmentField.jsx'
 import Modal from '../../components/Modal.jsx'
+import ReverseModal from '../../components/finance/ReverseModal.jsx'
 import { useToast } from '../../components/Toast.jsx'
 import { Icon } from '../../components/Icons.jsx'
 
@@ -15,12 +16,13 @@ import { Icon } from '../../components/Icons.jsx'
 // (cash flow, P&L) sees the full picture, not just expenses. Recording is
 // reserved for Accounts + Super Admin; others get a read-only list.
 export default function IncomeRecords() {
-  const { finDocs, heads, accounts, recordIncome } = useFinance()
+  const { finDocs, heads, accounts, recordIncome, reverseFinDoc } = useFinance()
   const { company, currentUser } = useApp()
   const navigate = useNavigate()
   const toast = useToast()
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState(null)
+  const [reverseDoc, setReverseDoc] = useState(null)
 
   const canManage = can(currentUser.role, 'financeManage')
   const incomeHeads = heads.filter((h) => h.kind === 'income')
@@ -93,8 +95,10 @@ export default function IncomeRecords() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((d) => (
-                <tr key={d.id}>
+              {rows.map((d) => {
+                const reversed = d.status === FIN_STATUS.REVERSED
+                return (
+                <tr key={d.id} style={reversed ? { opacity: 0.55 } : undefined}>
                   <td className="mono small bold" style={{ cursor: 'pointer' }} onClick={() => navigate(`/finance/income/${d.id}`)}>
                     {d.docNumber}
                   </td>
@@ -103,18 +107,27 @@ export default function IncomeRecords() {
                     <span className={`badge ${d.kind === 'investment' ? 'badge-teal' : 'badge-green'}`}>
                       {d.kind === 'investment' ? 'Investment' : 'Income'}
                     </span>
+                    {reversed && <span className="badge badge-gray" style={{ marginLeft: 8 }}>Reversed</span>}
                   </td>
                   <td>{d.description}</td>
                   <td className="small">{headName(d.headId)}</td>
                   <td className="small">{accName(d.accountId)}</td>
                   <td className="text-right nowrap ledger-in">{formatMoney(d.amount, d.currency)}</td>
                   <td className="text-right nowrap">
-                    <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/finance/income/${d.id}`)} title="View receipt">
-                      <Icon.eye width={14} height={14} />
-                    </button>
+                    <div className="row gap-8" style={{ justifyContent: 'flex-end' }}>
+                      <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/finance/income/${d.id}`)} title="View receipt">
+                        <Icon.eye width={14} height={14} />
+                      </button>
+                      {canManage && !reversed && (
+                        <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)' }} onClick={() => setReverseDoc(d)} title="Reverse">
+                          <Icon.x width={14} height={14} />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
-              ))}
+                )
+              })}
             </tbody>
           </table>
         )}
@@ -195,6 +208,18 @@ export default function IncomeRecords() {
           </div>
           <AttachmentField label="Attach receipt / proof (optional)" value={form.attachments} onChange={(a) => upd('attachments', a)} />
         </Modal>
+      )}
+
+      {reverseDoc && (
+        <ReverseModal
+          label={`${reverseDoc.kind === 'investment' ? 'investment' : 'income'} ${reverseDoc.docNumber}`}
+          onCancel={() => setReverseDoc(null)}
+          onConfirm={(reason) => {
+            reverseFinDoc(reverseDoc.id, reason)
+            setReverseDoc(null)
+            toast.success('Entry reversed.')
+          }}
+        />
       )}
     </div>
   )
