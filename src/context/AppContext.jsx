@@ -210,6 +210,52 @@ export function AppProvider({ children }) {
     [users, addAudit, notify],
   )
 
+  // ── Testing helper — one-click sign-in per role ──────────────────────
+  // Simplified login for walking the app as each user level. Creates a demo
+  // account for the role if missing (simple password "test", no forced change)
+  // and starts a session. Remove this and the Login screen's demo panel when
+  // the real auth flow is finalised.
+  const quickDemoLogin = useCallback(
+    (role) => {
+      const unMap = {
+        [ROLES.SUPER_ADMIN]: 'super',
+        [ROLES.ADMIN]: 'admin',
+        [ROLES.ACCOUNTS]: 'accounts',
+        [ROLES.BUSINESS]: 'business',
+      }
+      const username = unMap[role] || 'demo'
+      let user = users.find((u) => u.username === username)
+      if (!user) {
+        user = {
+          id: 'demo-' + username,
+          fullName: role + ' (Demo)',
+          department: 'Testing',
+          username,
+          passwordHash: hashPassword('test'),
+          systemPassword: null,
+          role,
+          status: 'Active',
+          locked: false,
+          failedAttempts: 0,
+          mustChangePassword: false,
+          securityQuestion: '',
+          securityAnswerHash: '',
+          createdBy: 'Demo',
+          createdAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString(),
+          passwordChangedAt: null,
+          previousHash: null,
+        }
+        setUsers((prev) => [...prev, user])
+      }
+      const token = { userId: user.id }
+      ss.set(KEYS.session, token)
+      ls.remove(KEYS.session)
+      setSession(token)
+    },
+    [users],
+  )
+
   const logout = useCallback(() => {
     if (currentUser) addAudit('Logout', currentUser.username, '')
     ls.remove(KEYS.session)
@@ -635,6 +681,7 @@ export function AppProvider({ children }) {
     // auth
     login,
     logout,
+    quickDemoLogin,
     createSuperAdmin,
     signup,
     approveUser,

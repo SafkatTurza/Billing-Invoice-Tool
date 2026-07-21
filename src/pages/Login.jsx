@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext.jsx'
 import { ls } from '../lib/storage.js'
+import { ROLES, ALL_ROLES } from '../lib/roles.js'
 import { Icon } from '../components/Icons.jsx'
 import '../styles/auth.css'
 
 const REMEMBER_KEY = 'dcs_remembered_un'
 
 export default function Login({ onGoSignup, onGoForgot }) {
-  const { login } = useApp()
+  const { login, quickDemoLogin } = useApp()
   const [username, setUsername] = useState(() => ls.get(REMEMBER_KEY, '') || '')
   const [password, setPassword] = useState('')
   const [remember, setRemember] = useState(() => !!ls.get(REMEMBER_KEY, ''))
@@ -89,6 +90,19 @@ export default function Login({ onGoSignup, onGoForgot }) {
               </div>
             )}
           </form>
+
+          {/* Testing helper — one-click sign-in per user level. Remove this
+              block (and quickDemoLogin in AppContext) once real auth is final. */}
+          <div className="auth-demo">
+            <div className="auth-demo-label">Testing — sign in as</div>
+            <div className="auth-demo-btns">
+              {ALL_ROLES.map((r) => (
+                <button key={r} type="button" className="demo-btn" onClick={() => quickDemoLogin(r)}>
+                  {r === ROLES.BUSINESS ? 'Business Team' : r}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
