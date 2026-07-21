@@ -97,6 +97,7 @@ export function voucherAccent(doc) {
   return doc?.voucherType === 'debit' ? '#d97706' : '#7c3aed'
 }
 export function voucherLabel(doc) {
+  if (doc?.voucherType === 'cash') return 'Cash Voucher'
   return doc?.voucherType === 'debit' ? 'Debit Voucher' : 'Payment Voucher'
 }
 // Voucher amount — sum of the optional per-head breakdown, else the single field.
@@ -138,6 +139,37 @@ export function docFinalSlotIndex(doc) {
   return finalSlotIndex(doc?.type)
 }
 
+// ── Voucher financial role & duplicate-transaction guard (Phase J) ──────────
+// A voucher is either the PRIMARY financial transaction (it posts to the
+// ledger) or a LINKED / INTERNAL record (documentation only, zero financial
+// impact). Legacy vouchers with no financialRole are treated as primary.
+export function isPrimary(doc) {
+  return (doc?.financialRole || 'primary') !== 'linked'
+}
+// Direction of the ledger entry a voucher posts. A cash-receipt voucher brings
+// money IN; every other voucher (and requisition) pays money OUT.
+export function voucherDirection(doc) {
+  if (isVoucherType(doc?.type) && doc?.voucherType === 'cash' && doc?.cashDirection === 'receipt') return 'in'
+  return 'out'
+}
+// The single guard that stops one financial transaction being recorded twice.
+// Approving a document posts to the ledger only when this returns { post:true }:
+//   • a linked/internal voucher never posts
+//   • a document already posted never posts again
+//   • a transaction already posted by *another* document never posts again
+export function ledgerPostPlan(doc, ledger = []) {
+  if (isVoucherType(doc?.type) && !isPrimary(doc)) return { post: false, reason: 'linked' }
+  if (ledger.some((t) => t.linkId === doc?.id && t.status === 'posted')) return { post: false, reason: 'already-posted' }
+  if (doc?.transactionId && ledger.some((t) => t.transactionId === doc.transactionId && t.status === 'posted' && t.linkId !== doc?.id))
+    return { post: false, reason: 'duplicate-transaction' }
+  return { post: true, reason: 'primary', direction: voucherDirection(doc) }
+}
+// Mask all but the last 4 characters of a bank/card account number for display.
+export function maskAccount(value) {
+  const s = String(value || '').replace(/\s+/g, '')
+  return s.length <= 4 ? s : '•••• ' + s.slice(-4)
+}
+
 function yymm(date = new Date()) {
   const y = String(date.getFullYear()).slice(-2)
   const m = String(date.getMonth() + 1).padStart(2, '0')
@@ -171,13 +203,50 @@ function counterKey(type, company) {
   return t.companyPrefixed ? `${co}-${t.prefix}` : t.prefix
 }
 
+// Voucher numbering (Phase J): PV/CV/DV-YYYYMMDD-001, the serial resetting to
+// 001 at the start of each year (a separate running sequence per voucher type).
+// Non-voucher types keep the PREFIX-YYMM-serial scheme in build() above.
+export function voucherPrefix(voucherType) {
+  if (voucherType === 'cash') return 'CV'
+  if (voucherType === 'debit') return 'DV'
+  return 'PV'
+}
+function voucherCounterKey(voucherType, dateISO) {
+  return `${voucherPrefix(voucherType)}-${(dateISO || todayISO()).slice(0, 4)}`
+}
+function voucherNumber(voucherType, serial, dateISO) {
+  const digits = (dateISO || todayISO()).replaceAll('-', '')
+  return `${voucherPrefix(voucherType)}-${digits}-${String(serial).padStart(3, '0')}`
+}
+// Resolve the voucher type + date used for numbering from a (possibly partial) doc.
+function voucherMeta(type, doc) {
+  return {
+    voucherType: doc?.voucherType || (type === 'debit-voucher' ? 'debit' : 'payment'),
+    dateISO: doc?.date || todayISO(),
+  }
+}
+
 // Preview without incrementing (safe in render).
-export function previewFinNumber(type, company, date = new Date()) {
+export function previewFinNumber(type, company, date = new Date(), doc = null) {
+  if (isVoucherType(type)) {
+    const { voucherType, dateISO } = voucherMeta(type, doc)
+    return voucherNumber(voucherType, peek(voucherCounterKey(voucherType, dateISO)) + 1, dateISO)
+  }
   return build(type, company, peek(counterKey(type, company)) + 1, date)
 }
 // Commit (reserve) a serial — call once, at first save.
-export function commitFinNumber(type, company, date = new Date()) {
+export function commitFinNumber(type, company, date = new Date(), doc = null) {
+  if (isVoucherType(type)) {
+    const { voucherType, dateISO } = voucherMeta(type, doc)
+    return voucherNumber(voucherType, next(voucherCounterKey(voucherType, dateISO)), dateISO)
+  }
   return build(type, company, next(counterKey(type, company)), date)
+}
+// Mint a Transaction ID (TXN-YYYYMMDD-001, yearly reset) grouping a primary
+// voucher with any linked/internal records that document the same event.
+export function commitTransactionId(dateISO) {
+  const d = dateISO || todayISO()
+  return `TXN-${d.replaceAll('-', '')}-${String(next(`TXN-${d.slice(0, 4)}`)).padStart(3, '0')}`
 }
 
 export const FIN_STATUS = {
@@ -289,6 +358,21 @@ export function newFinDoc(type, company, user) {
       ...base,
       // New docs are always the unified type; the flavour is a field.
       voucherType: type === 'debit-voucher' ? 'debit' : 'payment',
+      // Cash voucher direction (Phase J): 'payment' (cash out) | 'receipt' (cash in).
+      cashDirection: 'payment',
+      // Primary vs linked/internal (Phase J). A primary voucher posts to the
+      // ledger; a linked voucher is an internal record with zero financial
+      // impact, tied to the primary's transactionId.
+      financialRole: 'primary',
+      transactionId: '',
+      linkedVoucherId: '',
+      linkedVoucherType: '',
+      linkedVoucherNumber: '',
+      // Payment references (Phase J) — captured per payment mode.
+      bankTxnId: '',
+      beftnRef: '',
+      cardRef: '',
+      otherRef: '',
       // Money-receipt / external-receiver routing (Phase I). When on, the payee
       // is outside the company: a money receipt is required and the approval
       // chain reorders so the receiver is recorded before final approval.

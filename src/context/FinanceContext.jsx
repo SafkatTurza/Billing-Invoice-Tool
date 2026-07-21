@@ -7,7 +7,10 @@ import {
   FIN_TYPES,
   FIN_STATUS,
   commitFinNumber,
+  commitTransactionId,
   isVoucherType,
+  isPrimary,
+  ledgerPostPlan,
   docFinalSlotIndex,
   approvalSlotIndex,
   docFxRate,
@@ -149,10 +152,15 @@ export function FinanceProvider({ children }) {
           return c
         }
         let docNumber = doc.docNumber
-        if (doc.autoNumber) docNumber = commitFinNumber(doc.type, company)
+        if (doc.autoNumber) docNumber = commitFinNumber(doc.type, company, new Date(), doc)
+        // A primary voucher grouping key — minted once so linked/internal
+        // records can attach to the same financial transaction.
+        let transactionId = doc.transactionId || ''
+        if (isVoucherType(doc.type) && isPrimary(doc) && !transactionId) transactionId = commitTransactionId(doc.date)
         saved = {
           ...doc,
           docNumber,
+          transactionId,
           autoNumber: false,
           id: doc.id || uid(),
           createdAt: doc.createdAt || now,
@@ -211,6 +219,13 @@ export function FinanceProvider({ children }) {
         docNumber: undefined,
         autoNumber: true,
         status: FIN_STATUS.DRAFT,
+        // A duplicate is a fresh, independent primary transaction — never inherit
+        // the source's grouping id or linked-record relationship.
+        transactionId: '',
+        financialRole: 'primary',
+        linkedVoucherId: '',
+        linkedVoucherType: '',
+        linkedVoucherNumber: '',
         signSlots: (src.signSlots || []).map((s) => ({ label: s.label, signed: false })),
         deleted: false,
         deletedAt: null,
@@ -376,17 +391,26 @@ export function FinanceProvider({ children }) {
   // When a doc reaches Approved, post it to the ledger (once).
   const onDocApproved = useCallback(
     (doc) => {
-      // Avoid double-posting: skip if already posted for this doc.
-      const already = ledger.some((t) => t.linkId === doc.id && t.status === 'posted')
-      if (already) return
       const meta = FIN_TYPES[doc.type]
-      // Vouchers & requisitions are money OUT (expenses/payments). A voucher with
-      // an itemised breakdown posts one ledger line per head so the expense-by-head
-      // report stays accurate; everything else posts a single line.
+      // The single duplicate-prevention guard: linked/internal vouchers post
+      // nothing, and no transaction is ever booked twice.
+      const plan = ledgerPostPlan(doc, ledger)
+      if (!plan.post) {
+        if (plan.reason === 'linked') {
+          addAudit('Finance doc approved', doc.docNumber, `${meta?.label} — linked internal record, no ledger impact`)
+          notify(`${meta?.label} ${doc.docNumber} approved — linked record, no financial impact`)
+        } else if (plan.reason === 'duplicate-transaction') {
+          addAudit('Duplicate transaction blocked', doc.docNumber, `already booked under ${doc.transactionId}`)
+        }
+        return
+      }
+      // Cash-receipt vouchers post money IN; everything else pays OUT. A voucher
+      // with an itemised breakdown posts one ledger line per head so the
+      // expense-by-head report stays accurate; everything else posts one line.
       const rate = docFxRate(doc)
       const common = {
         txnDate: doc.date,
-        direction: 'out',
+        direction: plan.direction,
         currency: doc.currency || 'BDT',
         fxRate: rate, // BDT per unit of doc currency, captured at approval
         accountId: doc.accountId || null,
@@ -395,6 +419,7 @@ export function FinanceProvider({ children }) {
         linkId: doc.id,
         docNumber: doc.docNumber,
         companyId: doc.companyId,
+        transactionId: doc.transactionId || null, // enables cross-document dedupe
       }
       const breakdown = (doc.lines || []).filter((l) => Number(l.amount) > 0)
       if (breakdown.length) {
