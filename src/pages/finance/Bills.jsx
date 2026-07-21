@@ -11,8 +11,10 @@ import {
   billPayStatus,
   billOverdue,
   billAgeBucket,
+  needsFxRate,
 } from '../../lib/finance.js'
 import AttachmentField from '../../components/AttachmentField.jsx'
+import FxRateField from '../../components/finance/FxRateField.jsx'
 import Modal from '../../components/Modal.jsx'
 import ReverseModal from '../../components/finance/ReverseModal.jsx'
 import { useToast } from '../../components/Toast.jsx'
@@ -82,6 +84,7 @@ export default function Bills() {
   const saveNew = () => {
     if (!form.vendorName?.trim()) return toast.error('Vendor name is required.')
     if (!(Number(form.amount) > 0)) return toast.error('Enter a bill amount.')
+    if (needsFxRate(form)) return toast.error(`Enter the ${form.currency} → BDT exchange rate.`)
     saveBill(form)
     toast.success('Bill recorded.')
     setForm(null)
@@ -280,6 +283,7 @@ export default function Bills() {
               </label>
               <input type="number" className="input" value={form.amount} onChange={(e) => upd('amount', e.target.value)} />
             </div>
+            <FxRateField currency={form.currency} rate={form.fxRate} onRate={(v) => upd('fxRate', v)} amount={form.amount} />
             <div className="field" style={{ gridColumn: 'span 2' }}>
               <label>Expense Head</label>
               <select className="select" value={form.headId} onChange={(e) => upd('headId', e.target.value)}>

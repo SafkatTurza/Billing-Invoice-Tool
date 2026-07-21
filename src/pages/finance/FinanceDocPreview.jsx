@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
-import { FIN_TYPES, FIN_STATUS, requisitionTotal, voucherTotal, voucherAccent, voucherLabel, isVoucherType, pushTimeline } from '../../lib/finance.js'
+import { FIN_TYPES, FIN_STATUS, requisitionTotal, voucherTotal, voucherAccent, voucherLabel, isVoucherType, pushTimeline, docFxRate, docBaseAmount } from '../../lib/finance.js'
 import { can } from '../../lib/roles.js'
 import { formatMoney, formatDate } from '../../lib/format.js'
 import { amountInWords } from '../../lib/amountInWords.js'
@@ -230,6 +230,11 @@ function SignRow({ slots }) {
         <div key={i} className="fin-sign">
           {s.signed && s.signatureImg ? (
             <img src={s.signatureImg} alt="" className="fs-img" />
+          ) : s.signed && s.receivedExternal ? (
+            <div style={{ height: 44, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', fontSize: 10, color: '#475569', textAlign: 'center', lineHeight: 1.2 }}>
+              {s.receiverName || 'External receiver'}
+              {s.receiptNo ? <><br />MR #{s.receiptNo}</> : null}
+            </div>
           ) : (
             <div style={{ height: 44 }} />
           )}
@@ -324,6 +329,15 @@ function VoucherPaper({ doc, company }) {
         <span className="vr-label">Received with thanks from</span>
         <span className="vr-fill">{doc.receivedFrom}</span>
       </div>
+      {doc.moneyReceipt && (
+        <div className="voucher-row">
+          <span className="vr-label">Received By (external)</span>
+          <span className="vr-fill">
+            {doc.receiverName || '—'}
+            {doc.receiptNo ? ` · Money Receipt #${doc.receiptNo}` : ''}
+          </span>
+        </div>
+      )}
       <div className="voucher-row">
         <span className="vr-label">Purpose OF</span>
         <span className="vr-fill" style={{ whiteSpace: 'pre-wrap' }}>{doc.purpose}</span>
@@ -379,6 +393,15 @@ function VoucherPaper({ doc, company }) {
         <span className="vr-label" style={{ marginLeft: 12 }}>Amount in Word</span>
         <span className="vr-fill" style={{ fontStyle: 'italic' }}>{amountInWords(total, doc.currency)}</span>
       </div>
+
+      {(doc.currency || 'BDT') !== 'BDT' && (
+        <div className="voucher-row">
+          <span className="vr-label">BDT Equivalent</span>
+          <span className="vr-fill">
+            {formatMoney(docBaseAmount(doc), 'BDT')} at ৳{Number(docFxRate(doc)).toLocaleString()} / {doc.currency}
+          </span>
+        </div>
+      )}
 
       <SignRow slots={doc.signSlots} />
     </div>

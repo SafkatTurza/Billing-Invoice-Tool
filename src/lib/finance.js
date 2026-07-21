@@ -106,6 +106,38 @@ export function voucherTotal(doc) {
   return Number(doc?.amount) || 0
 }
 
+// ── Voucher receiver & money-receipt routing (Phase I) ──────────────────────
+// Default: the receiver acknowledges *after* management approval (last slot).
+// When the payment is made against an external money receipt, the receiver is
+// recorded *before* final approval so the approver (CEO/MD) reviews the receipt
+// first — the chain reorders and the final (management) slot becomes "Approved
+// By".
+const VOUCHER_SLOTS_DEFAULT = ['Accountant', 'Checked By', 'Managing Director/Director', 'Received Payments']
+const VOUCHER_SLOTS_RECEIPT = ['Accountant', 'Checked By', 'Received Payment', 'Approved By']
+
+export function usesMoneyReceipt(doc) {
+  return isVoucherType(doc?.type) && !!doc?.moneyReceipt
+}
+export function voucherSlotLabels(doc) {
+  return usesMoneyReceipt(doc) ? VOUCHER_SLOTS_RECEIPT : VOUCHER_SLOTS_DEFAULT
+}
+// Empty slots for a voucher's current receiver mode — used while it is an
+// unsigned draft (never rewrites applied signatures).
+export function rebuildVoucherSlots(doc) {
+  return voucherSlotLabels(doc).map((label) => ({ label, signed: false }))
+}
+// Index of the receiver-acknowledgement slot for a voucher, else -1.
+export function receivedSlotIndex(doc) {
+  if (!isVoucherType(doc?.type)) return -1
+  return usesMoneyReceipt(doc) ? 2 : 3
+}
+// Final (management) slot, receiver-mode aware. For money-receipt vouchers the
+// last slot ("Approved By") is management; otherwise fall back to the type's.
+export function docFinalSlotIndex(doc) {
+  if (usesMoneyReceipt(doc)) return 3
+  return finalSlotIndex(doc?.type)
+}
+
 function yymm(date = new Date()) {
   const y = String(date.getFullYear()).slice(-2)
   const m = String(date.getMonth() + 1).padStart(2, '0')
@@ -234,6 +266,7 @@ export function newFinDoc(type, company, user) {
     autoNumber: true,
     date: todayISO(),
     currency: 'BDT',
+    fxRate: '', // BDT per 1 unit of the doc currency; blank/1 for BDT (Phase I)
     status: FIN_STATUS.DRAFT,
     notes: '',
     attachments: [],
@@ -256,6 +289,12 @@ export function newFinDoc(type, company, user) {
       ...base,
       // New docs are always the unified type; the flavour is a field.
       voucherType: type === 'debit-voucher' ? 'debit' : 'payment',
+      // Money-receipt / external-receiver routing (Phase I). When on, the payee
+      // is outside the company: a money receipt is required and the approval
+      // chain reorders so the receiver is recorded before final approval.
+      moneyReceipt: false,
+      receiverName: '',
+      receiptNo: '',
       receivedFrom: '',
       purpose: '',
       paymentMethod: 'Cash', // Cash | Bank Transfer | Cheque | Others
@@ -329,21 +368,54 @@ export function docAmount(doc) {
   return Number(doc.amount) || Number(doc.total) || 0
 }
 
+// ── Multi-currency (Phase I) ────────────────────────────────────────────────
+// Finance docs are recorded in their own currency; a per-document BDT exchange
+// rate converts every figure into the reporting base (BDT) used by the
+// consolidated dashboards, budgets and expense-by-head totals. Native
+// per-currency reports (ledger, trial balance) keep their original currency.
+export const BASE_CURRENCY = 'BDT'
+// The BDT rate for one unit of a doc's currency (1 for BDT, or a missing/invalid
+// rate, so legacy records and blank drafts never zero out).
+export function docFxRate(doc) {
+  if (!doc || (doc.currency || BASE_CURRENCY) === BASE_CURRENCY) return 1
+  const r = Number(doc.fxRate)
+  return r > 0 ? r : 1
+}
+export function toBaseAmount(amount, doc) {
+  return (Number(amount) || 0) * docFxRate(doc)
+}
+export function docBaseAmount(doc) {
+  return docAmount(doc) * docFxRate(doc)
+}
+// A ledger transaction's BDT-base amount. Legacy rows (no baseAmount) were all
+// BDT, so fall back to the raw amount.
+export function txnBase(t) {
+  const b = Number(t?.baseAmount)
+  return b > 0 ? b : Number(t?.amount) || 0
+}
+// A foreign-currency doc still needs its BDT rate before it can be saved.
+export function needsFxRate(doc) {
+  return !!doc && (doc.currency || BASE_CURRENCY) !== BASE_CURRENCY && !(Number(doc.fxRate) > 0)
+}
+
 // Approval-rules defaults. With routing disabled (or threshold 0) the
 // management/final signature is always required — the original behaviour.
 export const DEFAULT_FIN_SETTINGS = { thresholdEnabled: false, threshold: 50000 }
 
-// A doc is "high value" when routing is on and its amount meets the threshold.
+// A doc is "high value" when routing is on and its BDT-base amount meets the
+// threshold (thresholds are held in BDT, so foreign docs convert first).
 export function isHighValue(doc, settings) {
   const s = settings || DEFAULT_FIN_SETTINGS
   if (!s.thresholdEnabled || !(Number(s.threshold) > 0)) return false
-  return docAmount(doc) >= Number(s.threshold)
+  return docBaseAmount(doc) >= Number(s.threshold)
 }
 
 // Whether the management (final) slot must be signed to approve this doc.
 // Routing off, or a high-value doc → management required. Below threshold the
-// checker (slot before management) can finalise on their own.
+// checker (slot before management) can finalise on their own. Money-receipt
+// vouchers always route to management (the approver must review the receipt).
 export function requiresManagement(doc, settings) {
+  if (usesMoneyReceipt(doc)) return true
   const s = settings || DEFAULT_FIN_SETTINGS
   if (!s.thresholdEnabled || !(Number(s.threshold) > 0)) return true
   return isHighValue(doc, settings)
@@ -352,7 +424,7 @@ export function requiresManagement(doc, settings) {
 // Index of the slot whose signature completes approval under the routing rules:
 // the management slot when management is required, else the checker before it.
 export function approvalSlotIndex(doc, settings) {
-  const fi = finalSlotIndex(doc.type)
+  const fi = docFinalSlotIndex(doc)
   if (fi < 0) return -1
   return requiresManagement(doc, settings) ? fi : Math.max(0, fi - 1)
 }

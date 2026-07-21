@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
-import { FIN_STATUS, isExpenseTxn, billDue, billOverdue } from '../../lib/finance.js'
+import { FIN_STATUS, isExpenseTxn, billDue, billOverdue, txnBase } from '../../lib/finance.js'
 import { can } from '../../lib/roles.js'
 import { formatMoney, formatDate } from '../../lib/format.js'
 import { Icon } from '../../components/Icons.jsx'
@@ -42,6 +42,9 @@ export default function FinanceDashboard() {
     [ledger, thisMonth],
   )
   const approvedExpense = sumByCurrency(monthOut, (t) => t.amount)
+  // Consolidated BDT base — combines every currency's spend into one figure.
+  const approvedExpenseBase = monthOut.reduce((s, t) => s + txnBase(t), 0)
+  const multiCurrencyOut = Object.keys(approvedExpense).length > 1
 
   // Pending (not yet approved) — shown separately, NOT in the main figures.
   const pending = useMemo(
@@ -79,7 +82,7 @@ export default function FinanceDashboard() {
     const m = {}
     for (const t of monthOut) {
       const name = heads.find((h) => h.id === t.headId)?.name || 'Uncategorised'
-      m[name] = (m[name] || 0) + (Number(t.amount) || 0)
+      m[name] = (m[name] || 0) + txnBase(t)
     }
     return Object.entries(m).sort((a, b) => b[1] - a[1])
   }, [monthOut, heads])
@@ -107,6 +110,9 @@ export default function FinanceDashboard() {
           <div className="k-val out">
             <CurLines map={approvedExpense} cls="out" />
           </div>
+          {multiCurrencyOut && approvedExpenseBase > 0 && (
+            <div className="k-sub">≈ {formatMoney(approvedExpenseBase, 'BDT')} consolidated</div>
+          )}
           <div className="k-sub">{monthOut.length} transactions</div>
         </div>
         <div className="fin-kpi" style={{ cursor: 'pointer' }} onClick={() => navigate('/finance/reports')}>
@@ -169,7 +175,7 @@ export default function FinanceDashboard() {
       <div className="grid grid-2 mt-24" style={{ alignItems: 'start' }}>
         <div className="card">
           <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', fontWeight: 700, color: 'var(--navy)' }}>
-            Expense by Head (this month)
+            Expense by Head (this month, BDT)
           </div>
           {byHead.length === 0 ? (
             <div className="empty">No approved expenses this month.</div>

@@ -8,9 +8,9 @@ import {
   FIN_STATUS,
   commitFinNumber,
   isVoucherType,
-  finalSlotIndex,
-  requiresManagement,
+  docFinalSlotIndex,
   approvalSlotIndex,
+  docFxRate,
   pushTimeline,
   DEFAULT_FIN_SETTINGS,
 } from '../lib/finance.js'
@@ -264,7 +264,7 @@ export function FinanceProvider({ children }) {
       if (nextIdx < 0) return
       const approveIdx = approvalSlotIndex(doc, finSettings)
       if (approveIdx < 0 || nextIdx > approveIdx) return // no further approvals needed
-      const needFinal = nextIdx === finalSlotIndex(doc.type)
+      const needFinal = nextIdx === docFinalSlotIndex(doc)
       const perm = needFinal ? 'financeFinalApprove' : 'financeApprove'
       const routeType = isVoucherType(doc.type) ? 'voucher' : doc.type
       const link = `/finance/${routeType}/${doc.id}`
@@ -383,10 +383,12 @@ export function FinanceProvider({ children }) {
       // Vouchers & requisitions are money OUT (expenses/payments). A voucher with
       // an itemised breakdown posts one ledger line per head so the expense-by-head
       // report stays accurate; everything else posts a single line.
+      const rate = docFxRate(doc)
       const common = {
         txnDate: doc.date,
         direction: 'out',
         currency: doc.currency || 'BDT',
+        fxRate: rate, // BDT per unit of doc currency, captured at approval
         accountId: doc.accountId || null,
         partyName: doc.receivedFrom || doc.party || doc.requester || '',
         linkType: doc.type,
@@ -397,17 +399,21 @@ export function FinanceProvider({ children }) {
       const breakdown = (doc.lines || []).filter((l) => Number(l.amount) > 0)
       if (breakdown.length) {
         for (const l of breakdown) {
+          const amount = Number(l.amount) || 0
           postTransaction({
             ...common,
-            amount: Number(l.amount) || 0,
+            amount,
+            baseAmount: amount * rate, // BDT base for consolidated reporting
             headId: l.headId || doc.headId || null,
             description: l.description || doc.purpose || meta?.label,
           })
         }
       } else {
+        const amount = Number(doc.amount) || Number(doc.total) || 0
         postTransaction({
           ...common,
-          amount: Number(doc.amount) || Number(doc.total) || 0,
+          amount,
+          baseAmount: amount * rate,
           headId: doc.headId || null,
           description: doc.purpose || doc.title || meta?.label,
         })
@@ -426,7 +432,9 @@ export function FinanceProvider({ children }) {
         txnDate: saved.date,
         direction: 'out',
         amount: Number(saved.amount) || 0,
+        baseAmount: (Number(saved.amount) || 0) * docFxRate(saved),
         currency: saved.currency || 'BDT',
+        fxRate: docFxRate(saved),
         accountId: saved.accountId || null,
         headId: saved.headId || null,
         partyName: saved.party || '',
@@ -450,7 +458,9 @@ export function FinanceProvider({ children }) {
         txnDate: saved.date,
         direction: 'in',
         amount: Number(saved.amount) || 0,
+        baseAmount: (Number(saved.amount) || 0) * docFxRate(saved),
         currency: saved.currency || 'BDT',
+        fxRate: docFxRate(saved),
         accountId: saved.accountId || null,
         headId: saved.headId || null,
         partyName: saved.party || '',
@@ -484,7 +494,9 @@ export function FinanceProvider({ children }) {
         txnDate: payment.date,
         direction: 'out',
         amount: Number(payment.amount) || 0,
+        baseAmount: (Number(payment.amount) || 0) * docFxRate(bill),
         currency: bill.currency || 'BDT',
+        fxRate: docFxRate(bill),
         accountId: payment.accountId || null,
         headId: bill.headId || null,
         partyName: bill.vendorName || '',

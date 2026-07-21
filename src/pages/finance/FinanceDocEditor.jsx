@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
-import { FIN_TYPES, newFinDoc, newReqItem, newVoucherLine, requisitionTotal, voucherTotal, FIN_STATUS, pushTimeline } from '../../lib/finance.js'
+import { FIN_TYPES, newFinDoc, newReqItem, newVoucherLine, requisitionTotal, voucherTotal, FIN_STATUS, pushTimeline, docAmount, needsFxRate, rebuildVoucherSlots } from '../../lib/finance.js'
 import { CURRENCIES } from '../../lib/format.js'
 import { amountInWords } from '../../lib/amountInWords.js'
 import AttachmentField from '../../components/AttachmentField.jsx'
+import FxRateField from '../../components/finance/FxRateField.jsx'
 import AutoTextarea from '../../components/AutoTextarea.jsx'
 import Modal from '../../components/Modal.jsx'
 import { useToast } from '../../components/Toast.jsx'
@@ -30,6 +31,13 @@ export default function FinanceDocEditor({ type }) {
   const myTemplates = templates.filter((t) => t.kind === type)
 
   const save = (goPreview) => {
+    if (needsFxRate(doc)) return toast.error(`Enter the ${doc.currency} → BDT exchange rate.`)
+    // A money-receipt voucher pays an external party — the receipt and receiver
+    // must be captured before it can be routed for approval.
+    if (!isReq && doc.moneyReceipt) {
+      if (!(doc.attachments?.length > 0)) return toast.error('Attach the money receipt before submitting.')
+      if (!(doc.receiverName || '').trim()) return toast.error('Enter who received the payment.')
+    }
     const total = isReq ? requisitionTotal(doc) : voucherTotal(doc)
     // Keep the single amount field in sync with an itemised breakdown, so the
     // list, preview, and ledger all agree on the effective total.
@@ -129,6 +137,12 @@ export default function FinanceDocEditor({ type }) {
               ))}
             </select>
           </div>
+          <FxRateField
+            currency={doc.currency}
+            rate={doc.fxRate}
+            onRate={(v) => patch({ fxRate: v })}
+            amount={docAmount(doc)}
+          />
         </div>
       </div>
 
@@ -290,6 +304,10 @@ function VoucherBody({ doc, patch }) {
   const isCheque = doc.paymentMethod === 'Cheque'
   const showBank = isCheque || doc.paymentMethod === 'Bank Transfer'
   const total = voucherTotal(doc)
+  const anySigned = (doc.signSlots || []).some((s) => s.signed)
+  // Toggling receiver mode reorders the approval chain, so rebuild the (still
+  // empty) slots to match. Locked once any signature has been applied.
+  const setReceiverMode = (on) => patch({ moneyReceipt: on, signSlots: rebuildVoucherSlots({ ...doc, moneyReceipt: on }) })
 
   // Approved requisitions this voucher can settle.
   const approvedReqs = finDocs.filter((d) => d.type === 'requisition' && d.status === FIN_STATUS.APPROVED && !d.deleted)
@@ -345,6 +363,43 @@ function VoucherBody({ doc, patch }) {
           </label>
         </div>
       </div>
+
+      {/* External receiver / money receipt (Phase I). Reorders the approval
+          chain so the receiver is recorded before final approval. */}
+      <div className="field">
+        <label>Payment Receiver</label>
+        <label className="row gap-8 center" style={{ cursor: anySigned ? 'not-allowed' : 'pointer' }}>
+          <input type="checkbox" checked={!!doc.moneyReceipt} disabled={anySigned} onChange={(e) => setReceiverMode(e.target.checked)} />
+          Paid to an external party against a money receipt
+          <span className="muted small">(receiver recorded before final approval)</span>
+        </label>
+        {anySigned && <div className="small muted" style={{ marginTop: 4 }}>Receiver mode is locked once signing has begun.</div>}
+      </div>
+      {doc.moneyReceipt && (
+        <div className="grid grid-2">
+          <div className="field">
+            <label>
+              Received By (external) <span className="req">*</span>
+            </label>
+            <input
+              className="input"
+              value={doc.receiverName || ''}
+              onChange={(e) => patch({ receiverName: e.target.value })}
+              placeholder="Person / party who received the payment"
+            />
+          </div>
+          <div className="field">
+            <label>Money Receipt No.</label>
+            <input className="input" value={doc.receiptNo || ''} onChange={(e) => patch({ receiptNo: e.target.value })} placeholder="receipt reference" />
+          </div>
+          <div className="field" style={{ gridColumn: 'span 2' }}>
+            <div className="small muted">
+              Attach the money receipt under <b>Supporting Documents</b> below — it's required, and the approver
+              (CEO / Managing Director) reviews it before final approval.
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-2">
         <div className="field">

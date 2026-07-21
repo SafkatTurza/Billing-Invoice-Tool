@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
 import { can } from '../../lib/roles.js'
-import { finalSlotIndex, requiresManagement, approvalSlotIndex, isHighValue } from '../../lib/finance.js'
+import { docFinalSlotIndex, requiresManagement, approvalSlotIndex, isHighValue, receivedSlotIndex, usesMoneyReceipt } from '../../lib/finance.js'
 import { todayISO, formatDate } from '../../lib/format.js'
 import Modal from '../Modal.jsx'
 import { useToast } from '../Toast.jsx'
@@ -29,7 +29,7 @@ export default function ApprovalChain({ type, doc, slots, settings, onSign, onRe
   const [decision, setDecision] = useState(null) // 'reject' | 'sendback'
   const [reason, setReason] = useState('')
 
-  const finalIdx = finalSlotIndex(type)
+  const finalIdx = docFinalSlotIndex(doc)
   const mgmtRequired = requiresManagement(doc, settings)
   const approveIdx = approvalSlotIndex(doc, settings)
   // When management isn't required, its slot is skipped from the sequence
@@ -40,12 +40,29 @@ export default function ApprovalChain({ type, doc, slots, settings, onSign, onRe
   const isCreator = doc?.createdBy && doc.createdBy === currentUser.id
   const signedByMe = slots.some((s) => s.signed && s.signerId === currentUser.id)
 
+  // The receiver-acknowledgement slot is not an approval: it's exempt from the
+  // one-signature-per-person and maker-checker rules (an internal approver may
+  // also be the receiver). With an external money receipt it carries no personal
+  // signature at all — Accounts confirms it against the attached receipt.
+  const receivedIdx = receivedSlotIndex(doc)
+  const isReceivedSlot = (idx) => idx === receivedIdx
+  const isExternalReceipt = (idx) => usesMoneyReceipt(doc) && idx === receivedIdx
+  const hasReceipt = (doc?.attachments?.length || 0) > 0
+  const hasReceiverName = !!(doc?.receiverName || '').trim()
+
   const canSignSlot = (idx) => {
     if (readOnly) return false
     if (slots[idx].signed || isSkipped(idx)) return false
     if (idx !== firstUnsigned) return false // strictly sequential
-    if (signedByMe) return false // one signature per person (SoD)
-    if (idx > 0 && isCreator) return false // maker can't check/approve own doc
+    if (!isReceivedSlot(idx)) {
+      if (signedByMe) return false // one signature per person (SoD)
+      if (idx > 0 && isCreator) return false // maker can't check/approve own doc
+    }
+    if (isExternalReceipt(idx)) {
+      // Confirmed by Accounts against the money receipt — needs the receipt
+      // attachment and the external receiver's name recorded.
+      return can(currentUser.role, 'financeApprove') && hasReceipt && hasReceiverName
+    }
     if (idx === finalIdx) return can(currentUser.role, 'financeFinalApprove')
     return can(currentUser.role, 'financeApprove')
   }
@@ -57,34 +74,55 @@ export default function ApprovalChain({ type, doc, slots, settings, onSign, onRe
     if (readOnly) return 'Awaiting signature'
     if (isSkipped(idx)) return 'Not required (below threshold)'
     if (idx !== firstUnsigned) return 'Waiting for prior signatures'
-    if (signedByMe) return 'You already signed a slot'
-    if (idx > 0 && isCreator) return "Maker can't approve own document"
+    if (isExternalReceipt(idx)) {
+      if (!hasReceipt) return 'Attach the money receipt first'
+      if (!hasReceiverName) return 'Record the receiver name first'
+      return 'Accounts confirms receipt'
+    }
+    if (!isReceivedSlot(idx)) {
+      if (signedByMe) return 'You already signed a slot'
+      if (idx > 0 && isCreator) return "Maker can't approve own document"
+    }
     if (idx === finalIdx) return 'Awaits management'
     return 'Not permitted'
   }
 
   const doSign = () => {
     const idx = signingIdx
-    if (!currentUser.signatureImg) {
+    const external = isExternalReceipt(idx)
+    if (!external && !currentUser.signatureImg) {
       toast.error('Add your signature first in Settings → My Account.')
       return
     }
     const newSlots = slots.map((s, i) =>
       i === idx
-        ? {
-            ...s,
-            signed: true,
-            signerId: currentUser.id,
-            signerName: currentUser.fullName,
-            signatureImg: currentUser.signatureImg,
-            date: signDate,
-          }
+        ? external
+          ? {
+              // External receiver: recorded against the money receipt — the
+              // receiver's name stands in for a personal signature.
+              ...s,
+              signed: true,
+              receivedExternal: true,
+              receiverName: (doc.receiverName || '').trim(),
+              receiptNo: (doc.receiptNo || '').trim(),
+              signerId: currentUser.id,
+              signerName: currentUser.fullName,
+              date: signDate,
+            }
+          : {
+              ...s,
+              signed: true,
+              signerId: currentUser.id,
+              signerName: currentUser.fullName,
+              signatureImg: currentUser.signatureImg,
+              date: signDate,
+            }
         : s,
     )
     const completesApproval = idx === approveIdx || newSlots.every((s, i) => s.signed || isSkipped(i))
     onSign(newSlots, { completesApproval, signedLabel: slots[idx].label })
     setSigningIdx(null)
-    if (!completesApproval) toast.success('Signed.')
+    if (!completesApproval) toast.success(external ? 'Receipt confirmed.' : 'Signed.')
   }
 
   const submitDecision = () => {
@@ -123,11 +161,18 @@ export default function ApprovalChain({ type, doc, slots, settings, onSign, onRe
             </div>
             {s.signed ? (
               <>
-                {s.signatureImg && <img src={s.signatureImg} alt="" className="appr-sig-img" />}
+                {s.receivedExternal ? (
+                  <span className="badge badge-blue" title="Confirmed against the money receipt">
+                    Money receipt{s.receiptNo ? ` #${s.receiptNo}` : ''}
+                  </span>
+                ) : (
+                  s.signatureImg && <img src={s.signatureImg} alt="" className="appr-sig-img" />
+                )}
                 <div className="grow" />
                 <div className="appr-meta" style={{ textAlign: 'right' }}>
-                  <div className="bold">{s.signerName}</div>
+                  <div className="bold">{s.receivedExternal ? s.receiverName || 'External receiver' : s.signerName}</div>
                   <div>{formatDate(s.date)}</div>
+                  {s.receivedExternal && <div className="small faint">Confirmed by {s.signerName}</div>}
                 </div>
                 <Icon.check width={18} height={18} style={{ color: 'var(--green)' }} />
               </>
@@ -142,7 +187,8 @@ export default function ApprovalChain({ type, doc, slots, settings, onSign, onRe
                       setSignDate(todayISO())
                     }}
                   >
-                    <Icon.edit width={14} height={14} /> Sign {isFinal ? '& Approve' : approveIdx === idx ? '& Approve' : ''}
+                    <Icon.edit width={14} height={14} />{' '}
+                    {isExternalReceipt(idx) ? 'Confirm Receipt' : `Sign ${isFinal ? '& Approve' : approveIdx === idx ? '& Approve' : ''}`}
                   </button>
                 ) : (
                   <span className="small faint">{blockedReason(idx)}</span>
@@ -171,7 +217,7 @@ export default function ApprovalChain({ type, doc, slots, settings, onSign, onRe
 
       {signingIdx != null && (
         <Modal
-          title={`Sign — ${slots[signingIdx].label}`}
+          title={`${isExternalReceipt(signingIdx) ? 'Confirm Receipt' : 'Sign'} — ${slots[signingIdx].label}`}
           onClose={() => setSigningIdx(null)}
           footer={
             <>
@@ -179,28 +225,44 @@ export default function ApprovalChain({ type, doc, slots, settings, onSign, onRe
                 Cancel
               </button>
               <button className="btn btn-teal" onClick={doSign}>
-                <Icon.check width={16} height={16} /> Apply Signature
+                <Icon.check width={16} height={16} /> {isExternalReceipt(signingIdx) ? 'Confirm Receipt' : 'Apply Signature'}
               </button>
             </>
           }
         >
-          <p className="muted" style={{ marginBottom: 12 }}>
-            You are signing as <b>{currentUser.fullName}</b> ({currentUser.role}). Your saved signature
-            will be applied with the date below, with your consent.
-          </p>
-          {currentUser.signatureImg ? (
-            <div style={{ border: '1px solid var(--border)', borderRadius: 8, padding: 10, marginBottom: 12, background: '#fff' }}>
-              <img src={currentUser.signatureImg} alt="your signature" style={{ maxHeight: 70 }} />
-            </div>
+          {isExternalReceipt(signingIdx) ? (
+            <>
+              <p className="muted" style={{ marginBottom: 12 }}>
+                Confirming that <b>{(doc.receiverName || '').trim() || 'the external receiver'}</b> received this
+                payment, per the attached money receipt{doc.receiptNo ? ` (#${doc.receiptNo})` : ''}. No personal
+                signature is applied — you ({currentUser.fullName}) are recorded as the confirmer.
+              </p>
+              <div className="field" style={{ maxWidth: 220 }}>
+                <label>Receipt Date</label>
+                <input type="date" className="input" value={signDate} onChange={(e) => setSignDate(e.target.value)} />
+              </div>
+            </>
           ) : (
-            <div className="auth-error" style={{ marginBottom: 12 }}>
-              No signature saved. Add one in Settings → My Account first.
-            </div>
+            <>
+              <p className="muted" style={{ marginBottom: 12 }}>
+                You are signing as <b>{currentUser.fullName}</b> ({currentUser.role}). Your saved signature
+                will be applied with the date below, with your consent.
+              </p>
+              {currentUser.signatureImg ? (
+                <div style={{ border: '1px solid var(--border)', borderRadius: 8, padding: 10, marginBottom: 12, background: '#fff' }}>
+                  <img src={currentUser.signatureImg} alt="your signature" style={{ maxHeight: 70 }} />
+                </div>
+              ) : (
+                <div className="auth-error" style={{ marginBottom: 12 }}>
+                  No signature saved. Add one in Settings → My Account first.
+                </div>
+              )}
+              <div className="field" style={{ maxWidth: 220 }}>
+                <label>Signature Date</label>
+                <input type="date" className="input" value={signDate} onChange={(e) => setSignDate(e.target.value)} />
+              </div>
+            </>
           )}
-          <div className="field" style={{ maxWidth: 220 }}>
-            <label>Signature Date</label>
-            <input type="date" className="input" value={signDate} onChange={(e) => setSignDate(e.target.value)} />
-          </div>
         </Modal>
       )}
 

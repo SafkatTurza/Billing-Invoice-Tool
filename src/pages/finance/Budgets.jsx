@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
 import { can } from '../../lib/roles.js'
-import { isExpenseTxn } from '../../lib/finance.js'
+import { isExpenseTxn, txnBase } from '../../lib/finance.js'
 import { formatMoney, formatDate } from '../../lib/format.js'
 import { useToast } from '../../components/Toast.jsx'
 
@@ -26,7 +26,8 @@ export default function Budgets() {
       if (!isExpenseTxn(t)) continue
       if ((t.txnDate || '').slice(0, 7) !== thisMonth) continue
       if (!t.headId) continue
-      m[t.headId] = (m[t.headId] || 0) + (Number(t.amount) || 0)
+      // Consolidate in the BDT base so foreign-currency spend counts correctly.
+      m[t.headId] = (m[t.headId] || 0) + txnBase(t)
     }
     return m
   }, [ledger, thisMonth])

@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
 import { can } from '../../lib/roles.js'
+import { txnBase } from '../../lib/finance.js'
 import { CURRENCIES, formatMoney, formatDate, todayISO } from '../../lib/format.js'
 import Modal from '../../components/Modal.jsx'
 import { useToast } from '../../components/Toast.jsx'
@@ -39,10 +40,12 @@ export default function Ledger() {
   }, [ledger, accFilter, dirFilter, headFilter, from, to, query])
 
   const totals = useMemo(() => {
-    const t = { in: {}, out: {} }
+    const t = { in: {}, out: {}, baseIn: 0, baseOut: 0 }
     for (const r of rows) {
       const bucket = r.direction === 'in' ? t.in : r.direction === 'out' ? t.out : null
       if (bucket) bucket[r.currency] = (bucket[r.currency] || 0) + (Number(r.amount) || 0)
+      if (r.direction === 'in') t.baseIn += txnBase(r)
+      else if (r.direction === 'out') t.baseOut += txnBase(r)
     }
     return t
   }, [rows])
@@ -93,6 +96,9 @@ export default function Ledger() {
               <div key={c} style={{ fontSize: 18 }}>{formatMoney(v, c)}</div>
             ))}
             {Object.keys(totals.in).length === 0 && '—'}
+            {Object.keys(totals.in).length > 1 && (
+              <div className="k-sub">≈ {formatMoney(totals.baseIn, 'BDT')} consolidated</div>
+            )}
           </div>
         </div>
         <div className="fin-kpi">
@@ -102,6 +108,9 @@ export default function Ledger() {
               <div key={c} style={{ fontSize: 18 }}>{formatMoney(v, c)}</div>
             ))}
             {Object.keys(totals.out).length === 0 && '—'}
+            {Object.keys(totals.out).length > 1 && (
+              <div className="k-sub">≈ {formatMoney(totals.baseOut, 'BDT')} consolidated</div>
+            )}
           </div>
         </div>
       </div>
@@ -164,8 +173,18 @@ export default function Ledger() {
                   <td>{t.description || '—'}</td>
                   <td className="small">{t.linkType === 'transfer' ? '—' : headName(t.headId)}</td>
                   <td className="small">{accName(t.accountId)}</td>
-                  <td className="text-right nowrap ledger-in">{t.direction === 'in' ? formatMoney(t.amount, t.currency) : ''}</td>
-                  <td className="text-right nowrap ledger-out">{t.direction === 'out' ? formatMoney(t.amount, t.currency) : ''}</td>
+                  <td className="text-right nowrap ledger-in">
+                    {t.direction === 'in' ? formatMoney(t.amount, t.currency) : ''}
+                    {t.direction === 'in' && (t.currency || 'BDT') !== 'BDT' && (
+                      <div className="small muted">≈ {formatMoney(txnBase(t), 'BDT')}</div>
+                    )}
+                  </td>
+                  <td className="text-right nowrap ledger-out">
+                    {t.direction === 'out' ? formatMoney(t.amount, t.currency) : ''}
+                    {t.direction === 'out' && (t.currency || 'BDT') !== 'BDT' && (
+                      <div className="small muted">≈ {formatMoney(txnBase(t), 'BDT')}</div>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

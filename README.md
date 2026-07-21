@@ -213,6 +213,27 @@ A centralized company-finance module alongside billing:
   - **Salary Certificate** — a per-employee employment/salary certificate stating designation,
     tenure and the current salary breakdown, with YTD paid.
 
+### External receivers & multi-currency (Phase I)
+
+- **External payment receivers with a money receipt** — a voucher can be flagged as *paid to an
+  external party against a money receipt*. Accounts records who received the payment and attaches
+  the money receipt, and the approval chain **reorders** so the receiver is confirmed *before*
+  final sign-off: `Accountant → Checked By → Received Payment → Approved By`. The money receipt is
+  required, the *Received Payment* slot is confirmed against that receipt (no personal signature
+  from the outside party), and the approver (CEO / Managing Director) reviews the receipt before
+  approving. For internal receivers the original order stands (`… → Received Payments` last).
+- **Receipt is an acknowledgement, not an approval** — the *Received Payment* slot is exempt from
+  the one-signature-per-person and maker-checker rules, so an internal approver (e.g. the MD who
+  signed *Authorised By*) may also be recorded as the receiver.
+- **Multi-currency with a BDT exchange rate** — vouchers, income, bills and requisitions can be
+  recorded in a foreign currency (e.g. USD). A per-document **BDT exchange rate** (captured because
+  it changes daily) converts every figure into the reporting base. The printed document shows the
+  original amount **and** its BDT equivalent at the rate used.
+- **Consolidated BDT reporting** — each posted ledger entry carries its BDT-base amount, so the
+  dashboard's expense-by-head, budgets-vs-actual and the ledger/dashboard consolidated totals
+  combine every currency into one BDT figure, while the per-currency ledger, statements and trial
+  balance keep their original currency. Threshold-based approval routing also compares the BDT base.
+
 ### Finance access control (privacy)
 
 All finance **data entry** — requisitions/PRs, payment & debit vouchers, salary

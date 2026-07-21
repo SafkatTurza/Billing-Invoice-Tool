@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
 import { formatMoney, formatDate } from '../../lib/format.js'
+import { docFxRate, docBaseAmount } from '../../lib/finance.js'
 import { amountInWords } from '../../lib/amountInWords.js'
 import { AttachmentList } from '../../components/AttachmentField.jsx'
 import { Icon } from '../../components/Icons.jsx'
@@ -109,6 +110,15 @@ export default function IncomeReceipt() {
           <span className="vr-label" style={{ marginLeft: 12 }}>Amount in Word</span>
           <span className="vr-fill" style={{ fontStyle: 'italic' }}>{amountInWords(Number(doc.amount) || 0, doc.currency)}</span>
         </div>
+
+        {(doc.currency || 'BDT') !== 'BDT' && (
+          <div className="voucher-row">
+            <span className="vr-label">BDT Equivalent</span>
+            <span className="vr-fill">
+              {formatMoney(docBaseAmount(doc), 'BDT')} at ৳{Number(docFxRate(doc)).toLocaleString()} / {doc.currency}
+            </span>
+          </div>
+        )}
 
         <div className="fin-sign-row" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
           <div className="fin-sign">

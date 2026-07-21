@@ -2,10 +2,11 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
-import { newFinDoc, FIN_STATUS } from '../../lib/finance.js'
+import { newFinDoc, FIN_STATUS, needsFxRate } from '../../lib/finance.js'
 import { can } from '../../lib/roles.js'
 import { CURRENCIES, formatMoney, formatDate, todayISO } from '../../lib/format.js'
 import AttachmentField from '../../components/AttachmentField.jsx'
+import FxRateField from '../../components/finance/FxRateField.jsx'
 import Modal from '../../components/Modal.jsx'
 import ReverseModal from '../../components/finance/ReverseModal.jsx'
 import { useToast } from '../../components/Toast.jsx'
@@ -48,6 +49,7 @@ export default function IncomeRecords() {
   const save = () => {
     if (!form.description?.trim()) return toast.error('Description is required.')
     if (!(Number(form.amount) > 0)) return toast.error('Enter an amount.')
+    if (needsFxRate(form)) return toast.error(`Enter the ${form.currency} → BDT exchange rate.`)
     recordIncome(form)
     toast.success(`${form.kind === 'investment' ? 'Investment' : 'Income'} recorded.`)
     setOpen(false)
@@ -180,6 +182,7 @@ export default function IncomeRecords() {
                 ))}
               </select>
             </div>
+            <FxRateField currency={form.currency} rate={form.fxRate} onRate={(v) => upd('fxRate', v)} amount={form.amount} />
             <div className="field">
               <label>{form.kind === 'investment' ? 'Investment Head' : 'Income Head'}</label>
               <select className="select" value={form.headId} onChange={(e) => upd('headId', e.target.value)}>
