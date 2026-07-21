@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
 import { can } from '../../lib/roles.js'
@@ -20,6 +21,7 @@ const STATUS_BADGE = {
 export default function Employees() {
   const { employees, saveEmployee, deleteEmployee } = useFinance()
   const { currentUser } = useApp()
+  const navigate = useNavigate()
   const toast = useToast()
   const canManage = can(currentUser.role, 'financeManage')
   const [editing, setEditing] = useState(null)
@@ -85,6 +87,9 @@ export default function Employees() {
                   </td>
                   <td className="text-right nowrap">
                     <div className="row gap-8" style={{ justifyContent: 'flex-end' }}>
+                      <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/finance/employees/${e.id}/certificate`)} title="Salary Certificate">
+                        <Icon.receipt width={14} height={14} /> Certificate
+                      </button>
                       <button className="btn btn-ghost btn-sm" onClick={() => startEdit(e)}>
                         <Icon.edit width={14} height={14} /> {canManage ? 'Edit' : 'View'}
                       </button>

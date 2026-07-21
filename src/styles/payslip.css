@@ -70,9 +70,17 @@
   padding-top: 10px;
 }
 
+/* Bulk payslips — one slip per page, spaced on screen, page-broken in print. */
+.bulk-payslips { display: flex; flex-direction: column; gap: 28px; }
+.bulk-payslip-page { break-inside: avoid; }
+
 @media print {
   /* One employee payslip = exactly one A4 page (client requirement). */
   @page { size: A4 portrait; margin: 14mm; }
+  .bulk-payslips { gap: 0; }
+  /* Each slip starts a fresh page (the first one doesn't need a leading break). */
+  .bulk-payslip-page { page-break-after: always; break-after: page; }
+  .bulk-payslip-page:last-child { page-break-after: auto; break-after: auto; }
   .payslip-paper {
     box-shadow: none;
     max-width: 100%;

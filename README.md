@@ -190,6 +190,29 @@ A centralized company-finance module alongside billing:
 - **Uniform export** — every report funnels through one Excel exporter (multi-sheet, titled
   sections) and the same Print / PDF path, so exports look consistent across the pack.
 
+### Payroll depth (Phase H)
+
+- **Attendance, overtime & unpaid leave** — a salary sheet can switch on payroll tracking to
+  capture, per employee, present days, unpaid-leave days, and overtime hours × rate. Unpaid
+  leave is pro-rated on the base salary using the sheet's Working Days; overtime adds to pay.
+  These flow straight into each employee's Final Amount and reconcile on the printed sheet
+  (extra OT / Absent / Loan columns appear only when the sheet actually uses them, so legacy
+  sheets stay clean).
+- **Loans & Advances** — a register of money advanced to staff, each with a principal and a
+  monthly installment. A one-click *Auto-fill loan installments* pulls each employee's due
+  installment (capped at the outstanding balance) onto the sheet; on approval the installments
+  are recorded against the loans and the balances drop. Repayments are stamped with the sheet
+  they came from, so re-approving a sheet never double-counts.
+- **Salary disbursement voucher** — every approved sheet has an auto-generated, printable
+  disbursement voucher (one payee line per employee with net payable and total), derived from
+  the sheet so it never re-posts to the ledger.
+- **Year-to-date, certificates & bulk payslips**:
+  - Each payslip now itemises overtime, unpaid leave and loan repayment, and carries a
+    **Year-to-Date** block aggregating that employee's approved months this year.
+  - **Bulk Payslips** renders every payslip for a sheet, one per page, for a single print/PDF run.
+  - **Salary Certificate** — a per-employee employment/salary certificate stating designation,
+    tenure and the current salary breakdown, with YTD paid.
+
 ### Finance access control (privacy)
 
 All finance **data entry** — requisitions/PRs, payment & debit vouchers, salary

@@ -26,9 +26,13 @@ import FinanceDocList from './pages/finance/FinanceDocList.jsx'
 import FinanceDocEditor from './pages/finance/FinanceDocEditor.jsx'
 import FinanceDocPreview from './pages/finance/FinanceDocPreview.jsx'
 import Employees from './pages/finance/Employees.jsx'
+import Loans from './pages/finance/Loans.jsx'
 import SalarySheetEditor from './pages/finance/SalarySheetEditor.jsx'
 import SalarySheetPreview from './pages/finance/SalarySheetPreview.jsx'
 import Payslip from './pages/finance/Payslip.jsx'
+import BulkPayslips from './pages/finance/BulkPayslips.jsx'
+import SalaryDisbursement from './pages/finance/SalaryDisbursement.jsx'
+import SalaryCertificate from './pages/finance/SalaryCertificate.jsx'
 import IncomeRecords from './pages/finance/IncomeRecords.jsx'
 import IncomeReceipt from './pages/finance/IncomeReceipt.jsx'
 import FinancialReports from './pages/finance/FinancialReports.jsx'
@@ -145,9 +149,13 @@ function AppRoutes({ isSetupComplete, currentUser }) {
           <Route key="fin-gl" path="finance/gl" element={<GeneralLedger />} />,
           <Route key="fin-insights" path="finance/insights" element={<Insights />} />,
           <Route key="fin-employees" path="finance/employees" element={<Employees />} />,
+          <Route key="fin-emp-cert" path="finance/employees/:id/certificate" element={<SalaryCertificate />} />,
+          <Route key="fin-loans" path="finance/loans" element={<Loans />} />,
           <Route key="sal-list" path="finance/salary-sheet" element={<FinanceDocList type="salary-sheet" />} />,
           <Route key="sal-view" path="finance/salary-sheet/:id" element={<SalarySheetPreview />} />,
           <Route key="sal-payslip" path="finance/salary-sheet/:id/payslip/:lineId" element={<Payslip />} />,
+          <Route key="sal-payslips" path="finance/salary-sheet/:id/payslips" element={<BulkPayslips />} />,
+          <Route key="sal-disburse" path="finance/salary-sheet/:id/disbursement" element={<SalaryDisbursement />} />,
           ...['requisition', 'voucher'].flatMap((t) => [
             <Route key={t} path={`finance/${t}`} element={<FinanceDocList type={t} />} />,
             <Route key={t + '-view'} path={`finance/${t}/:id`} element={<FinanceDocPreview type={t} />} />,

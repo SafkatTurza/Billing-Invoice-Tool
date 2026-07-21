@@ -1,9 +1,9 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
-import { FIN_STATUS } from '../../lib/finance.js'
+import { FIN_STATUS, pushTimeline } from '../../lib/finance.js'
 import { can } from '../../lib/roles.js'
-import { lineNet, sheetTotals, MONTHS } from '../../lib/salary.js'
+import { lineNet, lineComputed, sheetTotals, sheetUsesPayroll, MONTHS } from '../../lib/salary.js'
 import { formatDate } from '../../lib/format.js'
 import ApprovalChain from '../../components/finance/ApprovalChain.jsx'
 import { AttachmentList } from '../../components/AttachmentField.jsx'
@@ -22,7 +22,7 @@ const STATUS_BADGE = {
 export default function SalarySheetPreview() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { finDocs, saveFinDoc, onDocApproved } = useFinance()
+  const { finDocs, saveFinDoc, onDocApproved, applySalaryLoanRepayments, finSettings, notifyNextApprovers, rejectFinDoc, sendBackFinDoc } = useFinance()
   const { findCompany, currentUser } = useApp()
   const toast = useToast()
   const canManage = can(currentUser.role, 'financeManage')
@@ -42,15 +42,33 @@ export default function SalarySheetPreview() {
   const totals = sheetTotals(doc)
   const approved = doc.status === FIN_STATUS.APPROVED
 
-  const onSign = (newSlots, { completesApproval }) => {
-    const patch = { signSlots: newSlots }
-    if (completesApproval && !approved) patch.status = FIN_STATUS.APPROVED
+  const onSign = (newSlots, { completesApproval, signedLabel }) => {
+    const becomesApproved = completesApproval && !approved
+    const patch = {
+      signSlots: newSlots,
+      timeline: pushTimeline(doc, becomesApproved ? 'approved' : 'signed', signedLabel, currentUser),
+    }
+    if (becomesApproved) patch.status = FIN_STATUS.APPROVED
     const saved = saveFinDoc({ ...doc, ...patch })
-    if (patch.status === FIN_STATUS.APPROVED) {
+    if (becomesApproved) {
       onDocApproved(saved)
-      toast.success('Salary sheet approved — salary posted to the ledger.')
+      applySalaryLoanRepayments(saved) // repay any loan installments on the sheet
+      toast.success('Salary sheet approved — salary posted & loan installments applied.')
+    } else {
+      notifyNextApprovers(saved)
     }
   }
+
+  const onReject = (reason) => {
+    rejectFinDoc(doc.id, reason)
+    toast.success('Salary sheet rejected — the preparer has been notified.')
+  }
+  const onSendBack = (reason) => {
+    sendBackFinDoc(doc.id, reason)
+    toast.success('Salary sheet sent back to the preparer for correction.')
+  }
+
+  const usesPayroll = sheetUsesPayroll(doc)
 
   return (
     <div>
@@ -82,14 +100,31 @@ export default function SalarySheetPreview() {
       <div className="card card-pad no-print" style={{ marginBottom: 18 }}>
         <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--navy)', marginBottom: 4 }}>Approval Chain</h3>
         <p className="small muted mb-16">Signed in order; management (Authorised By) signs last. On final sign the salary posts to the ledger.</p>
-        <ApprovalChain type="salary-sheet" slots={doc.signSlots} onSign={onSign} readOnly={doc.status === FIN_STATUS.REJECTED} />
+        <ApprovalChain
+          type="salary-sheet"
+          doc={doc}
+          slots={doc.signSlots}
+          settings={finSettings}
+          onSign={onSign}
+          onReject={onReject}
+          onSendBack={onSendBack}
+          readOnly={doc.status === FIN_STATUS.REJECTED}
+        />
       </div>
 
       {/* Payslips (after approval) */}
       {approved && (
         <div className="card no-print" style={{ marginBottom: 18 }}>
-          <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', fontWeight: 700, color: 'var(--navy)' }}>
-            Payslips — Payroll Receipt Copies
+          <div className="row between center" style={{ padding: '12px 18px', borderBottom: '1px solid var(--border)' }}>
+            <span style={{ fontWeight: 700, color: 'var(--navy)' }}>Payslips — Payroll Receipt Copies</span>
+            <div className="row gap-8">
+              <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/finance/salary-sheet/${doc.id}/payslips`)}>
+                <Icon.receipt width={14} height={14} /> Bulk Payslips
+              </button>
+              <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/finance/salary-sheet/${doc.id}/disbursement`)}>
+                <Icon.money width={14} height={14} /> Disbursement Voucher
+              </button>
+            </div>
           </div>
           <table className="table">
             <thead>
@@ -103,7 +138,7 @@ export default function SalarySheetPreview() {
               {doc.lines.map((l) => (
                 <tr key={l.id}>
                   <td className="bold">{l.name}</td>
-                  <td className="text-right nowrap">{lineNet(l, doc.components).toLocaleString('en-US', { minimumFractionDigits: 2 })} {doc.currency}</td>
+                  <td className="text-right nowrap">{lineNet(l, doc).toLocaleString('en-US', { minimumFractionDigits: 2 })} {doc.currency}</td>
                   <td className="text-right">
                     <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/finance/salary-sheet/${doc.id}/payslip/${l.id}`)}>
                       <Icon.receipt width={14} height={14} /> Open Payslip
@@ -149,25 +184,34 @@ export default function SalarySheetPreview() {
                   {c.label}
                 </th>
               ))}
+              {usesPayroll && <th className="num">OT (+)</th>}
+              {usesPayroll && <th className="num">Absent (−)</th>}
+              {usesPayroll && <th className="num">Loan (−)</th>}
               <th className="num">Final Amount</th>
               <th style={{ width: '18%' }}>Remarks</th>
             </tr>
           </thead>
           <tbody>
-            {doc.lines.map((l, i) => (
-              <tr key={l.id}>
-                <td style={{ textAlign: 'center' }}>{i + 1}</td>
-                <td>{l.name}</td>
-                <td className="num">{Number(l.base) ? Number(l.base).toLocaleString() : ''}</td>
-                {doc.components.map((c) => (
-                  <td key={c.id} className="num">
-                    {Number(l.values?.[c.id]) ? Number(l.values[c.id]).toLocaleString() : ''}
-                  </td>
-                ))}
-                <td className="num">{lineNet(l, doc.components).toLocaleString()}</td>
-                <td style={{ whiteSpace: 'pre-wrap' }}>{l.remarks}</td>
-              </tr>
-            ))}
+            {doc.lines.map((l, i) => {
+              const c = lineComputed(l, doc)
+              return (
+                <tr key={l.id}>
+                  <td style={{ textAlign: 'center' }}>{i + 1}</td>
+                  <td>{l.name}</td>
+                  <td className="num">{Number(l.base) ? Number(l.base).toLocaleString() : ''}</td>
+                  {doc.components.map((comp) => (
+                    <td key={comp.id} className="num">
+                      {Number(l.values?.[comp.id]) ? Number(l.values[comp.id]).toLocaleString() : ''}
+                    </td>
+                  ))}
+                  {usesPayroll && <td className="num">{c.overtimeAmount ? c.overtimeAmount.toLocaleString() : ''}</td>}
+                  {usesPayroll && <td className="num">{c.unpaidDeduction ? c.unpaidDeduction.toLocaleString() : ''}</td>}
+                  {usesPayroll && <td className="num">{c.loanDeduction ? c.loanDeduction.toLocaleString() : ''}</td>}
+                  <td className="num">{c.net.toLocaleString()}</td>
+                  <td style={{ whiteSpace: 'pre-wrap' }}>{l.remarks}</td>
+                </tr>
+              )
+            })}
           </tbody>
           <tfoot>
             <tr>
@@ -178,6 +222,9 @@ export default function SalarySheetPreview() {
                   {(totals.compTotals[c.id] || 0).toLocaleString()}
                 </td>
               ))}
+              {usesPayroll && <td className="num">{totals.overtime.toLocaleString()}</td>}
+              {usesPayroll && <td className="num">{totals.unpaidDeduction.toLocaleString()}</td>}
+              {usesPayroll && <td className="num">{totals.loan.toLocaleString()}</td>}
               <td className="num">{totals.net.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
               <td></td>
             </tr>

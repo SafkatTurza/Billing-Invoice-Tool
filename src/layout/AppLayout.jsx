@@ -124,6 +124,9 @@ export default function AppLayout() {
                   <NavLink to="/finance/employees" className="nav-item sub">
                     <Icon.users width={16} height={16} /> Employees
                   </NavLink>
+                  <NavLink to="/finance/loans" className="nav-item sub">
+                    <Icon.money width={16} height={16} /> Loans &amp; Advances
+                  </NavLink>
                   <NavLink to="/finance/salary-sheet" className="nav-item sub">
                     <Icon.wo width={16} height={16} /> Salary Sheets
                   </NavLink>

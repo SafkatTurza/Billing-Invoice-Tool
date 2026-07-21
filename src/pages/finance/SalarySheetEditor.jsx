@@ -3,8 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
 import { previewFinNumber } from '../../lib/finance.js'
-import { newSalarySheet, lineNet, sheetTotals, MONTHS } from '../../lib/salary.js'
-import { CURRENCIES } from '../../lib/format.js'
+import { newSalarySheet, lineNet, lineComputed, sheetTotals, MONTHS } from '../../lib/salary.js'
+import { activeLoansForEmployee, suggestedInstallment, loanOutstanding } from '../../lib/loans.js'
+import { CURRENCIES, formatMoney } from '../../lib/format.js'
 import { uid } from '../../lib/format.js'
 import { useToast } from '../../components/Toast.jsx'
 import { Icon } from '../../components/Icons.jsx'
@@ -13,7 +14,7 @@ import '../../styles/documents.css'
 export default function SalarySheetEditor() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { finDocs, saveFinDoc, employees } = useFinance()
+  const { finDocs, saveFinDoc, employees, loans } = useFinance()
   const { company, currentUser } = useApp()
   const toast = useToast()
 
@@ -28,6 +29,24 @@ export default function SalarySheetEditor() {
   const updLineValue = (lineId, compId, v) =>
     patch({ lines: doc.lines.map((l) => (l.id === lineId ? { ...l, values: { ...l.values, [compId]: v } } : l)) })
   const removeLine = (lineId) => patch({ lines: doc.lines.filter((l) => l.id !== lineId) })
+
+  // Resolve the employee record behind a line (for loan lookups).
+  const empForLine = (l) => employees.find((e) => e.id === l.employeeId || e.empId === l.empId)
+
+  // Pull each employee's suggested loan installment (capped at outstanding)
+  // into that line's loan deduction, in one click.
+  const autofillLoans = () => {
+    let filled = 0
+    patch({
+      lines: doc.lines.map((l) => {
+        const s = suggestedInstallment(loans, empForLine(l))
+        if (!s.loanId || s.amount <= 0) return l
+        filled++
+        return { ...l, loanId: s.loanId, loanDeduction: s.amount }
+      }),
+    })
+    toast[filled ? 'success' : 'error'](filled ? `Loan installment set on ${filled} line(s).` : 'No active loans for these employees.')
+  }
 
   const addComponent = () =>
     patch({ components: [...doc.components, { id: 'c-' + uid(), label: 'New Component', type: 'earning' }] })
@@ -95,7 +114,18 @@ export default function SalarySheetEditor() {
               ))}
             </select>
           </div>
+          <div className="field">
+            <label>Working Days</label>
+            <input type="number" className="input" value={doc.workingDays ?? ''} onChange={(e) => patch({ workingDays: e.target.value })} />
+          </div>
         </div>
+        <label className="row gap-8 center mt-16" style={{ cursor: 'pointer', fontWeight: 600 }}>
+          <input type="checkbox" checked={!!doc.payrollMode} onChange={(e) => patch({ payrollMode: e.target.checked })} />
+          Track attendance, overtime &amp; loan deductions
+        </label>
+        <p className="small muted" style={{ marginTop: 4 }}>
+          Unpaid-leave days are pro-rated on the base salary using Working Days; overtime is hours × rate; loan installments repay employee loans on approval.
+        </p>
       </div>
 
       {/* Components config */}
@@ -165,7 +195,7 @@ export default function SalarySheetEditor() {
                     </td>
                   ))}
                   <td>
-                    <input disabled value={lineNet(l, doc.components).toLocaleString('en-US', { minimumFractionDigits: 2 })} style={{ fontWeight: 700 }} />
+                    <input disabled value={lineNet(l, doc).toLocaleString('en-US', { minimumFractionDigits: 2 })} style={{ fontWeight: 700 }} />
                   </td>
                   <td>
                     <input value={l.remarks} onChange={(e) => updLine(l.id, { remarks: e.target.value })} />
@@ -196,6 +226,90 @@ export default function SalarySheetEditor() {
           </table>
         </div>
       </div>
+
+      {/* Attendance, overtime & loan deductions (Phase H) */}
+      {doc.payrollMode && (
+        <div className="form-section">
+          <h3>
+            Attendance, Overtime &amp; Loans
+            <button className="btn btn-ghost btn-sm" onClick={autofillLoans}>
+              <Icon.download width={14} height={14} /> Auto-fill loan installments
+            </button>
+          </h3>
+          <p className="small muted mb-16">
+            Working days this month: <b>{doc.workingDays || '—'}</b>. Leave a field blank for none. Overtime and loan repayments flow straight into each employee's Final Amount.
+          </p>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="items-table">
+              <thead>
+                <tr>
+                  <th style={{ width: 30 }}>SL</th>
+                  <th style={{ minWidth: 140 }}>Name</th>
+                  <th style={{ width: 90 }}>Present</th>
+                  <th style={{ width: 100 }}>Unpaid Leave</th>
+                  <th style={{ width: 90 }}>OT Hrs</th>
+                  <th style={{ width: 90 }}>OT Rate</th>
+                  <th style={{ width: 100 }}>OT Amount</th>
+                  <th style={{ minWidth: 150 }}>Loan / Advance</th>
+                  <th style={{ width: 110 }}>Installment</th>
+                </tr>
+              </thead>
+              <tbody>
+                {doc.lines.map((l, i) => {
+                  const c = lineComputed(l, doc)
+                  const empLoans = activeLoansForEmployee(loans, empForLine(l))
+                  return (
+                    <tr key={l.id}>
+                      <td style={{ textAlign: 'center', color: 'var(--text-faint)' }}>{i + 1}</td>
+                      <td>{l.name}</td>
+                      <td>
+                        <input type="number" value={l.presentDays ?? ''} onChange={(e) => updLine(l.id, { presentDays: e.target.value })} />
+                      </td>
+                      <td>
+                        <input type="number" value={l.unpaidLeave ?? ''} onChange={(e) => updLine(l.id, { unpaidLeave: e.target.value })} />
+                      </td>
+                      <td>
+                        <input type="number" value={l.overtimeHours ?? ''} onChange={(e) => updLine(l.id, { overtimeHours: e.target.value })} />
+                      </td>
+                      <td>
+                        <input type="number" value={l.overtimeRate ?? ''} onChange={(e) => updLine(l.id, { overtimeRate: e.target.value })} />
+                      </td>
+                      <td>
+                        <input disabled value={c.overtimeAmount ? c.overtimeAmount.toLocaleString() : ''} style={{ color: 'var(--green)', fontWeight: 700 }} />
+                      </td>
+                      <td>
+                        <select value={l.loanId || ''} onChange={(e) => updLine(l.id, { loanId: e.target.value })}>
+                          <option value="">— none —</option>
+                          {empLoans.map((ln) => (
+                            <option key={ln.id} value={ln.id}>
+                              {ln.type} · {formatMoney(loanOutstanding(ln), ln.currency)} left
+                            </option>
+                          ))}
+                          {/* keep a previously-chosen but now-settled loan selectable */}
+                          {l.loanId && !empLoans.some((ln) => ln.id === l.loanId) && <option value={l.loanId}>selected loan</option>}
+                        </select>
+                      </td>
+                      <td>
+                        <input type="number" value={l.loanDeduction ?? ''} onChange={(e) => updLine(l.id, { loanDeduction: e.target.value })} />
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'right', fontWeight: 700, padding: '8px' }}>
+                    Totals
+                  </td>
+                  <td style={{ fontWeight: 700, padding: '8px', color: 'var(--green)' }}>{totals.overtime.toLocaleString()}</td>
+                  <td></td>
+                  <td style={{ fontWeight: 700, padding: '8px', color: 'var(--red)' }}>{totals.loan.toLocaleString()}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      )}
 
       <div className="row gap-12 mt-16" style={{ justifyContent: 'flex-end' }}>
         <button className="btn btn-ghost" onClick={() => navigate('/finance/salary-sheet')}>

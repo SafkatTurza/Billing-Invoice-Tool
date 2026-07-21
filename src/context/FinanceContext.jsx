@@ -14,6 +14,7 @@ import {
   pushTimeline,
   DEFAULT_FIN_SETTINGS,
 } from '../lib/finance.js'
+import { loanOutstanding } from '../lib/loans.js'
 
 const FinanceContext = createContext(null)
 export function useFinance() {
@@ -49,6 +50,7 @@ export function FinanceProvider({ children }) {
   const [employees, setEmployees] = useState(() => ls.get(KEYS.employees, []))
   const [budgets, setBudgets] = useState(() => ls.get(KEYS.finBudgets, []))
   const [recurring, setRecurring] = useState(() => ls.get(KEYS.finRecurring, []))
+  const [loans, setLoans] = useState(() => ls.get(KEYS.finLoans, []))
   const [finSettings, setFinSettings] = useState(() => ({ ...DEFAULT_FIN_SETTINGS, ...ls.get(KEYS.finSettings, {}) }))
 
   useEffect(() => {
@@ -75,6 +77,9 @@ export function FinanceProvider({ children }) {
   useEffect(() => {
     ls.set(KEYS.finRecurring, recurring)
   }, [recurring])
+  useEffect(() => {
+    ls.set(KEYS.finLoans, loans)
+  }, [loans])
   useEffect(() => {
     ls.set(KEYS.finSettings, finSettings)
   }, [finSettings])
@@ -587,6 +592,57 @@ export function FinanceProvider({ children }) {
   }, [])
   const deleteTemplate = useCallback((id) => setTemplates((prev) => prev.filter((t) => t.id !== id)), [])
 
+  // ── Employee loans & advances (Phase H) ──
+  const saveLoan = useCallback(
+    (loan) => {
+      setLoans((prev) => {
+        const i = prev.findIndex((l) => l.id === loan.id)
+        if (i >= 0) {
+          const c = [...prev]
+          c[i] = loan
+          return c
+        }
+        return [...prev, loan]
+      })
+      addAudit('Loan saved', loan.empId || loan.employeeName, `${loan.type} ${loan.principal} ${loan.currency}`)
+    },
+    [addAudit],
+  )
+  const deleteLoan = useCallback((id) => setLoans((prev) => prev.filter((l) => l.id !== id)), [])
+
+  // Record a repayment against a loan. When it comes from a salary sheet the
+  // sheetId guards against double-applying if the sheet is re-approved; the
+  // amount is capped at the outstanding balance and the loan auto-closes.
+  const recordLoanRepayment = useCallback(
+    (loanId, { sheetId, date, amount, note }) => {
+      setLoans((prev) =>
+        prev.map((l) => {
+          if (l.id !== loanId) return l
+          if (sheetId && (l.repayments || []).some((r) => r.sheetId === sheetId)) return l
+          const amt = Math.min(Number(amount) || 0, loanOutstanding(l))
+          if (amt <= 0) return l
+          const repayments = [...(l.repayments || []), { id: uid(), sheetId: sheetId || null, date, amount: amt, note: note || '' }]
+          const repaid = repayments.reduce((s, r) => s + (Number(r.amount) || 0), 0)
+          const status = repaid >= (Number(l.principal) || 0) - 0.005 ? 'closed' : 'active'
+          return { ...l, repayments, status }
+        }),
+      )
+    },
+    [],
+  )
+
+  // Apply every loan installment carried on an approved salary sheet's lines.
+  const applySalaryLoanRepayments = useCallback(
+    (doc) => {
+      for (const l of doc.lines || []) {
+        if (l.loanId && Number(l.loanDeduction) > 0) {
+          recordLoanRepayment(l.loanId, { sheetId: doc.id, date: l.paymentDate || doc.date, amount: Number(l.loanDeduction), note: `Salary ${doc.docNumber}` })
+        }
+      }
+    },
+    [recordLoanRepayment],
+  )
+
   // ── Employees ──
   const saveEmployee = useCallback(
     (emp) => {
@@ -614,8 +670,13 @@ export function FinanceProvider({ children }) {
     employees,
     budgets,
     recurring,
+    loans,
     finSettings,
     saveFinSettings,
+    saveLoan,
+    deleteLoan,
+    recordLoanRepayment,
+    applySalaryLoanRepayments,
     notifyNextApprovers,
     rejectFinDoc,
     sendBackFinDoc,
