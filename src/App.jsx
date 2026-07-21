@@ -32,6 +32,8 @@ import Payslip from './pages/finance/Payslip.jsx'
 import IncomeRecords from './pages/finance/IncomeRecords.jsx'
 import IncomeReceipt from './pages/finance/IncomeReceipt.jsx'
 import FinancialReports from './pages/finance/FinancialReports.jsx'
+import GeneralLedger from './pages/finance/GeneralLedger.jsx'
+import Insights from './pages/finance/Insights.jsx'
 import Bills from './pages/finance/Bills.jsx'
 import Budgets from './pages/finance/Budgets.jsx'
 import Recurring from './pages/finance/Recurring.jsx'
@@ -140,6 +142,8 @@ function AppRoutes({ isSetupComplete, currentUser }) {
           <Route key="fin-income-view" path="finance/income/:id" element={<IncomeReceipt />} />,
           <Route key="fin-reports" path="finance/reports" element={<MonthlyReport />} />,
           <Route key="fin-statements" path="finance/statements" element={<FinancialReports />} />,
+          <Route key="fin-gl" path="finance/gl" element={<GeneralLedger />} />,
+          <Route key="fin-insights" path="finance/insights" element={<Insights />} />,
           <Route key="fin-employees" path="finance/employees" element={<Employees />} />,
           <Route key="sal-list" path="finance/salary-sheet" element={<FinanceDocList type="salary-sheet" />} />,
           <Route key="sal-view" path="finance/salary-sheet/:id" element={<SalarySheetPreview />} />,

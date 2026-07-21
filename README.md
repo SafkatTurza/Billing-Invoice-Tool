@@ -167,6 +167,29 @@ A centralized company-finance module alongside billing:
   marked *optional*; at or above it — or with routing off — the management (CEO/MD) final
   signature is required. Segregation of duties always applies on top.
 
+### Reporting & insight (Phase G)
+
+- **General Ledger** — three accountant's views off the posted ledger, each exportable to
+  Excel and printable to PDF:
+  - **Trial Balance** — a balancing debit/credit sheet as of any date, grouped by currency.
+    Cash/bank accounts are assets (debit), income & investment heads are credits, expense
+    heads are debits, and opening balances are carried by an *Opening Balance Equity* credit
+    so the sheet always ties out. A Balanced / Out-of-balance badge makes it obvious.
+  - **Ledger by Head** — every posting against a chosen head over a date range, with a running
+    net and per-currency totals.
+  - **Account Statement** — a bank-statement-style run for any cash/bank account: opening
+    balance, each in/out movement with a running balance, and a closing balance.
+- **Insights & Forecast** — the at-a-glance view, all currency-scoped:
+  - **Income vs Expense trend** — a 6- or 12-month bar chart of income and expense with a net
+    line, drawn as plain inline SVG (no charting library, prints cleanly).
+  - **Where the money goes** — expense-by-head over the window as proportional bars.
+  - **Cash-flow forecast** — projects the running cash balance forward from today: recurring
+    templates repeat each month, open vendor bills land in their due month, and unpaid invoices
+    are expected in their due month. Shown as a chart, a summary, and a month-by-month table.
+    It's a planning view only — nothing here posts to the ledger.
+- **Uniform export** — every report funnels through one Excel exporter (multi-sheet, titled
+  sections) and the same Print / PDF path, so exports look consistent across the pack.
+
 ### Finance access control (privacy)
 
 All finance **data entry** — requisitions/PRs, payment & debit vouchers, salary

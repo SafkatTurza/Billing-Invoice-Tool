@@ -136,6 +136,12 @@ export default function AppLayout() {
                   <NavLink to="/finance/statements" className="nav-item sub">
                     <Icon.estimate width={16} height={16} /> Financial Reports
                   </NavLink>
+                  <NavLink to="/finance/gl" className="nav-item sub">
+                    <Icon.audit width={16} height={16} /> General Ledger
+                  </NavLink>
+                  <NavLink to="/finance/insights" className="nav-item sub">
+                    <Icon.monitor width={16} height={16} /> Insights &amp; Forecast
+                  </NavLink>
                 </>
               )}
             </>
