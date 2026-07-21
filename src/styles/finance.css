@@ -53,6 +53,38 @@
 .appr-sig-img { height: 40px; max-width: 150px; object-fit: contain; }
 .appr-slot .appr-meta { font-size: 12px; color: var(--text-muted); }
 .appr-slot .grow { flex: 1; }
+.appr-slot.skipped { opacity: 0.6; border-style: dashed; background: #fafafa; }
+
+/* Threshold-routing note above the chain */
+.routing-note { font-size: 12.5px; font-weight: 600; padding: 9px 12px; border-radius: 8px; border: 1px solid; }
+.routing-note.high { color: #b45309; background: #fffbeb; border-color: #fde68a; }
+.routing-note.low { color: #0f766e; background: #f0fdfa; border-color: #99f6e4; }
+
+/* Reject / send-back action bar */
+.appr-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 2px; }
+
+/* Sent-back warning banner (reuses auth-error look, amber) */
+.warn-banner {
+  background: #fffbeb; border: 1px solid #fde68a; color: #92400e;
+  border-radius: 10px; padding: 12px 14px; font-size: 13px;
+}
+
+/* Approval timeline */
+.appr-timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.tl-item { display: flex; gap: 12px; position: relative; }
+.tl-item:not(:last-child)::before {
+  content: ''; position: absolute; left: 5px; top: 16px; bottom: -14px; width: 2px; background: var(--border);
+}
+.tl-dot { width: 12px; height: 12px; border-radius: 50%; margin-top: 3px; flex: 0 0 12px; z-index: 1; }
+.tl-dot.tl-gray { background: #94a3b8; }
+.tl-dot.tl-amber { background: var(--amber); }
+.tl-dot.tl-teal { background: #14b8a6; }
+.tl-dot.tl-red { background: var(--red); }
+.tl-dot.tl-green { background: var(--green); }
+.tl-body { flex: 1; }
+.tl-head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.tl-action { font-weight: 700; font-size: 13px; color: var(--navy); }
+.tl-detail { margin-top: 2px; color: var(--text-muted); white-space: pre-wrap; }
 
 .sig-preview { height: 46px; max-width: 180px; object-fit: contain; display: block; }
 .sig-slot-line { border-top: 1.5px solid #333; padding-top: 5px; margin-top: 30px; }

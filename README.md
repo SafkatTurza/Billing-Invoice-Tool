@@ -147,6 +147,26 @@ A centralized company-finance module alongside billing:
   automatically: a due entry shows a **Post now** button so a person stays in the loop,
   and each template records the last month it generated so it can't double-post.
 
+### Approval workflow maturity (Phase F)
+
+- **Maker-checker (segregation of duties)** — the person who prepares a document can
+  never check or approve it, and no one may sign two slots. The maker may only sign the
+  first (preparer) slot; the deciding signature must come from someone else.
+- **Reject & send-back** — an approver whose turn it is can **reject** a document (terminal,
+  reason required — the preparer is notified and can duplicate it as a fresh draft) or
+  **send it back for correction** (clears all signatures, returns it to the preparer as a
+  draft to edit and resubmit). Both capture a reason and show a banner on the document.
+- **Approval timeline** — every document carries a visible history: submitted, each
+  signature (with the slot), sent-back / rejected (with reason), approved, reversed —
+  who did it and when.
+- **Next-approver notifications** — submitting or signing a document pings the users whose
+  role can act on it next (reviewers, or management for the final sign-off), skipping the
+  maker and anyone who already signed.
+- **Threshold-based routing** — an optional amount gate (Settings → Approval Rules). Below
+  the threshold the checker can finalise approval on their own and the management slot is
+  marked *optional*; at or above it — or with routing off — the management (CEO/MD) final
+  signature is required. Segregation of duties always applies on top.
+
 ### Finance access control (privacy)
 
 All finance **data entry** — requisitions/PRs, payment & debit vouchers, salary

@@ -2,7 +2,18 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { ls, KEYS } from '../lib/storage.js'
 import { uid } from '../lib/format.js'
 import { useApp } from './AppContext.jsx'
-import { FIN_TYPES, FIN_STATUS, commitFinNumber, isVoucherType } from '../lib/finance.js'
+import { can } from '../lib/roles.js'
+import {
+  FIN_TYPES,
+  FIN_STATUS,
+  commitFinNumber,
+  isVoucherType,
+  finalSlotIndex,
+  requiresManagement,
+  approvalSlotIndex,
+  pushTimeline,
+  DEFAULT_FIN_SETTINGS,
+} from '../lib/finance.js'
 
 const FinanceContext = createContext(null)
 export function useFinance() {
@@ -28,7 +39,7 @@ const DEFAULT_ACCOUNTS = [
 ]
 
 export function FinanceProvider({ children }) {
-  const { currentUser, addAudit, notify, company } = useApp()
+  const { currentUser, addAudit, notify, company, users } = useApp()
 
   const [accounts, setAccounts] = useState(() => ls.get(KEYS.finAccounts, null) || DEFAULT_ACCOUNTS)
   const [heads, setHeads] = useState(() => ls.get(KEYS.finHeads, null) || DEFAULT_HEADS)
@@ -38,6 +49,7 @@ export function FinanceProvider({ children }) {
   const [employees, setEmployees] = useState(() => ls.get(KEYS.employees, []))
   const [budgets, setBudgets] = useState(() => ls.get(KEYS.finBudgets, []))
   const [recurring, setRecurring] = useState(() => ls.get(KEYS.finRecurring, []))
+  const [finSettings, setFinSettings] = useState(() => ({ ...DEFAULT_FIN_SETTINGS, ...ls.get(KEYS.finSettings, {}) }))
 
   useEffect(() => {
     ls.set(KEYS.finAccounts, accounts)
@@ -63,6 +75,11 @@ export function FinanceProvider({ children }) {
   useEffect(() => {
     ls.set(KEYS.finRecurring, recurring)
   }, [recurring])
+  useEffect(() => {
+    ls.set(KEYS.finSettings, finSettings)
+  }, [finSettings])
+
+  const saveFinSettings = useCallback((patch) => setFinSettings((prev) => ({ ...prev, ...patch })), [])
 
   // ── Masters ──
   const saveAccount = useCallback((acc) => {
@@ -220,6 +237,7 @@ export function FinanceProvider({ children }) {
                 reversedAt: new Date().toISOString(),
                 reversedBy: currentUser?.fullName || 'Unknown',
                 reversalReason: reason || '',
+                timeline: pushTimeline(d, 'reversed', reason, currentUser),
               }
             : d,
         ),
@@ -228,6 +246,103 @@ export function FinanceProvider({ children }) {
       notify(`${FIN_TYPES[doc.type]?.label || 'Document'} ${doc.docNumber} reversed`)
     },
     [finDocs, currentUser, voidTransactionsForDoc, addAudit, notify],
+  )
+
+  // ── Approval workflow (Phase F) ──────────────────────────────────────
+  // Notify whoever can act on a doc next: the users whose role can sign the
+  // next required slot (management for high-value/final, otherwise reviewers),
+  // skipping the maker and anyone who already signed.
+  const notifyNextApprovers = useCallback(
+    (doc) => {
+      const slots = doc.signSlots || []
+      const nextIdx = slots.findIndex((s) => !s.signed)
+      if (nextIdx < 0) return
+      const approveIdx = approvalSlotIndex(doc, finSettings)
+      if (approveIdx < 0 || nextIdx > approveIdx) return // no further approvals needed
+      const needFinal = nextIdx === finalSlotIndex(doc.type)
+      const perm = needFinal ? 'financeFinalApprove' : 'financeApprove'
+      const routeType = isVoucherType(doc.type) ? 'voucher' : doc.type
+      const link = `/finance/${routeType}/${doc.id}`
+      const signedIds = new Set(slots.filter((s) => s.signed).map((s) => s.signerId))
+      const label = FIN_TYPES[doc.type]?.label || 'Document'
+      for (const u of users) {
+        if (u.status === 'Pending' || u.status === 'Deactivated') continue
+        if (!can(u.role, perm)) continue
+        if (u.id === doc.createdBy) continue // maker can't approve own doc
+        if (signedIds.has(u.id)) continue // already signed a slot
+        notify(
+          `${label} ${doc.docNumber} awaits your ${needFinal ? 'final approval' : 'review'} — ${slots[nextIdx].label}`,
+          u.id,
+          link,
+        )
+      }
+    },
+    [users, notify, finSettings],
+  )
+
+  // Reject a pending doc (terminal). Reason required; the maker is notified and
+  // can duplicate-as-new to try again.
+  const rejectFinDoc = useCallback(
+    (id, reason) => {
+      const doc = finDocs.find((d) => d.id === id)
+      if (!doc) return
+      setFinDocs((prev) =>
+        prev.map((d) =>
+          d.id === id
+            ? {
+                ...d,
+                status: FIN_STATUS.REJECTED,
+                rejectedAt: new Date().toISOString(),
+                rejectedBy: currentUser?.fullName || 'Unknown',
+                rejectionReason: reason || '',
+                timeline: pushTimeline(d, 'rejected', reason, currentUser),
+              }
+            : d,
+        ),
+      )
+      addAudit('Finance doc rejected', doc.docNumber, reason || '')
+      const routeType = isVoucherType(doc.type) ? 'voucher' : doc.type
+      if (doc.createdBy)
+        notify(
+          `${FIN_TYPES[doc.type]?.label || 'Document'} ${doc.docNumber} was rejected: ${reason || 'no reason given'}`,
+          doc.createdBy,
+          `/finance/${routeType}/${doc.id}`,
+        )
+    },
+    [finDocs, currentUser, addAudit, notify],
+  )
+
+  // Send a pending doc back to the maker for correction: clears all signatures
+  // and returns it to Draft so the preparer can edit and resubmit.
+  const sendBackFinDoc = useCallback(
+    (id, reason) => {
+      const doc = finDocs.find((d) => d.id === id)
+      if (!doc) return
+      setFinDocs((prev) =>
+        prev.map((d) =>
+          d.id === id
+            ? {
+                ...d,
+                status: FIN_STATUS.DRAFT,
+                signSlots: (d.signSlots || []).map((s) => ({ label: s.label, signed: false })),
+                sentBackAt: new Date().toISOString(),
+                sentBackBy: currentUser?.fullName || 'Unknown',
+                sentBackReason: reason || '',
+                timeline: pushTimeline(d, 'sent-back', reason, currentUser),
+              }
+            : d,
+        ),
+      )
+      addAudit('Finance doc sent back', doc.docNumber, reason || '')
+      const routeType = isVoucherType(doc.type) ? 'voucher' : doc.type
+      if (doc.createdBy)
+        notify(
+          `${FIN_TYPES[doc.type]?.label || 'Document'} ${doc.docNumber} was sent back for correction: ${reason || ''}`,
+          doc.createdBy,
+          `/finance/${routeType}/${doc.id}`,
+        )
+    },
+    [finDocs, currentUser, addAudit, notify],
   )
 
   // Internal account transfer (contra): one linked out+in pair. Not an
@@ -499,6 +614,11 @@ export function FinanceProvider({ children }) {
     employees,
     budgets,
     recurring,
+    finSettings,
+    saveFinSettings,
+    notifyNextApprovers,
+    rejectFinDoc,
+    sendBackFinDoc,
     saveBill,
     recordBillPayment,
     saveBudget,

@@ -238,6 +238,7 @@ export function newFinDoc(type, company, user) {
     notes: '',
     attachments: [],
     signSlots: buildSlots(type),
+    timeline: [], // approval-workflow event history (Phase F)
   }
 
   if (type === 'requisition') {
@@ -316,4 +317,67 @@ export function newFinDoc(type, company, user) {
 
 export function requisitionTotal(doc) {
   return (doc.items || []).reduce((s, it) => s + (Number(it.finalAmount) || Number(it.calcAmount) || 0), 0)
+}
+
+// ── Approval workflow (Phase F) ──────────────────────────────────────────
+
+// Effective monetary amount of an approvable doc — used for threshold routing.
+export function docAmount(doc) {
+  if (!doc) return 0
+  if (isVoucherType(doc.type)) return voucherTotal(doc)
+  if (doc.type === 'requisition') return requisitionTotal(doc)
+  return Number(doc.amount) || Number(doc.total) || 0
+}
+
+// Approval-rules defaults. With routing disabled (or threshold 0) the
+// management/final signature is always required — the original behaviour.
+export const DEFAULT_FIN_SETTINGS = { thresholdEnabled: false, threshold: 50000 }
+
+// A doc is "high value" when routing is on and its amount meets the threshold.
+export function isHighValue(doc, settings) {
+  const s = settings || DEFAULT_FIN_SETTINGS
+  if (!s.thresholdEnabled || !(Number(s.threshold) > 0)) return false
+  return docAmount(doc) >= Number(s.threshold)
+}
+
+// Whether the management (final) slot must be signed to approve this doc.
+// Routing off, or a high-value doc → management required. Below threshold the
+// checker (slot before management) can finalise on their own.
+export function requiresManagement(doc, settings) {
+  const s = settings || DEFAULT_FIN_SETTINGS
+  if (!s.thresholdEnabled || !(Number(s.threshold) > 0)) return true
+  return isHighValue(doc, settings)
+}
+
+// Index of the slot whose signature completes approval under the routing rules:
+// the management slot when management is required, else the checker before it.
+export function approvalSlotIndex(doc, settings) {
+  const fi = finalSlotIndex(doc.type)
+  if (fi < 0) return -1
+  return requiresManagement(doc, settings) ? fi : Math.max(0, fi - 1)
+}
+
+// Human labels for timeline actions.
+export const WORKFLOW_LABELS = {
+  created: 'Created',
+  submitted: 'Submitted for approval',
+  signed: 'Signed',
+  'sent-back': 'Sent back for correction',
+  rejected: 'Rejected',
+  approved: 'Approved',
+  reversed: 'Reversed',
+}
+
+// Append an immutable event to a doc's approval timeline. Pure — returns the
+// new array; callers spread it into the saved doc.
+export function pushTimeline(doc, action, detail, user) {
+  const entry = {
+    id: uid(),
+    at: new Date().toISOString(),
+    byId: user?.id || null,
+    byName: user?.fullName || 'Unknown',
+    action,
+    detail: detail || '',
+  }
+  return [...(doc?.timeline || []), entry]
 }

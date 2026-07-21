@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
-import { FIN_TYPES, FIN_STATUS, requisitionTotal, voucherTotal, voucherAccent, voucherLabel, isVoucherType } from '../../lib/finance.js'
+import { FIN_TYPES, FIN_STATUS, requisitionTotal, voucherTotal, voucherAccent, voucherLabel, isVoucherType, pushTimeline } from '../../lib/finance.js'
 import { can } from '../../lib/roles.js'
 import { formatMoney, formatDate } from '../../lib/format.js'
 import { amountInWords } from '../../lib/amountInWords.js'
 import { AttachmentList } from '../../components/AttachmentField.jsx'
 import ApprovalChain from '../../components/finance/ApprovalChain.jsx'
+import ApprovalTimeline from '../../components/finance/ApprovalTimeline.jsx'
 import ReverseModal from '../../components/finance/ReverseModal.jsx'
 import { useToast } from '../../components/Toast.jsx'
 import { Icon } from '../../components/Icons.jsx'
@@ -26,7 +27,7 @@ const STATUS_BADGE = {
 export default function FinanceDocPreview({ type }) {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { finDocs, saveFinDoc, onDocApproved, reverseFinDoc, duplicateFinDoc } = useFinance()
+  const { finDocs, saveFinDoc, onDocApproved, reverseFinDoc, duplicateFinDoc, finSettings, notifyNextApprovers, rejectFinDoc, sendBackFinDoc } = useFinance()
   const { findCompany, currentUser } = useApp()
   const toast = useToast()
   const meta = FIN_TYPES[type]
@@ -46,16 +47,31 @@ export default function FinanceDocPreview({ type }) {
   }
   const company = findCompany(doc)
 
-  // Atomic: save the new slots and (if this completes management approval) the
-  // Approved status together, then post to the ledger once.
-  const onSign = (newSlots, { completesApproval }) => {
-    const patch = { signSlots: newSlots }
-    if (completesApproval && doc.status !== FIN_STATUS.APPROVED) patch.status = FIN_STATUS.APPROVED
+  // Atomic: save the new slots and (if this completes approval) the Approved
+  // status together, record the timeline event, then post to the ledger once.
+  const onSign = (newSlots, { completesApproval, signedLabel }) => {
+    const becomesApproved = completesApproval && doc.status !== FIN_STATUS.APPROVED
+    const patch = {
+      signSlots: newSlots,
+      timeline: pushTimeline(doc, becomesApproved ? 'approved' : 'signed', signedLabel, currentUser),
+    }
+    if (becomesApproved) patch.status = FIN_STATUS.APPROVED
     const saved = saveFinDoc({ ...doc, ...patch })
-    if (patch.status === FIN_STATUS.APPROVED) {
+    if (becomesApproved) {
       onDocApproved(saved)
       toast.success(`${meta.label} approved — posted to the ledger and monthly expenditure.`)
+    } else {
+      notifyNextApprovers(saved)
     }
+  }
+
+  const onReject = (reason) => {
+    rejectFinDoc(doc.id, reason)
+    toast.success(`${meta.label} rejected — the preparer has been notified.`)
+  }
+  const onSendBack = (reason) => {
+    sendBackFinDoc(doc.id, reason)
+    toast.success(`${meta.label} sent back to the preparer for correction.`)
   }
 
   const onReverse = (reason) => {
@@ -116,20 +132,47 @@ export default function FinanceDocPreview({ type }) {
         </div>
       )}
 
+      {doc.status === FIN_STATUS.REJECTED && (
+        <div className="auth-error no-print" style={{ marginBottom: 18 }}>
+          <b>Rejected</b> by {doc.rejectedBy || 'Unknown'} on {formatDate(doc.rejectedAt)}.
+          {doc.rejectionReason ? <div style={{ marginTop: 4 }}>Reason: {doc.rejectionReason}</div> : null}
+          {canManage ? <div style={{ marginTop: 4 }}>Use <b>Duplicate</b> to start a fresh draft.</div> : null}
+        </div>
+      )}
+      {doc.sentBackReason && doc.status === FIN_STATUS.DRAFT && (
+        <div className="warn-banner no-print" style={{ marginBottom: 18 }}>
+          <b>Sent back for correction</b> by {doc.sentBackBy || 'Unknown'} on {formatDate(doc.sentBackAt)}.
+          {doc.sentBackReason ? <div style={{ marginTop: 4 }}>Reason: {doc.sentBackReason}</div> : null}
+          {canManage ? <div style={{ marginTop: 4 }}>Edit the document and save to resubmit for approval.</div> : null}
+        </div>
+      )}
+
       {/* Approval chain (interactive) — hidden once reversed */}
       {meta.approvable && doc.status !== FIN_STATUS.REVERSED && (
         <div className="card card-pad no-print" style={{ marginBottom: 18 }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--navy)', marginBottom: 4 }}>Approval Chain</h3>
           <p className="small muted mb-16">
-            Signatures are applied in order; management (CEO/MD) signs last. Once the final signature is
-            applied, this document is approved and its amount is added to expenses.
+            Signatures are applied in order and the maker can't approve their own document. Once the
+            deciding signature is applied, the document is approved and its amount is added to expenses.
           </p>
           <ApprovalChain
             type={type}
+            doc={doc}
             slots={doc.signSlots}
+            settings={finSettings}
             onSign={onSign}
+            onReject={onReject}
+            onSendBack={onSendBack}
             readOnly={doc.status === FIN_STATUS.REJECTED}
           />
+        </div>
+      )}
+
+      {/* Approval timeline (history) */}
+      {meta.approvable && (doc.timeline?.length > 0) && (
+        <div className="card card-pad no-print" style={{ marginBottom: 18 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--navy)', marginBottom: 10 }}>Approval Timeline</h3>
+          <ApprovalTimeline timeline={doc.timeline} />
         </div>
       )}
 
@@ -163,7 +206,7 @@ export default function FinanceDocPreview({ type }) {
   )
 }
 
-function Letterhead({ company, title, ref, date }) {
+function Letterhead({ company, title, refId, date }) {
   return (
     <>
       <div className="fin-letterhead">
@@ -171,7 +214,7 @@ function Letterhead({ company, title, ref, date }) {
         <div className="fl-center">
           <div className="fl-co">{company.name}</div>
           <div className="fl-title">{title}</div>
-          {ref && <div className="fl-ref mono">Ref ID: {ref}</div>}
+          {refId && <div className="fl-ref mono">Ref ID: {refId}</div>}
         </div>
         <div className="fl-logo">{company.logo ? <img src={company.logo} alt="" /> : (company.name || 'D')[0]}</div>
       </div>
@@ -202,7 +245,7 @@ function RequisitionPaper({ doc, company }) {
   const total = requisitionTotal(doc)
   return (
     <div>
-      <Letterhead company={company} title="Office Requisition" ref={doc.docNumber} date={doc.date} />
+      <Letterhead company={company} title="Office Requisition" refId={doc.docNumber} date={doc.date} />
       <table className="fin-table">
         <thead>
           <tr>

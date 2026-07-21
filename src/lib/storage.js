@@ -27,6 +27,7 @@ export const KEYS = {
   employees: 'dcs_employees', // salary (Phase B)
   finBudgets: 'dcs_fin_budgets', // monthly budget per expense head (Phase E)
   finRecurring: 'dcs_fin_recurring', // recurring expense/bill templates (Phase E)
+  finSettings: 'dcs_fin_settings', // approval-workflow rules, e.g. routing threshold (Phase F)
 }
 
 export const ls = {

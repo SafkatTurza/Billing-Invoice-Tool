@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
-import { FIN_TYPES, newFinDoc, newReqItem, newVoucherLine, requisitionTotal, voucherTotal, FIN_STATUS } from '../../lib/finance.js'
+import { FIN_TYPES, newFinDoc, newReqItem, newVoucherLine, requisitionTotal, voucherTotal, FIN_STATUS, pushTimeline } from '../../lib/finance.js'
 import { CURRENCIES } from '../../lib/format.js'
 import { amountInWords } from '../../lib/amountInWords.js'
 import AttachmentField from '../../components/AttachmentField.jsx'
@@ -15,7 +15,7 @@ import '../../styles/documents.css'
 export default function FinanceDocEditor({ type }) {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { finDocs, saveFinDoc, templates, saveTemplate } = useFinance()
+  const { finDocs, saveFinDoc, templates, saveTemplate, notifyNextApprovers } = useFinance()
   const { company, currentUser } = useApp()
   const toast = useToast()
   const meta = FIN_TYPES[type]
@@ -34,9 +34,13 @@ export default function FinanceDocEditor({ type }) {
     // Keep the single amount field in sync with an itemised breakdown, so the
     // list, preview, and ledger all agree on the effective total.
     const amount = isReq ? doc.amount : total
-    // Submitting for approval moves Draft → Pending.
-    const status = doc.status === FIN_STATUS.DRAFT ? FIN_STATUS.PENDING : doc.status
-    const saved = saveFinDoc({ ...doc, total, amount, status })
+    // Submitting for approval moves Draft → Pending (also covers resubmitting a
+    // sent-back doc), recording a timeline event and pinging the next approvers.
+    const submitting = doc.status === FIN_STATUS.DRAFT
+    const status = submitting ? FIN_STATUS.PENDING : doc.status
+    const timeline = submitting ? pushTimeline(doc, 'submitted', '', currentUser) : doc.timeline
+    const saved = saveFinDoc({ ...doc, total, amount, status, timeline })
+    if (submitting && meta.approvable) notifyNextApprovers(saved)
     toast.success(`${meta.label} saved — routed for approval.`)
     navigate(goPreview ? `/finance/${type}/${saved.id}` : `/finance/${type}`)
   }

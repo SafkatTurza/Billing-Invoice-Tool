@@ -1,35 +1,66 @@
 import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
 import { can } from '../../lib/roles.js'
-import { finalSlotIndex } from '../../lib/finance.js'
+import { finalSlotIndex, requiresManagement, approvalSlotIndex, isHighValue } from '../../lib/finance.js'
 import { todayISO, formatDate } from '../../lib/format.js'
 import Modal from '../Modal.jsx'
 import { useToast } from '../Toast.jsx'
 import { Icon } from '../Icons.jsx'
 
-// Sequential signature/approval chain. Each slot is signed in order; the
-// management slot (finalSlotIndex) may only be signed by someone with
-// financeFinalApprove, and only after all earlier slots are signed. When the
-// final slot is signed the whole doc is Approved.
+// Sequential signature/approval chain with maker-checker segregation of duties
+// and threshold-based routing.
 //
-// `slots` is an array of { label, signerName?, signerId?, signatureImg?, date?, signed }.
-// onSign(index, patch) mutates one slot; onFullyApproved() fires when the
-// management slot gets signed.
-export default function ApprovalChain({ type, slots, onSign, onFullyApproved, readOnly }) {
+// • Signatures are applied in order. The maker (doc creator) may only sign the
+//   first (preparer) slot; they can't check or approve their own document, and
+//   no one may sign more than one slot.
+// • The management slot (finalSlotIndex) needs financeFinalApprove; other slots
+//   need financeApprove.
+// • Threshold routing: below the configured amount the checker (slot before
+//   management) finalises approval and the management slot is "not required";
+//   at/above it — or with routing off — management must sign.
+//
+// onSign(newSlots, { completesApproval, signedLabel }) applies one signature.
+// onReject(reason) / onSendBack(reason) end or return the document.
+export default function ApprovalChain({ type, doc, slots, settings, onSign, onReject, onSendBack, readOnly }) {
   const { currentUser } = useApp()
   const toast = useToast()
   const [signingIdx, setSigningIdx] = useState(null)
   const [signDate, setSignDate] = useState(todayISO())
+  const [decision, setDecision] = useState(null) // 'reject' | 'sendback'
+  const [reason, setReason] = useState('')
 
   const finalIdx = finalSlotIndex(type)
-  const firstUnsigned = slots.findIndex((s) => !s.signed)
+  const mgmtRequired = requiresManagement(doc, settings)
+  const approveIdx = approvalSlotIndex(doc, settings)
+  // When management isn't required, its slot is skipped from the sequence
+  // (kept on the doc for the record, marked "not required").
+  const isSkipped = (idx) => !mgmtRequired && idx === finalIdx
+  const firstUnsigned = slots.findIndex((s, i) => !s.signed && !isSkipped(i))
+
+  const isCreator = doc?.createdBy && doc.createdBy === currentUser.id
+  const signedByMe = slots.some((s) => s.signed && s.signerId === currentUser.id)
 
   const canSignSlot = (idx) => {
     if (readOnly) return false
-    if (slots[idx].signed) return false
+    if (slots[idx].signed || isSkipped(idx)) return false
     if (idx !== firstUnsigned) return false // strictly sequential
+    if (signedByMe) return false // one signature per person (SoD)
+    if (idx > 0 && isCreator) return false // maker can't check/approve own doc
     if (idx === finalIdx) return can(currentUser.role, 'financeFinalApprove')
     return can(currentUser.role, 'financeApprove')
+  }
+
+  // Whether it's this user's turn — enables the reject / send-back actions.
+  const canActNow = firstUnsigned >= 0 && canSignSlot(firstUnsigned)
+
+  const blockedReason = (idx) => {
+    if (readOnly) return 'Awaiting signature'
+    if (isSkipped(idx)) return 'Not required (below threshold)'
+    if (idx !== firstUnsigned) return 'Waiting for prior signatures'
+    if (signedByMe) return 'You already signed a slot'
+    if (idx > 0 && isCreator) return "Maker can't approve own document"
+    if (idx === finalIdx) return 'Awaits management'
+    return 'Not permitted'
   }
 
   const doSign = () => {
@@ -38,8 +69,6 @@ export default function ApprovalChain({ type, slots, onSign, onFullyApproved, re
       toast.error('Add your signature first in Settings → My Account.')
       return
     }
-    // Build the full updated slot array and hand it to the parent in ONE
-    // update, so the signature and any resulting approval are saved atomically.
     const newSlots = slots.map((s, i) =>
       i === idx
         ? {
@@ -52,22 +81,45 @@ export default function ApprovalChain({ type, slots, onSign, onFullyApproved, re
           }
         : s,
     )
-    const completesApproval = idx === finalIdx || newSlots.every((s) => s.signed)
-    onSign(newSlots, { completesApproval })
+    const completesApproval = idx === approveIdx || newSlots.every((s, i) => s.signed || isSkipped(i))
+    onSign(newSlots, { completesApproval, signedLabel: slots[idx].label })
     setSigningIdx(null)
     if (!completesApproval) toast.success('Signed.')
   }
 
+  const submitDecision = () => {
+    const r = reason.trim()
+    if (!r) {
+      toast.error('A reason is required.')
+      return
+    }
+    if (decision === 'reject') onReject?.(r)
+    else onSendBack?.(r)
+    setDecision(null)
+    setReason('')
+  }
+
+  const highValue = isHighValue(doc, settings)
+
   return (
     <div className="approval-chain">
+      {(settings?.thresholdEnabled && Number(settings?.threshold) > 0) && (
+        <div className={`routing-note ${highValue ? 'high' : 'low'}`}>
+          {highValue
+            ? 'High-value document — management (final) approval required.'
+            : 'Below the approval threshold — the checker can finalise; management sign-off is optional.'}
+        </div>
+      )}
+
       {slots.map((s, idx) => {
         const isFinal = idx === finalIdx
+        const skipped = isSkipped(idx)
         const next = idx === firstUnsigned && !s.signed
         return (
-          <div key={idx} className={`appr-slot ${s.signed ? 'signed' : ''} ${next && !readOnly ? 'next' : ''}`}>
+          <div key={idx} className={`appr-slot ${s.signed ? 'signed' : ''} ${skipped ? 'skipped' : ''} ${next && !readOnly ? 'next' : ''}`}>
             <div className="appr-role">
               {s.label}
-              {isFinal && <span className="mgmt">Management — final approval</span>}
+              {isFinal && <span className="mgmt">Management — {mgmtRequired ? 'final approval' : 'optional'}</span>}
             </div>
             {s.signed ? (
               <>
@@ -90,24 +142,32 @@ export default function ApprovalChain({ type, slots, onSign, onFullyApproved, re
                       setSignDate(todayISO())
                     }}
                   >
-                    <Icon.edit width={14} height={14} /> Sign {isFinal ? '& Approve' : ''}
+                    <Icon.edit width={14} height={14} /> Sign {isFinal ? '& Approve' : approveIdx === idx ? '& Approve' : ''}
                   </button>
                 ) : (
-                  <span className="small faint">
-                    {readOnly
-                      ? 'Awaiting signature'
-                      : next
-                        ? isFinal
-                          ? 'Awaits management'
-                          : 'Not permitted'
-                        : 'Waiting for prior signatures'}
-                  </span>
+                  <span className="small faint">{blockedReason(idx)}</span>
                 )}
               </>
             )}
           </div>
         )
       })}
+
+      {/* Reject / send-back — available to whoever can act on the doc now. */}
+      {canActNow && (onReject || onSendBack) && (
+        <div className="appr-actions">
+          {onSendBack && (
+            <button className="btn btn-ghost btn-sm" onClick={() => setDecision('sendback')}>
+              <Icon.edit width={14} height={14} /> Send back
+            </button>
+          )}
+          {onReject && (
+            <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)' }} onClick={() => setDecision('reject')}>
+              <Icon.x width={14} height={14} /> Reject
+            </button>
+          )}
+        </div>
+      )}
 
       {signingIdx != null && (
         <Modal
@@ -140,6 +200,48 @@ export default function ApprovalChain({ type, slots, onSign, onFullyApproved, re
           <div className="field" style={{ maxWidth: 220 }}>
             <label>Signature Date</label>
             <input type="date" className="input" value={signDate} onChange={(e) => setSignDate(e.target.value)} />
+          </div>
+        </Modal>
+      )}
+
+      {decision && (
+        <Modal
+          title={decision === 'reject' ? 'Reject document' : 'Send back for correction'}
+          onClose={() => {
+            setDecision(null)
+            setReason('')
+          }}
+          footer={
+            <>
+              <button
+                className="btn btn-ghost"
+                onClick={() => {
+                  setDecision(null)
+                  setReason('')
+                }}
+              >
+                Cancel
+              </button>
+              <button className={`btn ${decision === 'reject' ? 'btn-danger' : 'btn-primary'}`} onClick={submitDecision}>
+                {decision === 'reject' ? 'Reject' : 'Send back'}
+              </button>
+            </>
+          }
+        >
+          <p className="muted" style={{ marginBottom: 12 }}>
+            {decision === 'reject'
+              ? 'Rejecting ends this document. The preparer is notified and can duplicate it as a new draft to try again.'
+              : 'Sending back clears all signatures and returns the document to the preparer as a draft to edit and resubmit.'}
+          </p>
+          <div className="field">
+            <label>Reason {decision === 'reject' ? '(required)' : '(required)'}</label>
+            <textarea
+              className="input"
+              rows={3}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder={decision === 'reject' ? 'Why is this being rejected?' : 'What needs to be corrected?'}
+            />
           </div>
         </Modal>
       )}
