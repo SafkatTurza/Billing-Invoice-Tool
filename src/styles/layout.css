@@ -71,6 +71,18 @@
 }
 .nav-group-toggle .arr.open { transform: rotate(180deg); }
 .nav-item.sub { padding-left: 26px; }
+/* Finance sub-group headers (Transactions / Payroll / Reports) — smaller,
+   uppercase caption sitting between the Finance toggle and its items. */
+.nav-group-toggle.sub {
+  padding: 6px 11px 6px 24px;
+  margin-top: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #67708c;
+}
+.nav-item.sub2 { padding-left: 40px; }
 .nav-divider {
   height: 1px;
   background: rgba(255, 255, 255, 0.08);

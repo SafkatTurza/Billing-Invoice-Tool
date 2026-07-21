@@ -20,11 +20,61 @@ const PURCHASES = [
   { type: 'work-orders', label: 'Work Orders', icon: Icon.wo },
 ]
 
+// Finance sub-groups: three buckets so the module reads at a glance instead of
+// a flat 16-item list. Overview stays pinned above these. Order within each
+// bucket is kept intact so nothing feels relocated.
+const FIN_TRANSACTIONS = [
+  { to: '/finance/requisition', label: 'Requisitions', icon: Icon.invoice },
+  { to: '/finance/voucher', label: 'Vouchers', icon: Icon.money },
+  { to: '/finance/expenses', label: 'Daily Expenses', icon: Icon.po },
+  { to: '/finance/bills', label: 'Bills & Payables', icon: Icon.receipt },
+  { to: '/finance/income', label: 'Income & Investment', icon: Icon.money },
+  { to: '/finance/recurring', label: 'Recurring', icon: Icon.audit },
+]
+const FIN_PAYROLL = [
+  { to: '/finance/employees', label: 'Employees', icon: Icon.users },
+  { to: '/finance/salary-sheet', label: 'Salary Sheets', icon: Icon.wo },
+  { to: '/finance/loans', label: 'Loans & Advances', icon: Icon.money },
+]
+const FIN_REPORTS = [
+  { to: '/finance/budgets', label: 'Budgets', icon: Icon.estimate },
+  { to: '/finance/ledger', label: 'Ledger', icon: Icon.audit },
+  { to: '/finance/gl', label: 'General Ledger', icon: Icon.audit },
+  { to: '/finance/reports', label: 'Monthly Report', icon: Icon.estimate },
+  { to: '/finance/statements', label: 'Financial Reports', icon: Icon.estimate },
+  { to: '/finance/insights', label: 'Insights & Forecast', icon: Icon.monitor },
+]
+
 export default function AppLayout() {
   const { currentUser, docs } = useApp()
   const role = currentUser.role
-  const [groups, setGroups] = useState({ sales: true, purchases: true, finance: true })
+  const [groups, setGroups] = useState({
+    sales: true,
+    purchases: true,
+    finance: true,
+    finTxn: true,
+    finPayroll: true,
+    finReports: true,
+  })
   const toggle = (id) => setGroups((g) => ({ ...g, [id]: !g[id] }))
+
+  // A collapsible sub-group inside the Finance section.
+  const FinSub = ({ id, label, items }) => (
+    <>
+      <button className="nav-group-toggle sub" onClick={() => toggle(id)}>
+        {label}
+        <span className={`arr${groups[id] ? ' open' : ''}`}>
+          <Icon.chevron width={12} height={12} />
+        </span>
+      </button>
+      {groups[id] &&
+        items.map((it) => (
+          <NavLink key={it.to} to={it.to} className="nav-item sub2">
+            <it.icon width={16} height={16} /> {it.label}
+          </NavLink>
+        ))}
+    </>
+  )
 
   const liveDocs = docs.filter((d) => !d.deleted)
   const counts = useMemo(() => {
@@ -100,51 +150,9 @@ export default function AppLayout() {
                   <NavLink to="/finance" end className="nav-item sub">
                     <Icon.dashboard width={16} height={16} /> Overview
                   </NavLink>
-                  <NavLink to="/finance/requisition" className="nav-item sub">
-                    <Icon.invoice width={16} height={16} /> Requisitions
-                  </NavLink>
-                  <NavLink to="/finance/voucher" className="nav-item sub">
-                    <Icon.money width={16} height={16} /> Vouchers
-                  </NavLink>
-                  <NavLink to="/finance/expenses" className="nav-item sub">
-                    <Icon.po width={16} height={16} /> Daily Expenses
-                  </NavLink>
-                  <NavLink to="/finance/bills" className="nav-item sub">
-                    <Icon.receipt width={16} height={16} /> Bills &amp; Payables
-                  </NavLink>
-                  <NavLink to="/finance/income" className="nav-item sub">
-                    <Icon.money width={16} height={16} /> Income &amp; Investment
-                  </NavLink>
-                  <NavLink to="/finance/budgets" className="nav-item sub">
-                    <Icon.estimate width={16} height={16} /> Budgets
-                  </NavLink>
-                  <NavLink to="/finance/recurring" className="nav-item sub">
-                    <Icon.audit width={16} height={16} /> Recurring
-                  </NavLink>
-                  <NavLink to="/finance/employees" className="nav-item sub">
-                    <Icon.users width={16} height={16} /> Employees
-                  </NavLink>
-                  <NavLink to="/finance/loans" className="nav-item sub">
-                    <Icon.money width={16} height={16} /> Loans &amp; Advances
-                  </NavLink>
-                  <NavLink to="/finance/salary-sheet" className="nav-item sub">
-                    <Icon.wo width={16} height={16} /> Salary Sheets
-                  </NavLink>
-                  <NavLink to="/finance/ledger" className="nav-item sub">
-                    <Icon.audit width={16} height={16} /> Ledger
-                  </NavLink>
-                  <NavLink to="/finance/reports" className="nav-item sub">
-                    <Icon.estimate width={16} height={16} /> Monthly Report
-                  </NavLink>
-                  <NavLink to="/finance/statements" className="nav-item sub">
-                    <Icon.estimate width={16} height={16} /> Financial Reports
-                  </NavLink>
-                  <NavLink to="/finance/gl" className="nav-item sub">
-                    <Icon.audit width={16} height={16} /> General Ledger
-                  </NavLink>
-                  <NavLink to="/finance/insights" className="nav-item sub">
-                    <Icon.monitor width={16} height={16} /> Insights &amp; Forecast
-                  </NavLink>
+                  <FinSub id="finTxn" label="Transactions" items={FIN_TRANSACTIONS} />
+                  <FinSub id="finPayroll" label="Payroll &amp; People" items={FIN_PAYROLL} />
+                  <FinSub id="finReports" label="Reports &amp; Analysis" items={FIN_REPORTS} />
                 </>
               )}
             </>
