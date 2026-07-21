@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useFinance } from '../../context/FinanceContext.jsx'
+import { useApp } from '../../context/AppContext.jsx'
+import { can } from '../../lib/roles.js'
 import { newEmployee, commitEmpId, EMPLOYMENT_TYPES, EMP_STATUSES } from '../../lib/salary.js'
 import { CURRENCIES, formatMoney } from '../../lib/format.js'
 import { useToast } from '../../components/Toast.jsx'
@@ -17,7 +19,9 @@ const STATUS_BADGE = {
 
 export default function Employees() {
   const { employees, saveEmployee, deleteEmployee } = useFinance()
+  const { currentUser } = useApp()
   const toast = useToast()
+  const canManage = can(currentUser.role, 'financeManage')
   const [editing, setEditing] = useState(null)
 
   const startNew = () => setEditing(newEmployee())
@@ -45,9 +49,11 @@ export default function Employees() {
           <h1 className="page-title">Employees</h1>
           <p className="page-sub">Staff records used to pre-fill salary sheets and payslips.</p>
         </div>
-        <button className="btn btn-primary" onClick={startNew}>
-          <Icon.plus width={16} height={16} /> Add Employee
-        </button>
+        {canManage && (
+          <button className="btn btn-primary" onClick={startNew}>
+            <Icon.plus width={16} height={16} /> Add Employee
+          </button>
+        )}
       </div>
 
       <div className="card mt-24">
@@ -80,11 +86,13 @@ export default function Employees() {
                   <td className="text-right nowrap">
                     <div className="row gap-8" style={{ justifyContent: 'flex-end' }}>
                       <button className="btn btn-ghost btn-sm" onClick={() => startEdit(e)}>
-                        <Icon.edit width={14} height={14} /> Edit
+                        <Icon.edit width={14} height={14} /> {canManage ? 'Edit' : 'View'}
                       </button>
-                      <button className="btn btn-danger btn-sm" onClick={() => confirm(`Remove ${e.name}?`) && deleteEmployee(e.id)}>
-                        <Icon.trash width={14} height={14} />
-                      </button>
+                      {canManage && (
+                        <button className="btn btn-danger btn-sm" onClick={() => confirm(`Remove ${e.name}?`) && deleteEmployee(e.id)}>
+                          <Icon.trash width={14} height={14} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -96,17 +104,19 @@ export default function Employees() {
 
       {editing && (
         <Modal
-          title={employees.some((e) => e.id === editing.id) ? 'Edit Employee' : 'Add Employee'}
+          title={!canManage ? 'Employee Details' : employees.some((e) => e.id === editing.id) ? 'Edit Employee' : 'Add Employee'}
           width={640}
           onClose={() => setEditing(null)}
           footer={
             <>
               <button className="btn btn-ghost" onClick={() => setEditing(null)}>
-                Cancel
+                {canManage ? 'Cancel' : 'Close'}
               </button>
-              <button className="btn btn-primary" onClick={save}>
-                Save Employee
-              </button>
+              {canManage && (
+                <button className="btn btn-primary" onClick={save}>
+                  Save Employee
+                </button>
+              )}
             </>
           }
         >

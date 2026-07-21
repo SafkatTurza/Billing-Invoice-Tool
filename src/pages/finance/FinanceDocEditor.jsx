@@ -274,13 +274,40 @@ function RequisitionBody({ doc, patch }) {
 }
 
 function VoucherBody({ doc, patch, type }) {
-  const { accounts, heads } = useFinance()
+  const { accounts, heads, employees } = useFinance()
   const isDebit = type === 'debit-voucher'
   const expenseHeads = heads.filter((h) => h.kind === 'expense')
+
+  // Accounts/Super Admin select the employee this voucher relates to (optional —
+  // vouchers can also be raised for non-employee payees).
+  const onSelectEmployee = (empId) => {
+    if (!empId) return patch({ employeeId: '', empId: '', employeeName: '' })
+    const emp = employees.find((e) => e.id === empId)
+    if (!emp) return
+    patch({
+      employeeId: emp.id,
+      empId: emp.empId,
+      employeeName: emp.name,
+      // Prefill "received from" when it's blank, for convenience.
+      receivedFrom: doc.receivedFrom || emp.name,
+    })
+  }
+
   return (
     <div className="form-section">
       <h3>{isDebit ? 'Debit' : 'Payment'} Voucher Details</h3>
       <div className="grid grid-2">
+        <div className="field">
+          <label>Employee (optional)</label>
+          <select className="select" value={doc.employeeId || ''} onChange={(e) => onSelectEmployee(e.target.value)}>
+            <option value="">— Not employee-related —</option>
+            {employees.map((emp) => (
+              <option key={emp.id} value={emp.id}>
+                {emp.empId} — {emp.name}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="field">
           <label>Received with thanks from</label>
           <input className="input" value={doc.receivedFrom} onChange={(e) => patch({ receivedFrom: e.target.value })} />

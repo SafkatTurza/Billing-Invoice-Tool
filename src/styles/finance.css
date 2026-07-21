@@ -117,3 +117,20 @@
 
 .ledger-in { color: var(--green); font-weight: 700; }
 .ledger-out { color: var(--red); font-weight: 700; }
+
+/* ── Financial reports (Phase C) ─────────────────────────── */
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.seg-btn { background: #fff; border: none; padding: 7px 14px; font-size: 13px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-left: 1px solid var(--border); }
+.seg-btn:first-child { border-left: none; }
+.seg-btn.active { background: var(--navy); color: #fff; }
+.report-card .report-table td { padding: 7px 16px; }
+.report-table .rt-cur td { background: #f6f8fb; font-weight: 800; color: var(--navy); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+.report-table .rt-strong td { font-weight: 700; }
+.report-table .rt-total td { border-top: 2px solid var(--border); font-weight: 800; }
+.report-print-head { text-align: center; margin-bottom: 12px; }
+.report-print-head h2 { font-size: 20px; font-weight: 800; color: var(--navy); }
+.only-print { display: none; }
+@media print {
+  .only-print { display: block; }
+  .report-card { box-shadow: none; border: 1px solid #d7dbe3; break-inside: avoid; }
+}

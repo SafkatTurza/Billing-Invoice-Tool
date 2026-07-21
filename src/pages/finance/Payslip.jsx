@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
 import { lineNet, MONTHS } from '../../lib/salary.js'
+import { can } from '../../lib/roles.js'
 import { formatMoney, formatDate } from '../../lib/format.js'
 import { Icon } from '../../components/Icons.jsx'
 import '../../styles/preview.css'
@@ -17,7 +18,8 @@ export default function Payslip() {
   const { id, lineId } = useParams()
   const navigate = useNavigate()
   const { finDocs, saveFinDoc, employees } = useFinance()
-  const { findCompany } = useApp()
+  const { findCompany, currentUser } = useApp()
+  const canManage = can(currentUser.role, 'financeManage')
 
   const doc = finDocs.find((d) => d.id === id)
   const line = doc?.lines.find((l) => l.id === lineId)
@@ -67,7 +69,8 @@ export default function Payslip() {
         </div>
       </div>
 
-      {/* Editable payslip-only fields */}
+      {/* Editable payslip-only fields (Accounts / Super Admin only) */}
+      {canManage && (
       <div className="card card-pad no-print" style={{ marginBottom: 18, maxWidth: 560 }}>
         <div className="grid grid-3">
           <div className="field">
@@ -84,6 +87,7 @@ export default function Payslip() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Printable payslip */}
       <div className="payslip-paper">

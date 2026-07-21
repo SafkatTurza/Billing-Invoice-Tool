@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
 import { FIN_STATUS } from '../../lib/finance.js'
+import { can } from '../../lib/roles.js'
 import { formatMoney, formatDate } from '../../lib/format.js'
 import { Icon } from '../../components/Icons.jsx'
 import '../../styles/dashboard.css'
@@ -30,8 +31,9 @@ function CurLines({ map, cls }) {
 
 export default function FinanceDashboard() {
   const { ledger, finDocs, heads, accounts } = useFinance()
-  const { docs } = useApp()
+  const { docs, currentUser } = useApp()
   const navigate = useNavigate()
+  const canManage = can(currentUser.role, 'financeManage')
   const thisMonth = ym(new Date().toISOString())
 
   // Approved-only expenses → posted ledger 'out' this month.
@@ -122,24 +124,29 @@ export default function FinanceDashboard() {
         </div>
       </div>
 
-      <div className="section-head">
-        <h3>Quick Create</h3>
-      </div>
-      <div className="quick-create">
-        {[
-          { to: '/finance/requisition/new', label: 'New Requisition', icon: Icon.invoice },
-          { to: '/finance/payment-voucher/new', label: 'Payment Voucher', icon: Icon.money },
-          { to: '/finance/debit-voucher/new', label: 'Debit Voucher', icon: Icon.receipt },
-          { to: '/finance/expenses', label: 'Daily Expense', icon: Icon.po },
-        ].map((q) => (
-          <button key={q.to} className="qc-btn" onClick={() => navigate(q.to)}>
-            <span className="qc-icon">
-              <q.icon width={18} height={18} />
-            </span>
-            {q.label}
-          </button>
-        ))}
-      </div>
+      {canManage && (
+        <>
+          <div className="section-head">
+            <h3>Quick Create</h3>
+          </div>
+          <div className="quick-create">
+            {[
+              { to: '/finance/requisition/new', label: 'New Requisition', icon: Icon.invoice },
+              { to: '/finance/payment-voucher/new', label: 'Payment Voucher', icon: Icon.money },
+              { to: '/finance/debit-voucher/new', label: 'Debit Voucher', icon: Icon.receipt },
+              { to: '/finance/expenses', label: 'Daily Expense', icon: Icon.po },
+              { to: '/finance/income', label: 'Income / Investment', icon: Icon.money },
+            ].map((q) => (
+              <button key={q.label} className="qc-btn" onClick={() => navigate(q.to)}>
+                <span className="qc-icon">
+                  <q.icon width={18} height={18} />
+                </span>
+                {q.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
 
       <div className="grid grid-2 mt-24" style={{ alignItems: 'start' }}>
         <div className="card">

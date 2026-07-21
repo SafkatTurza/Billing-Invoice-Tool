@@ -38,6 +38,13 @@ export const FIN_TYPES = {
     prefix: 'EXP',
     approvable: false, // recorded directly by Accounts; still needs a head/account
   },
+  income: {
+    label: 'Income / Investment',
+    plural: 'Income & Investment',
+    prefix: 'INC',
+    approvable: false, // money IN recorded directly by Accounts (Phase C)
+    accent: '#059669', // green
+  },
   'salary-sheet': {
     label: 'Salary Sheet',
     plural: 'Salary Sheets',
@@ -164,6 +171,22 @@ export function newFinDoc(type, company, user) {
       amount: '',
       headId: '',
       accountId: '',
+      // Accounts/Super Admin pick the employee this voucher relates to (optional).
+      employeeId: '',
+      empId: '',
+      employeeName: '',
+    }
+  }
+  if (type === 'income') {
+    return {
+      ...base,
+      status: FIN_STATUS.RECORDED,
+      kind: 'income', // 'income' | 'investment'
+      headId: '',
+      accountId: '',
+      amount: '',
+      party: '',
+      description: '',
     }
   }
   // expense

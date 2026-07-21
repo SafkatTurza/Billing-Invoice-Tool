@@ -60,12 +60,15 @@ const MATRIX = {
     forceUnlock: true,
     fullDashboard: true,
     approveEstimate: true,
-    // Finance — Admin is management (final approver)
+    // Finance — Admin is management (final approver) ONLY. Per the client's
+    // finance-privacy rule, all finance data-entry (requisitions, PRs,
+    // vouchers, salary, payslips, employees, income/investment) is reserved
+    // for Accounts + Super Admin. Admin can view and sign off, not create.
     financeView: true,
-    financeManage: true,
+    financeManage: false, // cannot create/edit finance docs or record entries
     financeApprove: true,
-    financeFinalApprove: true,
-    manageFinanceMasters: true,
+    financeFinalApprove: true, // management sign-off stays with Admin
+    manageFinanceMasters: false, // masters are Super Admin only
     financeReports: true,
   },
   [ROLES.ACCOUNTS]: {

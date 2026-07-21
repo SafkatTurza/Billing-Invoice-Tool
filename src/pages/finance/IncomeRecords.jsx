@@ -9,28 +9,33 @@ import Modal from '../../components/Modal.jsx'
 import { useToast } from '../../components/Toast.jsx'
 import { Icon } from '../../components/Icons.jsx'
 
-// Quick daily-expense entry. Recorded straight to the ledger (no approval
-// chain — these are small operational cash spends). Still classified by head
-// and account so reports stay complete.
-export default function DailyExpenses() {
-  const { finDocs, heads, accounts, recordExpense } = useFinance()
+// Phase C — Income & Investment records. Money IN (service income, capital /
+// investment injections) recorded straight to the ledger so the reports pack
+// (cash flow, P&L) sees the full picture, not just expenses. Recording is
+// reserved for Accounts + Super Admin; others get a read-only list.
+export default function IncomeRecords() {
+  const { finDocs, heads, accounts, recordIncome } = useFinance()
   const { company, currentUser } = useApp()
   const toast = useToast()
-  const canManage = can(currentUser.role, 'financeManage')
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState(null)
 
-  const expenseHeads = heads.filter((h) => h.kind === 'expense')
+  const canManage = can(currentUser.role, 'financeManage')
+  const incomeHeads = heads.filter((h) => h.kind === 'income')
+  const investHeads = heads.filter((h) => h.kind === 'investment')
+
   const rows = useMemo(
-    () => finDocs.filter((d) => d.type === 'expense' && !d.deleted).sort((a, b) => new Date(b.date) - new Date(a.date)),
+    () => finDocs.filter((d) => d.type === 'income' && !d.deleted).sort((a, b) => new Date(b.date) - new Date(a.date)),
     [finDocs],
   )
 
-  const startNew = () => {
+  const startNew = (kind) => {
+    const pool = kind === 'investment' ? investHeads : incomeHeads
     setForm({
-      ...newFinDoc('expense', company, currentUser),
+      ...newFinDoc('income', company, currentUser),
+      kind,
       date: todayISO(),
-      headId: expenseHeads[0]?.id || '',
+      headId: pool[0]?.id || '',
       accountId: accounts[0]?.id || '',
     })
     setOpen(true)
@@ -39,38 +44,45 @@ export default function DailyExpenses() {
   const save = () => {
     if (!form.description?.trim()) return toast.error('Description is required.')
     if (!(Number(form.amount) > 0)) return toast.error('Enter an amount.')
-    recordExpense(form)
-    toast.success('Expense recorded.')
+    recordIncome(form)
+    toast.success(`${form.kind === 'investment' ? 'Investment' : 'Income'} recorded.`)
     setOpen(false)
   }
 
   const upd = (k, v) => setForm((f) => ({ ...f, [k]: v }))
   const headName = (id) => heads.find((h) => h.id === id)?.name || '—'
   const accName = (id) => accounts.find((a) => a.id === id)?.name || '—'
+  const formHeads = form?.kind === 'investment' ? investHeads : incomeHeads
 
   return (
     <div>
       <div className="row between center">
         <div>
-          <h1 className="page-title">Daily Expenses</h1>
-          <p className="page-sub">Quick cash spends — recorded straight to the ledger.</p>
+          <h1 className="page-title">Income &amp; Investment</h1>
+          <p className="page-sub">Money received — service income and investment / capital — recorded straight to the ledger.</p>
         </div>
         {canManage && (
-          <button className="btn btn-primary" onClick={startNew}>
-            <Icon.plus width={16} height={16} /> Record Expense
-          </button>
+          <div className="row gap-8">
+            <button className="btn btn-ghost" onClick={() => startNew('investment')}>
+              <Icon.plus width={16} height={16} /> Investment
+            </button>
+            <button className="btn btn-primary" onClick={() => startNew('income')}>
+              <Icon.plus width={16} height={16} /> Record Income
+            </button>
+          </div>
         )}
       </div>
 
       <div className="card mt-24">
         {rows.length === 0 ? (
-          <div className="empty">No daily expenses recorded yet.</div>
+          <div className="empty">No income or investment recorded yet.</div>
         ) : (
           <table className="table">
             <thead>
               <tr>
                 <th>Number</th>
                 <th>Date</th>
+                <th>Type</th>
                 <th>Description</th>
                 <th>Head</th>
                 <th>Account</th>
@@ -82,10 +94,15 @@ export default function DailyExpenses() {
                 <tr key={d.id}>
                   <td className="mono small">{d.docNumber}</td>
                   <td className="small nowrap">{formatDate(d.date)}</td>
+                  <td>
+                    <span className={`badge ${d.kind === 'investment' ? 'badge-teal' : 'badge-green'}`}>
+                      {d.kind === 'investment' ? 'Investment' : 'Income'}
+                    </span>
+                  </td>
                   <td>{d.description}</td>
                   <td className="small">{headName(d.headId)}</td>
                   <td className="small">{accName(d.accountId)}</td>
-                  <td className="text-right nowrap ledger-out">{formatMoney(d.amount, d.currency)}</td>
+                  <td className="text-right nowrap ledger-in">{formatMoney(d.amount, d.currency)}</td>
                 </tr>
               ))}
             </tbody>
@@ -95,7 +112,7 @@ export default function DailyExpenses() {
 
       {open && form && (
         <Modal
-          title="Record Daily Expense"
+          title={form.kind === 'investment' ? 'Record Investment / Capital' : 'Record Income'}
           width={560}
           onClose={() => setOpen(false)}
           footer={
@@ -113,7 +130,13 @@ export default function DailyExpenses() {
             <label>
               Description <span className="req">*</span>
             </label>
-            <input className="input" autoFocus value={form.description} onChange={(e) => upd('description', e.target.value)} placeholder="e.g. Office tea & snacks" />
+            <input
+              className="input"
+              autoFocus
+              value={form.description}
+              onChange={(e) => upd('description', e.target.value)}
+              placeholder={form.kind === 'investment' ? 'e.g. Director capital injection' : 'e.g. Project milestone payment'}
+            />
           </div>
           <div className="grid grid-3">
             <div className="field">
@@ -135,9 +158,10 @@ export default function DailyExpenses() {
               </select>
             </div>
             <div className="field">
-              <label>Expense Head</label>
+              <label>{form.kind === 'investment' ? 'Investment Head' : 'Income Head'}</label>
               <select className="select" value={form.headId} onChange={(e) => upd('headId', e.target.value)}>
-                {expenseHeads.map((h) => (
+                {formHeads.length === 0 && <option value="">— No head configured —</option>}
+                {formHeads.map((h) => (
                   <option key={h.id} value={h.id}>
                     {h.name}
                   </option>
@@ -145,7 +169,7 @@ export default function DailyExpenses() {
               </select>
             </div>
             <div className="field">
-              <label>Paid From</label>
+              <label>Deposited To</label>
               <select className="select" value={form.accountId} onChange={(e) => upd('accountId', e.target.value)}>
                 {accounts.map((a) => (
                   <option key={a.id} value={a.id}>
@@ -155,11 +179,11 @@ export default function DailyExpenses() {
               </select>
             </div>
             <div className="field">
-              <label>Payee (optional)</label>
+              <label>Received From (optional)</label>
               <input className="input" value={form.party} onChange={(e) => upd('party', e.target.value)} />
             </div>
           </div>
-          <AttachmentField label="Attach receipt (optional)" value={form.attachments} onChange={(a) => upd('attachments', a)} />
+          <AttachmentField label="Attach receipt / proof (optional)" value={form.attachments} onChange={(a) => upd('attachments', a)} />
         </Modal>
       )}
     </div>

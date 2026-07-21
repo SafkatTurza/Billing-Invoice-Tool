@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
 import { FIN_STATUS } from '../../lib/finance.js'
+import { can } from '../../lib/roles.js'
 import { lineNet, sheetTotals, MONTHS } from '../../lib/salary.js'
 import { formatDate } from '../../lib/format.js'
 import ApprovalChain from '../../components/finance/ApprovalChain.jsx'
@@ -22,8 +23,9 @@ export default function SalarySheetPreview() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { finDocs, saveFinDoc, onDocApproved } = useFinance()
-  const { findCompany } = useApp()
+  const { findCompany, currentUser } = useApp()
   const toast = useToast()
+  const canManage = can(currentUser.role, 'financeManage')
 
   const doc = finDocs.find((d) => d.id === id)
   if (!doc) {
@@ -65,7 +67,7 @@ export default function SalarySheetPreview() {
           <button className="btn btn-ghost" onClick={() => navigate('/finance/salary-sheet')}>
             Back
           </button>
-          {!approved && (
+          {canManage && !approved && (
             <button className="btn btn-ghost" onClick={() => navigate(`/finance/salary-sheet/${doc.id}/edit`)}>
               <Icon.edit width={15} height={15} /> Edit
             </button>

@@ -203,6 +203,31 @@ export function FinanceProvider({ children }) {
     [saveFinDoc, postTransaction, addAudit],
   )
 
+  // Record income / investment straight into the ledger (money IN). Phase C.
+  const recordIncome = useCallback(
+    (doc) => {
+      const saved = saveFinDoc({ ...doc, type: 'income', status: FIN_STATUS.RECORDED })
+      postTransaction({
+        txnDate: saved.date,
+        direction: 'in',
+        amount: Number(saved.amount) || 0,
+        currency: saved.currency || 'BDT',
+        accountId: saved.accountId || null,
+        headId: saved.headId || null,
+        partyName: saved.party || '',
+        description: saved.description || (saved.kind === 'investment' ? 'Investment / Capital' : 'Income'),
+        kind: saved.kind || 'income',
+        linkType: 'income',
+        linkId: saved.id,
+        docNumber: saved.docNumber,
+        companyId: saved.companyId,
+      })
+      addAudit('Income recorded', saved.docNumber, saved.description || '')
+      return saved
+    },
+    [saveFinDoc, postTransaction, addAudit],
+  )
+
   // ── Templates ──
   const saveTemplate = useCallback((tpl) => {
     setTemplates((prev) => {
@@ -251,6 +276,7 @@ export function FinanceProvider({ children }) {
     saveFinDoc,
     deleteFinDoc,
     recordExpense,
+    recordIncome,
     onDocApproved,
     postTransaction,
     voidTransactionsForDoc,

@@ -71,6 +71,22 @@
 }
 
 @media print {
-  .payslip-paper { box-shadow: none; max-width: 100%; padding: 0; }
+  /* One employee payslip = exactly one A4 page (client requirement). */
+  @page { size: A4 portrait; margin: 14mm; }
+  .payslip-paper {
+    box-shadow: none;
+    max-width: 100%;
+    padding: 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    page-break-after: avoid;
+  }
+  .payslip-paper .ps-title { font-size: 24px; margin-bottom: 18px; }
+  .ps-table th,
+  .ps-table td { padding: 6px 10px; }
+  .ps-table { margin-bottom: 10px; }
+  /* Trim the tall signature gap so the whole slip stays on a single page. */
+  .ps-sign-row { margin: 34px 0 8px; }
+  .ps-footer { margin-top: 16px; padding-top: 8px; }
   .ps-table th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }

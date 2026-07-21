@@ -91,8 +91,36 @@ A centralized company-finance module alongside billing:
   Authorized/Received By — with editable payment date and remarks, printable to
   PDF.
 
-Later phases (planned): income/investment records, the auto-generated
-actual-expense summary, and the full reports pack (cash flow, P&L, aging).
+### Reports & Income (Phase C)
+
+- **Income & Investment records** — money-IN entries (service income and
+  investment / capital injections) recorded straight to the ledger, so the
+  reports see the full picture, not just expenses. Investment is tracked
+  separately from revenue.
+- **Financial Reports pack** — a print/PDF-ready page, all grouped by currency
+  (never mixed), for This Month / This Year / All Time:
+  - **Cash Flow Statement** — inflows (billing income, recorded income,
+    investment) vs. outflows (approved expenses), with net cash flow.
+  - **Profit & Loss** — revenue − expenses = net profit/loss (investment is
+    treated as financing and excluded).
+  - **Actual Expense Summary** — auto-generated expense-by-head breakdown from
+    the posted ledger.
+  - **Receivables Aging** — unpaid invoices bucketed 0–30 / 31–60 / 61–90 / 90+
+    days past due.
+
+### Finance access control (privacy)
+
+All finance **data entry** — requisitions/PRs, payment & debit vouchers, salary
+sheets, payslips, employee records, and income/investment — is reserved for the
+**Accounts** department and **Super Admin**. **Admin** is management: it can
+**view and give final sign-off** on finance documents but cannot create or edit
+them, and **Business Team** has no finance access at all. Client-facing Invoices
+and Estimates are unaffected and remain open to every role as before. Approval
+stays with management: a document is only *Approved* once the management
+signature is applied, and payslips are only generated **after** the salary sheet
+is confirmed (approved) by higher management. Each employee's payslip prints as
+a single A4 page. On a billing voucher, Accounts/Super Admin can optionally
+select the employee it relates to.
 - **Dashboard** — role-aware. Document count cards, financial summary grouped by
   currency (never mixed/converted), quick-create, and recent documents. The
   financial summary and restricted document types are hidden for Business Team.

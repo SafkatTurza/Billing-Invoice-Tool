@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
 import { FIN_TYPES, FIN_STATUS, requisitionTotal } from '../../lib/finance.js'
+import { can } from '../../lib/roles.js'
 import { formatMoney, formatDate } from '../../lib/format.js'
 import { amountInWords } from '../../lib/amountInWords.js'
 import { AttachmentList } from '../../components/AttachmentField.jsx'
@@ -23,9 +24,10 @@ export default function FinanceDocPreview({ type }) {
   const { id } = useParams()
   const navigate = useNavigate()
   const { finDocs, saveFinDoc, onDocApproved } = useFinance()
-  const { findCompany } = useApp()
+  const { findCompany, currentUser } = useApp()
   const toast = useToast()
   const meta = FIN_TYPES[type]
+  const canManage = can(currentUser.role, 'financeManage')
 
   const doc = finDocs.find((d) => d.id === id)
   if (!doc) {
@@ -67,7 +69,7 @@ export default function FinanceDocPreview({ type }) {
           <button className="btn btn-ghost" onClick={() => navigate(`/finance/${type}`)}>
             Back
           </button>
-          {doc.status === FIN_STATUS.DRAFT || doc.status === FIN_STATUS.PENDING ? (
+          {canManage && (doc.status === FIN_STATUS.DRAFT || doc.status === FIN_STATUS.PENDING) ? (
             <button className="btn btn-ghost" onClick={() => navigate(`/finance/${type}/${doc.id}/edit`)}>
               <Icon.edit width={15} height={15} /> Edit
             </button>
@@ -220,6 +222,15 @@ function VoucherPaper({ doc, company, type }) {
         <div className="small">Date: {formatDate(doc.date)}</div>
       </div>
 
+      {doc.employeeName && (
+        <div className="voucher-row">
+          <span className="vr-label">Employee</span>
+          <span className="vr-fill">
+            {doc.employeeName}
+            {doc.empId ? ` (${doc.empId})` : ''}
+          </span>
+        </div>
+      )}
       <div className="voucher-row">
         <span className="vr-label">Received with thanks from</span>
         <span className="vr-fill">{doc.receivedFrom}</span>
