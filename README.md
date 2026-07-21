@@ -58,9 +58,13 @@ A centralized company-finance module alongside billing:
 
 - **Cash/Bank accounts** and a **chart of account heads** (Settings) — running
   balances update from the ledger.
-- **Requisitions** (Proposed → Checked → Authorised) and **Payment / Debit
-  Vouchers** (Accountant → Checked → Managing Director/Director → Received)
-  rendered in the DreamCore letterhead, matching the company's real formats.
+- **Requisitions** (Proposed → Checked → Authorised) and a single **Voucher**
+  document — Payment or Debit chosen with a toggle — (Accountant → Checked →
+  Managing Director/Director → Received) rendered in the DreamCore letterhead,
+  matching the company's real formats. A voucher can optionally be **split by
+  expense head** (each line posts to its own head), record a **cheque number**,
+  and **link to the requisition** it settles. Income and investment entries each
+  get a printable **receipt**.
 - **Signature-overlay approval chain** — each user stores their own signature
   (draw or upload) in *Settings → My Account* and applies it, with a date they
   set, to their slot. Signing is strictly in order and **management (CEO/MD)

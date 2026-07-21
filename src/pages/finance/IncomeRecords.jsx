@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
 import { newFinDoc } from '../../lib/finance.js'
@@ -16,6 +17,7 @@ import { Icon } from '../../components/Icons.jsx'
 export default function IncomeRecords() {
   const { finDocs, heads, accounts, recordIncome } = useFinance()
   const { company, currentUser } = useApp()
+  const navigate = useNavigate()
   const toast = useToast()
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState(null)
@@ -87,12 +89,15 @@ export default function IncomeRecords() {
                 <th>Head</th>
                 <th>Account</th>
                 <th className="text-right">Amount</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
               {rows.map((d) => (
                 <tr key={d.id}>
-                  <td className="mono small">{d.docNumber}</td>
+                  <td className="mono small bold" style={{ cursor: 'pointer' }} onClick={() => navigate(`/finance/income/${d.id}`)}>
+                    {d.docNumber}
+                  </td>
                   <td className="small nowrap">{formatDate(d.date)}</td>
                   <td>
                     <span className={`badge ${d.kind === 'investment' ? 'badge-teal' : 'badge-green'}`}>
@@ -103,6 +108,11 @@ export default function IncomeRecords() {
                   <td className="small">{headName(d.headId)}</td>
                   <td className="small">{accName(d.accountId)}</td>
                   <td className="text-right nowrap ledger-in">{formatMoney(d.amount, d.currency)}</td>
+                  <td className="text-right nowrap">
+                    <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/finance/income/${d.id}`)} title="View receipt">
+                      <Icon.eye width={14} height={14} />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

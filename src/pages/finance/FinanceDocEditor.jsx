@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
-import { FIN_TYPES, newFinDoc, newReqItem, requisitionTotal, FIN_STATUS } from '../../lib/finance.js'
+import { FIN_TYPES, newFinDoc, newReqItem, newVoucherLine, requisitionTotal, voucherTotal, FIN_STATUS } from '../../lib/finance.js'
 import { CURRENCIES } from '../../lib/format.js'
 import { amountInWords } from '../../lib/amountInWords.js'
 import AttachmentField from '../../components/AttachmentField.jsx'
@@ -30,10 +30,13 @@ export default function FinanceDocEditor({ type }) {
   const myTemplates = templates.filter((t) => t.kind === type)
 
   const save = (goPreview) => {
-    const total = isReq ? requisitionTotal(doc) : Number(doc.amount) || 0
+    const total = isReq ? requisitionTotal(doc) : voucherTotal(doc)
+    // Keep the single amount field in sync with an itemised breakdown, so the
+    // list, preview, and ledger all agree on the effective total.
+    const amount = isReq ? doc.amount : total
     // Submitting for approval moves Draft → Pending.
     const status = doc.status === FIN_STATUS.DRAFT ? FIN_STATUS.PENDING : doc.status
-    const saved = saveFinDoc({ ...doc, total, status })
+    const saved = saveFinDoc({ ...doc, total, amount, status })
     toast.success(`${meta.label} saved — routed for approval.`)
     navigate(goPreview ? `/finance/${type}/${saved.id}` : `/finance/${type}`)
   }
@@ -125,7 +128,7 @@ export default function FinanceDocEditor({ type }) {
         </div>
       </div>
 
-      {isReq ? <RequisitionBody doc={doc} patch={patch} /> : <VoucherBody doc={doc} patch={patch} type={type} />}
+      {isReq ? <RequisitionBody doc={doc} patch={patch} /> : <VoucherBody doc={doc} patch={patch} />}
 
       {/* Attachments */}
       <div className="form-section">
@@ -273,10 +276,19 @@ function RequisitionBody({ doc, patch }) {
   )
 }
 
-function VoucherBody({ doc, patch, type }) {
-  const { accounts, heads, employees } = useFinance()
-  const isDebit = type === 'debit-voucher'
+const PAYMENT_METHODS = ['Cash', 'Bank Transfer', 'Cheque', 'Others']
+
+function VoucherBody({ doc, patch }) {
+  const { accounts, heads, employees, finDocs } = useFinance()
+  const isDebit = doc.voucherType === 'debit'
   const expenseHeads = heads.filter((h) => h.kind === 'expense')
+  const lines = doc.lines || []
+  const isCheque = doc.paymentMethod === 'Cheque'
+  const showBank = isCheque || doc.paymentMethod === 'Bank Transfer'
+  const total = voucherTotal(doc)
+
+  // Approved requisitions this voucher can settle.
+  const approvedReqs = finDocs.filter((d) => d.type === 'requisition' && d.status === FIN_STATUS.APPROVED && !d.deleted)
 
   // Accounts/Super Admin select the employee this voucher relates to (optional —
   // vouchers can also be raised for non-employee payees).
@@ -293,9 +305,43 @@ function VoucherBody({ doc, patch, type }) {
     })
   }
 
+  const onSelectReq = (reqId) => {
+    if (!reqId) return patch({ requisitionId: '', requisitionNumber: '' })
+    const req = finDocs.find((d) => d.id === reqId)
+    if (!req) return
+    patch({
+      requisitionId: req.id,
+      requisitionNumber: req.docNumber,
+      // Fill blanks from the requisition for convenience.
+      purpose: doc.purpose || req.title || '',
+      amount: doc.amount || req.total || '',
+    })
+  }
+
+  // Breakdown lines
+  const updLine = (rowId, c) => patch({ lines: lines.map((l) => (l.id === rowId ? { ...l, ...c } : l)) })
+  const addLine = () => patch({ lines: [...lines, newVoucherLine()] })
+  const removeLine = (rowId) => patch({ lines: lines.filter((l) => l.id !== rowId) })
+
   return (
     <div className="form-section">
       <h3>{isDebit ? 'Debit' : 'Payment'} Voucher Details</h3>
+
+      {/* Payment vs Debit — one type, chosen here. */}
+      <div className="field">
+        <label>Voucher Type</label>
+        <div className="row gap-16" style={{ flexWrap: 'wrap' }}>
+          <label className="row gap-8 center" style={{ cursor: 'pointer' }}>
+            <input type="radio" name="voucherType" checked={!isDebit} onChange={() => patch({ voucherType: 'payment' })} />
+            Payment Voucher <span className="muted small">(money paid out)</span>
+          </label>
+          <label className="row gap-8 center" style={{ cursor: 'pointer' }}>
+            <input type="radio" name="voucherType" checked={isDebit} onChange={() => patch({ voucherType: 'debit' })} />
+            Debit Voucher <span className="muted small">(charge to an account)</span>
+          </label>
+        </div>
+      </div>
+
       <div className="grid grid-2">
         <div className="field">
           <label>Employee (optional)</label>
@@ -313,30 +359,12 @@ function VoucherBody({ doc, patch, type }) {
           <input className="input" value={doc.receivedFrom} onChange={(e) => patch({ receivedFrom: e.target.value })} />
         </div>
         <div className="field">
-          <label>By Cash / Cheque / Others</label>
-          <input className="input" value={doc.paymentMethod} onChange={(e) => patch({ paymentMethod: e.target.value })} placeholder="Cash" />
-        </div>
-      </div>
-      <div className="field">
-        <label>Purpose Of</label>
-        <AutoTextarea value={doc.purpose} onChange={(e) => patch({ purpose: e.target.value })} minHeight={50} />
-      </div>
-      <div className="grid grid-3">
-        <div className="field">
-          <label>Total Amount</label>
-          <input type="number" className="input" value={doc.amount} onChange={(e) => patch({ amount: e.target.value })} />
-        </div>
-        <div className="field">
-          <label>Dated</label>
-          <input type="date" className="input" value={doc.paymentDated} onChange={(e) => patch({ paymentDated: e.target.value })} />
-        </div>
-        <div className="field">
-          <label>Expense Head</label>
-          <select className="select" value={doc.headId} onChange={(e) => patch({ headId: e.target.value })}>
-            <option value="">— Select head —</option>
-            {expenseHeads.map((h) => (
-              <option key={h.id} value={h.id}>
-                {h.name}
+          <label>Pays Requisition (optional)</label>
+          <select className="select" value={doc.requisitionId || ''} onChange={(e) => onSelectReq(e.target.value)}>
+            <option value="">— None —</option>
+            {approvedReqs.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.docNumber} — {r.title || 'Requisition'}
               </option>
             ))}
           </select>
@@ -352,18 +380,129 @@ function VoucherBody({ doc, patch, type }) {
             ))}
           </select>
         </div>
-        <div className="field">
-          <label>Bank</label>
-          <input className="input" value={doc.bank} onChange={(e) => patch({ bank: e.target.value })} placeholder="N/A" />
-        </div>
-        <div className="field">
-          <label>Branch</label>
-          <input className="input" value={doc.branch} onChange={(e) => patch({ branch: e.target.value })} placeholder="N/A" />
-        </div>
       </div>
-      {Number(doc.amount) > 0 && (
-        <div className="words-box">
-          <b>In words:</b> {amountInWords(Number(doc.amount), doc.currency)}
+
+      <div className="field">
+        <label>Purpose Of</label>
+        <AutoTextarea value={doc.purpose} onChange={(e) => patch({ purpose: e.target.value })} minHeight={50} />
+      </div>
+
+      {/* Payment method + conditional cheque / bank fields */}
+      <div className="grid grid-3">
+        <div className="field">
+          <label>Payment Method</label>
+          <select className="select" value={doc.paymentMethod} onChange={(e) => patch({ paymentMethod: e.target.value })}>
+            {PAYMENT_METHODS.map((m) => (
+              <option key={m}>{m}</option>
+            ))}
+          </select>
+        </div>
+        {isCheque && (
+          <div className="field">
+            <label>Cheque No.</label>
+            <input className="input" value={doc.chequeNo} onChange={(e) => patch({ chequeNo: e.target.value })} />
+          </div>
+        )}
+        <div className="field">
+          <label>Dated</label>
+          <input type="date" className="input" value={doc.paymentDated} onChange={(e) => patch({ paymentDated: e.target.value })} />
+        </div>
+        {showBank && (
+          <>
+            <div className="field">
+              <label>Bank</label>
+              <input className="input" value={doc.bank} onChange={(e) => patch({ bank: e.target.value })} placeholder="N/A" />
+            </div>
+            <div className="field">
+              <label>Branch</label>
+              <input className="input" value={doc.branch} onChange={(e) => patch({ branch: e.target.value })} placeholder="N/A" />
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Amount — single head, or an itemised split. */}
+      {lines.length === 0 ? (
+        <div className="grid grid-2">
+          <div className="field">
+            <label>Total Amount</label>
+            <input type="number" className="input" value={doc.amount} onChange={(e) => patch({ amount: e.target.value })} />
+          </div>
+          <div className="field">
+            <label>Expense Head</label>
+            <select className="select" value={doc.headId} onChange={(e) => patch({ headId: e.target.value })}>
+              <option value="">— Select head —</option>
+              {expenseHeads.map((h) => (
+                <option key={h.id} value={h.id}>
+                  {h.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-8" style={{ overflowX: 'auto' }}>
+          <table className="items-table">
+            <thead>
+              <tr>
+                <th style={{ width: 30 }}>#</th>
+                <th style={{ width: '32%' }}>Expense Head</th>
+                <th>Description</th>
+                <th style={{ width: 130 }}>Amount ({doc.currency})</th>
+                <th style={{ width: 34 }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {lines.map((l, i) => (
+                <tr key={l.id}>
+                  <td style={{ textAlign: 'center', color: 'var(--text-faint)' }}>{i + 1}</td>
+                  <td>
+                    <select value={l.headId} onChange={(e) => updLine(l.id, { headId: e.target.value })}>
+                      <option value="">— Select head —</option>
+                      {expenseHeads.map((h) => (
+                        <option key={h.id} value={h.id}>
+                          {h.name}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <input value={l.description} onChange={(e) => updLine(l.id, { description: e.target.value })} />
+                  </td>
+                  <td>
+                    <input type="number" value={l.amount} onChange={(e) => updLine(l.id, { amount: e.target.value })} />
+                  </td>
+                  <td>
+                    <button className="btn btn-danger btn-sm" style={{ padding: '5px 8px' }} onClick={() => removeLine(l.id)}>
+                      <Icon.x width={13} height={13} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="row gap-12 center mt-8" style={{ justifyContent: 'space-between', flexWrap: 'wrap' }}>
+        <button className="btn btn-ghost btn-sm" onClick={addLine}>
+          <Icon.plus width={14} height={14} /> {lines.length === 0 ? 'Split by expense head' : 'Add head'}
+        </button>
+        {lines.length > 0 && (
+          <div className="totals-box" style={{ minWidth: 220 }}>
+            <div className="totals-row grand">
+              <span>Total Amount</span>
+              <span>
+                {total.toLocaleString('en-US', { minimumFractionDigits: 2 })} {doc.currency}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {total > 0 && (
+        <div className="words-box mt-8">
+          <b>In words:</b> {amountInWords(total, doc.currency)}
         </div>
       )}
     </div>

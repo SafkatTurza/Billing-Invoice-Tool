@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
-import { FIN_TYPES, FIN_STATUS, requisitionTotal } from '../../lib/finance.js'
+import { FIN_TYPES, FIN_STATUS, requisitionTotal, voucherTotal, voucherAccent, voucherLabel, isVoucherType } from '../../lib/finance.js'
 import { can } from '../../lib/roles.js'
 import { formatMoney, formatDate } from '../../lib/format.js'
 import { amountInWords } from '../../lib/amountInWords.js'
@@ -59,7 +59,8 @@ export default function FinanceDocPreview({ type }) {
       <div className="preview-toolbar no-print">
         <div>
           <h1 className="page-title" style={{ fontSize: 20 }}>
-            {meta.label} <span className="mono muted" style={{ fontSize: 15 }}>{doc.docNumber}</span>
+            {isVoucherType(doc.type) ? voucherLabel(doc) : meta.label}{' '}
+            <span className="mono muted" style={{ fontSize: 15 }}>{doc.docNumber}</span>
           </h1>
           <div className="mt-8">
             <span className={`badge ${STATUS_BADGE[doc.status] || 'badge-gray'}`}>{doc.status}</span>
@@ -109,10 +110,10 @@ export default function FinanceDocPreview({ type }) {
 
       {/* Printable letterhead copy */}
       <div className="fin-paper">
-        {type === 'requisition' ? (
+        {doc.type === 'requisition' ? (
           <RequisitionPaper doc={doc} company={company} />
         ) : (
-          <VoucherPaper doc={doc} company={company} type={type} />
+          <VoucherPaper doc={doc} company={company} />
         )}
       </div>
     </div>
@@ -198,10 +199,12 @@ function RequisitionPaper({ doc, company }) {
   )
 }
 
-function VoucherPaper({ doc, company, type }) {
-  const meta = FIN_TYPES[type]
-  const isDebit = type === 'debit-voucher'
-  const accent = meta.accent
+function VoucherPaper({ doc, company }) {
+  const isDebit = doc.voucherType === 'debit'
+  const accent = voucherAccent(doc)
+  const total = voucherTotal(doc)
+  const lines = (doc.lines || []).filter((l) => Number(l.amount) > 0)
+  const paymentLine = [doc.paymentMethod, doc.chequeNo && `Cheque #${doc.chequeNo}`].filter(Boolean).join(' — ') || 'N/A'
   return (
     <div>
       <div className="fin-letterhead">
@@ -239,9 +242,15 @@ function VoucherPaper({ doc, company, type }) {
         <span className="vr-label">Purpose OF</span>
         <span className="vr-fill" style={{ whiteSpace: 'pre-wrap' }}>{doc.purpose}</span>
       </div>
+      {doc.requisitionNumber && (
+        <div className="voucher-row">
+          <span className="vr-label">Against Requisition</span>
+          <span className="vr-fill mono">{doc.requisitionNumber}</span>
+        </div>
+      )}
       <div className="voucher-row">
         <span className="vr-label">By Cash/Cheque/Others</span>
-        <span className="vr-fill">{doc.paymentMethod}</span>
+        <span className="vr-fill">{paymentLine}</span>
         <span className="vr-label">Dated</span>
         <span className="vr-fill" style={{ maxWidth: 120 }}>{doc.paymentDated ? formatDate(doc.paymentDated) : 'N/A'}</span>
       </div>
@@ -251,16 +260,46 @@ function VoucherPaper({ doc, company, type }) {
         <span className="vr-label">Branch</span>
         <span className="vr-fill">{doc.branch || 'N/A'}</span>
       </div>
+
+      {/* Optional per-head breakdown */}
+      {lines.length > 0 && (
+        <table className="fin-table" style={{ marginTop: 12 }}>
+          <thead>
+            <tr>
+              <th style={{ width: 34 }}>No.</th>
+              <th>Expense Head</th>
+              <th>Description</th>
+              <th className="num" style={{ width: 130 }}>Amount ({doc.currency})</th>
+            </tr>
+          </thead>
+          <tbody>
+            {lines.map((l, i) => (
+              <tr key={l.id}>
+                <td style={{ textAlign: 'center' }}>{i + 1}</td>
+                <td><HeadName id={l.headId} /></td>
+                <td style={{ whiteSpace: 'pre-wrap' }}>{l.description}</td>
+                <td className="num">{Number(l.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
       <div className="voucher-row" style={{ marginTop: 12 }}>
         <span className="vr-label">Total Amount</span>
         <span style={{ border: `1px solid ${accent}`, borderRadius: 6, padding: '4px 14px', fontWeight: 800, minWidth: 120, textAlign: 'center' }}>
-          {formatMoney(doc.amount, doc.currency)}
+          {formatMoney(total, doc.currency)}
         </span>
         <span className="vr-label" style={{ marginLeft: 12 }}>Amount in Word</span>
-        <span className="vr-fill" style={{ fontStyle: 'italic' }}>{amountInWords(Number(doc.amount) || 0, doc.currency)}</span>
+        <span className="vr-fill" style={{ fontStyle: 'italic' }}>{amountInWords(total, doc.currency)}</span>
       </div>
 
       <SignRow slots={doc.signSlots} />
     </div>
   )
+}
+
+function HeadName({ id }) {
+  const { heads } = useFinance()
+  return <>{heads.find((h) => h.id === id)?.name || '—'}</>
 }

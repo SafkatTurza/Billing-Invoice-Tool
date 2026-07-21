@@ -101,11 +101,8 @@ export default function AppLayout() {
                   <NavLink to="/finance/requisition" className="nav-item sub">
                     <Icon.invoice width={16} height={16} /> Requisitions
                   </NavLink>
-                  <NavLink to="/finance/payment-voucher" className="nav-item sub">
-                    <Icon.money width={16} height={16} /> Payment Vouchers
-                  </NavLink>
-                  <NavLink to="/finance/debit-voucher" className="nav-item sub">
-                    <Icon.receipt width={16} height={16} /> Debit Vouchers
+                  <NavLink to="/finance/voucher" className="nav-item sub">
+                    <Icon.money width={16} height={16} /> Vouchers
                   </NavLink>
                   <NavLink to="/finance/expenses" className="nav-item sub">
                     <Icon.po width={16} height={16} /> Daily Expenses

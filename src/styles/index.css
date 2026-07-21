@@ -208,6 +208,7 @@ textarea {
 .badge-amber { background: #fdf0dd; color: var(--amber); }
 .badge-red { background: #fce8e8; color: var(--red); }
 .badge-teal { background: #d8f4f0; color: #0b7d73; }
+.badge-purple { background: #efe7fd; color: #7c3aed; }
 
 /* ── Utility ─────────────────────────────────────────────── */
 .row { display: flex; }

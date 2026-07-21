@@ -13,6 +13,20 @@ export const FIN_TYPES = {
     approvable: true,
     slots: ['Proposed By', 'Checked By', 'Authorised By'], // Authorised By = management (last)
   },
+  // Unified voucher (Payment or Debit chosen via doc.voucherType). This replaces
+  // the two near-identical types below for all new documents; the old types are
+  // kept only so previously-saved records still resolve their meta.
+  voucher: {
+    label: 'Voucher',
+    plural: 'Vouchers',
+    prefix: 'V',
+    approvable: true,
+    accent: '#7c3aed', // default; real accent comes from voucherAccent(doc)
+    slots: ['Accountant', 'Checked By', 'Managing Director/Director', 'Received Payments'],
+    // Managing Director/Director is the management/final slot (index 2)
+    finalSlotIndex: 2,
+  },
+  // ── Legacy (pre-merge) — not offered in the UI, only rendered for old docs ──
   'payment-voucher': {
     label: 'Payment Voucher',
     plural: 'Payment Vouchers',
@@ -20,8 +34,8 @@ export const FIN_TYPES = {
     approvable: true,
     accent: '#7c3aed', // purple
     slots: ['Accountant', 'Checked By', 'Managing Director/Director', 'Received Payments'],
-    // Managing Director/Director is the management/final slot (index 2)
     finalSlotIndex: 2,
+    legacy: true,
   },
   'debit-voucher': {
     label: 'Debit Voucher',
@@ -31,6 +45,7 @@ export const FIN_TYPES = {
     accent: '#d97706', // amber
     slots: ['Accountant', 'Checked By', 'Managing Director/Director', 'Received Payments'],
     finalSlotIndex: 2,
+    legacy: true,
   },
   expense: {
     label: 'Daily Expense',
@@ -61,6 +76,25 @@ export function finalSlotIndex(type) {
   const t = FIN_TYPES[type]
   if (!t || !t.slots) return -1
   return typeof t.finalSlotIndex === 'number' ? t.finalSlotIndex : t.slots.length - 1
+}
+
+// The three types that share the voucher shape (unified + two legacy).
+export function isVoucherType(type) {
+  return type === 'voucher' || type === 'payment-voucher' || type === 'debit-voucher'
+}
+// Payment = purple, Debit = amber — driven by doc.voucherType so one type
+// renders both flavours.
+export function voucherAccent(doc) {
+  return doc?.voucherType === 'debit' ? '#d97706' : '#7c3aed'
+}
+export function voucherLabel(doc) {
+  return doc?.voucherType === 'debit' ? 'Debit Voucher' : 'Payment Voucher'
+}
+// Voucher amount — sum of the optional per-head breakdown, else the single field.
+export function voucherTotal(doc) {
+  const lines = doc?.lines || []
+  if (lines.length) return lines.reduce((s, l) => s + (Number(l.amount) || 0), 0)
+  return Number(doc?.amount) || 0
 }
 
 function yymm(date = new Date()) {
@@ -132,6 +166,11 @@ export function newReqItem() {
   return { id: uid(), title: '', description: '', qty: '', calcAmount: '', finalAmount: '', remarks: '' }
 }
 
+// A single line of the optional voucher expense-breakdown (split by head).
+export function newVoucherLine() {
+  return { id: uid(), headId: '', description: '', amount: '' }
+}
+
 // Factory for a fresh finance document.
 export function newFinDoc(type, company, user) {
   const base = {
@@ -158,19 +197,26 @@ export function newFinDoc(type, company, user) {
       total: 0,
     }
   }
-  if (type === 'payment-voucher' || type === 'debit-voucher') {
+  if (isVoucherType(type)) {
     return {
       ...base,
-      voucherType: type === 'payment-voucher' ? 'payment' : 'debit',
+      // New docs are always the unified type; the flavour is a field.
+      voucherType: type === 'debit-voucher' ? 'debit' : 'payment',
       receivedFrom: '',
       purpose: '',
-      paymentMethod: 'Cash',
+      paymentMethod: 'Cash', // Cash | Bank Transfer | Cheque | Others
+      chequeNo: '',
       paymentDated: '',
       bank: '',
       branch: '',
       amount: '',
       headId: '',
       accountId: '',
+      // Optional per-head breakdown; when non-empty the amount = Σ line amounts.
+      lines: [],
+      // Optional link to the requisition this voucher pays.
+      requisitionId: '',
+      requisitionNumber: '',
       // Accounts/Super Admin pick the employee this voucher relates to (optional).
       employeeId: '',
       empId: '',

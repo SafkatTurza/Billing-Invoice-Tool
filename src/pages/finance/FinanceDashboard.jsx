@@ -132,8 +132,7 @@ export default function FinanceDashboard() {
           <div className="quick-create">
             {[
               { to: '/finance/requisition/new', label: 'New Requisition', icon: Icon.invoice },
-              { to: '/finance/payment-voucher/new', label: 'Payment Voucher', icon: Icon.money },
-              { to: '/finance/debit-voucher/new', label: 'Debit Voucher', icon: Icon.receipt },
+              { to: '/finance/voucher/new', label: 'New Voucher', icon: Icon.money },
               { to: '/finance/expenses', label: 'Daily Expense', icon: Icon.po },
               { to: '/finance/income', label: 'Income / Investment', icon: Icon.money },
             ].map((q) => (

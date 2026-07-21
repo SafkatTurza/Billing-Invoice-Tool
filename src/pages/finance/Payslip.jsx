@@ -37,6 +37,7 @@ export default function Payslip() {
   const emp = employees.find((e) => e.empId === line.empId || e.id === line.employeeId)
   const net = lineNet(line, doc.components)
   const cur = line.currency || doc.currency
+  const fmt = (n) => (Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })
 
   const updLine = (changes) => {
     const lines = doc.lines.map((l) => (l.id === lineId ? { ...l, ...changes } : l))
@@ -118,41 +119,33 @@ export default function Payslip() {
           </tbody>
         </table>
 
+        {/* Itemised breakdown — every earning (+) and deduction (−) from the
+            sheet's components, so the figures always reconcile to Total Payment
+            regardless of how many components the sheet has. */}
         <table className="ps-table ps-salary">
           <tbody>
             <tr>
-              <th style={{ background: TEAL }}>Salary</th>
-              <th style={{ background: TEAL }} className="num">{cur}</th>
-              <th style={{ background: TEAL }}>Final Salary</th>
-              <th style={{ background: TEAL }} className="num">{cur}</th>
+              <th style={{ background: TEAL }}>Description</th>
+              <th style={{ background: TEAL }} className="num">Amount ({cur})</th>
             </tr>
             <tr>
               <td>Monthly Salary</td>
-              <td className="num">{Number(line.base).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-              <td>{deductions[0]?.[0] || earnings[0]?.[0] || '—'}</td>
-              <td className="num">{(deductions[0]?.[1] ?? earnings[0]?.[1] ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+              <td className="num">{fmt(Number(line.base) || 0)}</td>
             </tr>
-            <tr>
-              <td>Other (Misc.)</td>
-              <td className="num">{(Number(line.otherMisc) || 0).toFixed(1)}</td>
-              <td>{deductions[1]?.[0] || earnings[1]?.[0] || 'Festive Bonus'}</td>
-              <td className="num">{(deductions[1]?.[1] ?? earnings[1]?.[1] ?? Number(line.festiveBonus) ?? 0).toLocaleString('en-US', { minimumFractionDigits: 1 })}</td>
-            </tr>
+            {earnings.map(([label, val]) => (
+              <tr key={'e-' + label}>
+                <td>{label} <span style={{ color: TEAL, fontWeight: 700 }}>(+)</span></td>
+                <td className="num">{fmt(val)}</td>
+              </tr>
+            ))}
+            {deductions.map(([label, val]) => (
+              <tr key={'d-' + label}>
+                <td>{label} <span style={{ color: '#dc2626', fontWeight: 700 }}>(−)</span></td>
+                <td className="num">{val ? '−' : ''}{fmt(val)}</td>
+              </tr>
+            ))}
             <tr className="ps-total-row">
-              <td colSpan={2}>Total Payment</td>
-              <td colSpan={2} className="num">{net.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <table className="ps-table">
-          <tbody>
-            <tr>
-              <th style={{ background: TEAL, width: '50%' }}>Final Salary</th>
-              <th style={{ background: TEAL }} className="num">Amount</th>
-            </tr>
-            <tr className="ps-total-row">
-              <td>Total Amount</td>
+              <td>Total Payment (Final Salary)</td>
               <td className="num">{formatMoney(net, cur)}</td>
             </tr>
           </tbody>

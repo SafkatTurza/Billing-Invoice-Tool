@@ -158,21 +158,38 @@ export function FinanceProvider({ children }) {
       const already = ledger.some((t) => t.linkId === doc.id && t.status === 'posted')
       if (already) return
       const meta = FIN_TYPES[doc.type]
-      // Vouchers & requisitions are money OUT (expenses/payments).
-      postTransaction({
+      // Vouchers & requisitions are money OUT (expenses/payments). A voucher with
+      // an itemised breakdown posts one ledger line per head so the expense-by-head
+      // report stays accurate; everything else posts a single line.
+      const common = {
         txnDate: doc.date,
         direction: 'out',
-        amount: Number(doc.amount) || Number(doc.total) || 0,
         currency: doc.currency || 'BDT',
         accountId: doc.accountId || null,
-        headId: doc.headId || null,
         partyName: doc.receivedFrom || doc.party || doc.requester || '',
-        description: doc.purpose || doc.title || meta?.label,
         linkType: doc.type,
         linkId: doc.id,
         docNumber: doc.docNumber,
         companyId: doc.companyId,
-      })
+      }
+      const breakdown = (doc.lines || []).filter((l) => Number(l.amount) > 0)
+      if (breakdown.length) {
+        for (const l of breakdown) {
+          postTransaction({
+            ...common,
+            amount: Number(l.amount) || 0,
+            headId: l.headId || doc.headId || null,
+            description: l.description || doc.purpose || meta?.label,
+          })
+        }
+      } else {
+        postTransaction({
+          ...common,
+          amount: Number(doc.amount) || Number(doc.total) || 0,
+          headId: doc.headId || null,
+          description: doc.purpose || doc.title || meta?.label,
+        })
+      }
       addAudit('Finance doc approved', doc.docNumber, `${meta?.label} — posted to ledger`)
       notify(`${meta?.label} ${doc.docNumber} approved & posted`)
     },

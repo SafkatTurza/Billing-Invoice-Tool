@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
 import { can } from '../../lib/roles.js'
-import { FIN_TYPES, FIN_STATUS } from '../../lib/finance.js'
+import { FIN_TYPES, FIN_STATUS, isVoucherType, voucherLabel, voucherTotal } from '../../lib/finance.js'
 import { formatMoney, formatDate } from '../../lib/format.js'
 import { Icon } from '../../components/Icons.jsx'
 import '../../styles/documents.css'
@@ -25,10 +25,13 @@ export default function FinanceDocList({ type }) {
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
 
+  // The unified 'voucher' list also shows legacy payment/debit vouchers.
+  const inScope = (d) => (type === 'voucher' ? isVoucherType(d.type) : d.type === type)
+
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase()
     return finDocs
-      .filter((d) => d.type === type && !d.deleted)
+      .filter((d) => inScope(d) && !d.deleted)
       .filter((d) => statusFilter === 'all' || d.status === statusFilter)
       .filter(
         (d) =>
@@ -39,8 +42,9 @@ export default function FinanceDocList({ type }) {
       .sort((a, b) => new Date(b.date) - new Date(a.date))
   }, [finDocs, type, query, statusFilter])
 
-  const amountOf = (d) => Number(d.amount) || Number(d.total) || 0
+  const amountOf = (d) => (isVoucherType(d.type) ? voucherTotal(d) : Number(d.amount) || Number(d.total) || 0)
   const canManage = can(currentUser.role, 'financeManage')
+  const isVoucherList = type === 'voucher'
 
   return (
     <div>
@@ -92,6 +96,7 @@ export default function FinanceDocList({ type }) {
               <tr>
                 <th>Number</th>
                 <th>Date</th>
+                {isVoucherList && <th>Type</th>}
                 <th>Details</th>
                 <th className="text-right">Amount</th>
                 <th>Status</th>
@@ -105,6 +110,13 @@ export default function FinanceDocList({ type }) {
                     {d.docNumber}
                   </td>
                   <td className="small nowrap">{formatDate(d.date)}</td>
+                  {isVoucherList && (
+                    <td>
+                      <span className={`badge ${d.voucherType === 'debit' ? 'badge-amber' : 'badge-purple'}`}>
+                        {voucherLabel(d).replace(' Voucher', '')}
+                      </span>
+                    </td>
+                  )}
                   <td>{d.title || d.purpose || d.receivedFrom || '—'}</td>
                   <td className="text-right nowrap">{formatMoney(amountOf(d), d.currency)}</td>
                   <td>
