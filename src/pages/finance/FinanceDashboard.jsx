@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
-import { FIN_STATUS, isExpenseTxn } from '../../lib/finance.js'
+import { FIN_STATUS, isExpenseTxn, billDue, billOverdue } from '../../lib/finance.js'
 import { can } from '../../lib/roles.js'
 import { formatMoney, formatDate } from '../../lib/format.js'
 import { Icon } from '../../components/Icons.jsx'
@@ -53,6 +53,14 @@ export default function FinanceDashboard() {
   // Billing income from the existing system (paid invoices).
   const paidInvoices = useMemo(() => docs.filter((d) => d.type === 'invoices' && !d.deleted && d.status === 'Paid'), [docs])
   const income = sumByCurrency(paidInvoices, (d) => d.grandTotal)
+
+  // Outstanding payables (unpaid portion of bills) — money the company owes.
+  const openBills = useMemo(
+    () => finDocs.filter((d) => d.type === 'bill' && !d.deleted && d.status !== FIN_STATUS.REVERSED && billDue(d) > 0),
+    [finDocs],
+  )
+  const payables = sumByCurrency(openBills, (d) => billDue(d))
+  const overdueCount = useMemo(() => openBills.filter((d) => billOverdue(d)).length, [openBills])
 
   // Cash position across accounts.
   const balances = useMemo(() => {
@@ -108,6 +116,16 @@ export default function FinanceDashboard() {
           </div>
           <div className="k-sub">{pending.length} awaiting sign-off — not counted yet</div>
         </div>
+        <div className="fin-kpi" style={{ cursor: 'pointer' }} onClick={() => navigate('/finance/bills')}>
+          <div className="k-label">Outstanding Payables</div>
+          <div className="k-val out">
+            <CurLines map={payables} cls="out" />
+          </div>
+          <div className="k-sub">
+            {openBills.length} open bill{openBills.length === 1 ? '' : 's'}
+            {overdueCount > 0 ? ` · ${overdueCount} overdue` : ''}
+          </div>
+        </div>
         <div className="fin-kpi">
           <div className="k-label">Cash & Bank</div>
           <div className="k-val" style={{ color: 'var(--navy)', fontSize: 18 }}>
@@ -134,6 +152,7 @@ export default function FinanceDashboard() {
               { to: '/finance/requisition/new', label: 'New Requisition', icon: Icon.invoice },
               { to: '/finance/voucher/new', label: 'New Voucher', icon: Icon.money },
               { to: '/finance/expenses', label: 'Daily Expense', icon: Icon.po },
+              { to: '/finance/bills', label: 'New Bill', icon: Icon.receipt },
               { to: '/finance/income', label: 'Income / Investment', icon: Icon.money },
             ].map((q) => (
               <button key={q.label} className="qc-btn" onClick={() => navigate(q.to)}>

@@ -109,8 +109,17 @@ export default function AppLayout() {
                   <NavLink to="/finance/expenses" className="nav-item sub">
                     <Icon.po width={16} height={16} /> Daily Expenses
                   </NavLink>
+                  <NavLink to="/finance/bills" className="nav-item sub">
+                    <Icon.receipt width={16} height={16} /> Bills &amp; Payables
+                  </NavLink>
                   <NavLink to="/finance/income" className="nav-item sub">
                     <Icon.money width={16} height={16} /> Income &amp; Investment
+                  </NavLink>
+                  <NavLink to="/finance/budgets" className="nav-item sub">
+                    <Icon.estimate width={16} height={16} /> Budgets
+                  </NavLink>
+                  <NavLink to="/finance/recurring" className="nav-item sub">
+                    <Icon.audit width={16} height={16} /> Recurring
                   </NavLink>
                   <NavLink to="/finance/employees" className="nav-item sub">
                     <Icon.users width={16} height={16} /> Employees
@@ -264,7 +273,9 @@ function Topbar() {
       .filter(
         (d) =>
           (d.docNumber || '').toLowerCase().includes(q) ||
-          (d.title || d.purpose || d.description || d.receivedFrom || d.party || '').toLowerCase().includes(q) ||
+          (d.title || d.purpose || d.description || d.receivedFrom || d.party || d.vendorName || d.billRef || '')
+            .toLowerCase()
+            .includes(q) ||
           String(d.amount || d.total || '').includes(q),
       )
       .slice(0, 20)
@@ -340,7 +351,7 @@ function Topbar() {
                     {list.map((d) => (
                       <div key={d.id} className="search-result" onClick={() => openFinResult(d)}>
                         <span className="sr-num mono">{d.docNumber}</span>
-                        <span className="muted">{d.title || d.purpose || d.description || d.receivedFrom || d.party || '—'}</span>
+                        <span className="muted">{d.title || d.purpose || d.description || d.receivedFrom || d.party || d.vendorName || '—'}</span>
                         <span className="grow" />
                         <span className="small">{formatMoney(finRowAmount(d), d.currency)}</span>
                       </div>
@@ -430,6 +441,7 @@ function financeRouteFor(d) {
   if (d.type === 'income') return `/finance/income/${d.id}`
   if (d.type === 'salary-sheet') return `/finance/salary-sheet/${d.id}`
   if (d.type === 'expense') return '/finance/expenses'
+  if (d.type === 'bill') return '/finance/bills'
   return '/finance'
 }
 function finGroupLabel(key, sample) {

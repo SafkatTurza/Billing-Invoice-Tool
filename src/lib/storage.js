@@ -25,6 +25,8 @@ export const KEYS = {
   finTxns: 'dcs_fin_txns', // ledger (posted transactions)
   finTemplates: 'dcs_fin_templates', // reusable document templates
   employees: 'dcs_employees', // salary (Phase B)
+  finBudgets: 'dcs_fin_budgets', // monthly budget per expense head (Phase E)
+  finRecurring: 'dcs_fin_recurring', // recurring expense/bill templates (Phase E)
 }
 
 export const ls = {

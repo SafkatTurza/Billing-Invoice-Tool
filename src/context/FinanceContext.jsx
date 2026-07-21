@@ -36,6 +36,8 @@ export function FinanceProvider({ children }) {
   const [ledger, setLedger] = useState(() => ls.get(KEYS.finTxns, []))
   const [templates, setTemplates] = useState(() => ls.get(KEYS.finTemplates, []))
   const [employees, setEmployees] = useState(() => ls.get(KEYS.employees, []))
+  const [budgets, setBudgets] = useState(() => ls.get(KEYS.finBudgets, []))
+  const [recurring, setRecurring] = useState(() => ls.get(KEYS.finRecurring, []))
 
   useEffect(() => {
     ls.set(KEYS.finAccounts, accounts)
@@ -55,6 +57,12 @@ export function FinanceProvider({ children }) {
   useEffect(() => {
     ls.set(KEYS.employees, employees)
   }, [employees])
+  useEffect(() => {
+    ls.set(KEYS.finBudgets, budgets)
+  }, [budgets])
+  useEffect(() => {
+    ls.set(KEYS.finRecurring, recurring)
+  }, [recurring])
 
   // ── Masters ──
   const saveAccount = useCallback((acc) => {
@@ -339,6 +347,117 @@ export function FinanceProvider({ children }) {
     [saveFinDoc, postTransaction, addAudit],
   )
 
+  // ── Bills / accounts payable (Phase E) ──
+  // A bill records money *owed* — no cash moves yet, so no ledger entry on save.
+  const saveBill = useCallback(
+    (doc) => saveFinDoc({ ...doc, type: 'bill', status: doc.status || FIN_STATUS.RECORDED }),
+    [saveFinDoc],
+  )
+
+  // Record a payment against a bill: posts one ledger 'out' entry and appends
+  // the payment to the bill so its paid/outstanding figures stay in sync.
+  const recordBillPayment = useCallback(
+    (billId, payment) => {
+      const bill = finDocs.find((d) => d.id === billId)
+      if (!bill) return null
+      const txn = postTransaction({
+        txnDate: payment.date,
+        direction: 'out',
+        amount: Number(payment.amount) || 0,
+        currency: bill.currency || 'BDT',
+        accountId: payment.accountId || null,
+        headId: bill.headId || null,
+        partyName: bill.vendorName || '',
+        description: `Bill payment — ${bill.billRef || bill.docNumber}`,
+        linkType: 'bill',
+        linkId: bill.id,
+        docNumber: bill.docNumber,
+        companyId: bill.companyId,
+      })
+      const entry = {
+        id: uid(),
+        date: payment.date,
+        amount: Number(payment.amount) || 0,
+        accountId: payment.accountId || null,
+        note: payment.note || '',
+        txnId: txn.id,
+      }
+      setFinDocs((prev) => prev.map((d) => (d.id === billId ? { ...d, payments: [...(d.payments || []), entry] } : d)))
+      addAudit('Bill payment', bill.docNumber, `${entry.amount} ${bill.currency}`)
+      return entry
+    },
+    [finDocs, postTransaction, addAudit],
+  )
+
+  // ── Budgets per head (Phase E) — a monthly spending cap per expense head ──
+  const saveBudget = useCallback((headId, amount, currency = 'BDT') => {
+    setBudgets((prev) => {
+      const i = prev.findIndex((b) => b.headId === headId)
+      const row = { id: prev[i]?.id || 'bg-' + uid(), headId, amount: Number(amount) || 0, currency }
+      if (i >= 0) {
+        const c = [...prev]
+        c[i] = row
+        return c
+      }
+      return [...prev, row]
+    })
+  }, [])
+  const deleteBudget = useCallback((headId) => setBudgets((prev) => prev.filter((b) => b.headId !== headId)), [])
+
+  // ── Recurring entries (Phase E) — templates that spawn an expense or bill ──
+  const saveRecurring = useCallback((r) => {
+    setRecurring((prev) => {
+      const i = prev.findIndex((x) => x.id === r.id)
+      if (i >= 0) {
+        const c = [...prev]
+        c[i] = r
+        return c
+      }
+      return [...prev, { ...r, id: r.id || 'rc-' + uid() }]
+    })
+  }, [])
+  const deleteRecurring = useCallback((id) => setRecurring((prev) => prev.filter((r) => r.id !== id)), [])
+
+  // Generate this month's occurrence of a recurring template. Expenses post
+  // straight to the ledger; bills create a payable due on the chosen day.
+  const runRecurring = useCallback(
+    (id, monthISO) => {
+      const r = recurring.find((x) => x.id === id)
+      if (!r) return null
+      const month = monthISO || new Date().toISOString().slice(0, 7) // YYYY-MM
+      if (r.lastRunMonth === month) return null // already generated this month
+      const day = String(Math.min(28, Math.max(1, Number(r.dayOfMonth) || 1))).padStart(2, '0')
+      const date = `${month}-${day}`
+      const common = {
+        companyId: company?.id || 'co-1',
+        autoNumber: true,
+        date,
+        currency: r.currency || 'BDT',
+        headId: r.headId || '',
+        amount: Number(r.amount) || 0,
+        description: r.description || r.name,
+        attachments: [],
+      }
+      let created
+      if (r.kind === 'bill') {
+        created = saveBill({
+          ...common,
+          vendorName: r.vendorName || '',
+          billRef: '',
+          dueDate: date,
+          payments: [],
+        })
+      } else {
+        created = recordExpense({ ...common, type: 'expense', accountId: r.accountId || '', party: r.vendorName || '' })
+      }
+      setRecurring((prev) => prev.map((x) => (x.id === id ? { ...x, lastRunMonth: month } : x)))
+      addAudit('Recurring generated', r.name, `${common.amount} ${common.currency}`)
+      notify(`Recurring "${r.name}" generated for ${month}`)
+      return created
+    },
+    [recurring, company, saveBill, recordExpense, addAudit, notify],
+  )
+
   // ── Templates ──
   const saveTemplate = useCallback((tpl) => {
     setTemplates((prev) => {
@@ -378,6 +497,15 @@ export function FinanceProvider({ children }) {
     ledger,
     templates,
     employees,
+    budgets,
+    recurring,
+    saveBill,
+    recordBillPayment,
+    saveBudget,
+    deleteBudget,
+    saveRecurring,
+    deleteRecurring,
+    runRecurring,
     saveEmployee,
     deleteEmployee,
     saveAccount,

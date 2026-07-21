@@ -32,6 +32,9 @@ import Payslip from './pages/finance/Payslip.jsx'
 import IncomeRecords from './pages/finance/IncomeRecords.jsx'
 import IncomeReceipt from './pages/finance/IncomeReceipt.jsx'
 import FinancialReports from './pages/finance/FinancialReports.jsx'
+import Bills from './pages/finance/Bills.jsx'
+import Budgets from './pages/finance/Budgets.jsx'
+import Recurring from './pages/finance/Recurring.jsx'
 import { canAccessDocType, can } from './lib/roles.js'
 
 // SRS current.png: below 1280px the app shows a "Desktop Required" screen.
@@ -130,6 +133,9 @@ function AppRoutes({ isSetupComplete, currentUser }) {
           <Route key="fin-dash" path="finance" element={<FinanceDashboard />} />,
           <Route key="fin-ledger" path="finance/ledger" element={<Ledger />} />,
           <Route key="fin-expenses" path="finance/expenses" element={<DailyExpenses />} />,
+          <Route key="fin-bills" path="finance/bills" element={<Bills />} />,
+          <Route key="fin-budgets" path="finance/budgets" element={<Budgets />} />,
+          <Route key="fin-recurring" path="finance/recurring" element={<Recurring />} />,
           <Route key="fin-income" path="finance/income" element={<IncomeRecords />} />,
           <Route key="fin-income-view" path="finance/income/:id" element={<IncomeReceipt />} />,
           <Route key="fin-reports" path="finance/reports" element={<MonthlyReport />} />,

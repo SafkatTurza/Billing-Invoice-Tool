@@ -130,6 +130,23 @@ A centralized company-finance module alongside billing:
   documents (routing to the right preview), and the Ledger adds date-range and
   account-head filters.
 
+### Payables & spend control (Phase E)
+
+- **Bills / Accounts Payable** — record vendor bills you *owe*, with a due date and
+  optional attached invoice. No cash moves on save; you **record payments** against a
+  bill (full or partial) and each payment posts to the ledger, so cash-flow only ever
+  reflects money actually paid. Bills show **Open / Partial / Paid** status, an
+  **outstanding** balance, and an **overdue** aging bucket (0–30 / 31–60 / 61–90 / 90+).
+  The dashboard carries an **Outstanding Payables** figure with an overdue count.
+- **Budgets per head** — set a monthly spending cap for each expense head. The Budgets
+  page compares the cap to this month's **actual** posted expenses (vouchers, daily
+  expenses and bill payments alike), with a utilisation bar that turns amber at 80% and
+  red when a head goes over.
+- **Recurring entries** — templates for monthly costs (rent, internet, subscriptions)
+  that spawn a Daily Expense or a Bill on a chosen day of the month. Nothing posts
+  automatically: a due entry shows a **Post now** button so a person stays in the loop,
+  and each template records the last month it generated so it can't double-post.
+
 ### Finance access control (privacy)
 
 All finance **data entry** — requisitions/PRs, payment & debit vouchers, salary

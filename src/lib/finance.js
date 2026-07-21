@@ -60,6 +60,15 @@ export const FIN_TYPES = {
     approvable: false, // money IN recorded directly by Accounts (Phase C)
     accent: '#059669', // green
   },
+  // Vendor bill / accounts-payable (Phase E). Recorded when money is *owed*;
+  // cash only leaves the ledger when a payment is recorded against it.
+  bill: {
+    label: 'Bill',
+    plural: 'Bills / Payables',
+    prefix: 'BILL',
+    approvable: false,
+    accent: '#e11d48', // rose
+  },
   'salary-sheet': {
     label: 'Salary Sheet',
     plural: 'Salary Sheets',
@@ -158,6 +167,39 @@ export function isIncomeTxn(t) {
   return t.status === 'posted' && t.direction === 'in' && t.linkType !== 'transfer'
 }
 
+// ── Bills / accounts payable (Phase E) ──
+// A bill's own lifecycle status stays 'Recorded'/'Reversed'; its *payment*
+// status is derived purely from what's been paid against it.
+export function billPaid(doc) {
+  return (doc?.payments || []).reduce((s, p) => s + (Number(p.amount) || 0), 0)
+}
+export function billDue(doc) {
+  return Math.max(0, (Number(doc?.amount) || 0) - billPaid(doc))
+}
+// 'Paid' | 'Partial' | 'Open' — plus 'Reversed' if the bill itself was voided.
+export function billPayStatus(doc) {
+  if (doc?.status === FIN_STATUS.REVERSED) return 'Reversed'
+  const paid = billPaid(doc)
+  const total = Number(doc?.amount) || 0
+  if (total > 0 && paid >= total - 0.005) return 'Paid'
+  if (paid > 0) return 'Partial'
+  return 'Open'
+}
+// Overdue = still owes money and the due date has passed.
+export function billOverdue(doc, today = todayISO()) {
+  return billDue(doc) > 0 && !!doc?.dueDate && doc.dueDate < today && doc?.status !== FIN_STATUS.REVERSED
+}
+// Aging bucket for an unpaid bill, by days since due date.
+export function billAgeBucket(doc, today = todayISO()) {
+  if (!doc?.dueDate || billDue(doc) <= 0) return null
+  const days = Math.floor((new Date(today) - new Date(doc.dueDate)) / 86400000)
+  if (days < 0) return 'Not due'
+  if (days <= 30) return '0–30'
+  if (days <= 60) return '31–60'
+  if (days <= 90) return '61–90'
+  return '90+'
+}
+
 function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
 }
@@ -244,6 +286,20 @@ export function newFinDoc(type, company, user) {
       amount: '',
       party: '',
       description: '',
+    }
+  }
+  if (type === 'bill') {
+    return {
+      ...base,
+      status: FIN_STATUS.RECORDED,
+      vendorName: '',
+      billRef: '', // the vendor's own invoice/bill number
+      dueDate: '',
+      headId: '',
+      amount: '',
+      description: '',
+      // Payments recorded against this bill; each posts a ledger 'out' entry.
+      payments: [], // { id, date, amount, accountId, note, txnId }
     }
   }
   // expense

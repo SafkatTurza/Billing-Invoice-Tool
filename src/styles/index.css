@@ -210,6 +210,10 @@ textarea {
 .badge-teal { background: #d8f4f0; color: #0b7d73; }
 .badge-purple { background: #efe7fd; color: #7c3aed; }
 
+/* Budget utilisation bar (Phase E) */
+.budget-bar { height: 8px; border-radius: 999px; background: #eef0f4; overflow: hidden; width: 100%; }
+.budget-bar-fill { height: 100%; border-radius: 999px; transition: width .2s ease; }
+
 /* ── Utility ─────────────────────────────────────────────── */
 .row { display: flex; }
 .col { display: flex; flex-direction: column; }
