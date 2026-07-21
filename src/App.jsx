@@ -25,6 +25,7 @@ import MonthlyReport from './pages/finance/MonthlyReport.jsx'
 import FinanceDocList from './pages/finance/FinanceDocList.jsx'
 import FinanceDocEditor from './pages/finance/FinanceDocEditor.jsx'
 import FinanceDocPreview from './pages/finance/FinanceDocPreview.jsx'
+import TransactionDetail from './pages/finance/TransactionDetail.jsx'
 import Employees from './pages/finance/Employees.jsx'
 import Loans from './pages/finance/Loans.jsx'
 import SalarySheetEditor from './pages/finance/SalarySheetEditor.jsx'
@@ -156,6 +157,7 @@ function AppRoutes({ isSetupComplete, currentUser }) {
           <Route key="sal-payslip" path="finance/salary-sheet/:id/payslip/:lineId" element={<Payslip />} />,
           <Route key="sal-payslips" path="finance/salary-sheet/:id/payslips" element={<BulkPayslips />} />,
           <Route key="sal-disburse" path="finance/salary-sheet/:id/disbursement" element={<SalaryDisbursement />} />,
+          <Route key="fin-txn" path="finance/transaction/:txnId" element={<TransactionDetail />} />,
           ...['requisition', 'voucher'].flatMap((t) => [
             <Route key={t} path={`finance/${t}`} element={<FinanceDocList type={t} />} />,
             <Route key={t + '-view'} path={`finance/${t}/:id`} element={<FinanceDocPreview type={t} />} />,

@@ -91,15 +91,26 @@ export function finalSlotIndex(type) {
 export function isVoucherType(type) {
   return type === 'voucher' || type === 'payment-voucher' || type === 'debit-voucher'
 }
-// Payment = purple, Debit = amber — driven by doc.voucherType so one type
-// renders both flavours.
+// Per-type print accent — Payment = navy, Cash = green, Debit = teal-green.
+// Driven by doc.voucherType so one type renders all three flavours.
 export function voucherAccent(doc) {
-  return doc?.voucherType === 'debit' ? '#d97706' : '#7c3aed'
+  if (doc?.voucherType === 'cash') return '#15803d' // green
+  if (doc?.voucherType === 'debit') return '#0d9488' // teal-green
+  return '#1e3a5f' // navy (payment)
 }
 export function voucherLabel(doc) {
   if (doc?.voucherType === 'cash') return 'Cash Voucher'
   return doc?.voucherType === 'debit' ? 'Debit Voucher' : 'Payment Voucher'
 }
+// The two-line badge printed top-right of a voucher (e.g. CASH / RECEIPT).
+export function voucherBadgeLines(doc) {
+  if (doc?.voucherType === 'cash') return ['CASH', doc?.cashDirection === 'receipt' ? 'RECEIPT' : 'PAYMENT']
+  if (doc?.voucherType === 'debit') return ['DEBIT', 'VOUCHER']
+  return ['PAYMENT', 'VOUCHER']
+}
+// Payment modes offered on a (non-cash) voucher. BEFTN is a MODE, not an
+// account. Cash vouchers are physical cash only and don't use this list.
+export const VOUCHER_PAYMENT_METHODS = ['Cash', 'Bank Transfer', 'BEFTN', 'Cheque', 'Card', 'Online / MFS', 'Others']
 // Voucher amount — sum of the optional per-head breakdown, else the single field.
 export function voucherTotal(doc) {
   const lines = doc?.lines || []
@@ -113,29 +124,50 @@ export function voucherTotal(doc) {
 // recorded *before* final approval so the approver (CEO/MD) reviews the receipt
 // first — the chain reorders and the final (management) slot becomes "Approved
 // By".
-const VOUCHER_SLOTS_DEFAULT = ['Accountant', 'Checked By', 'Managing Director/Director', 'Received Payments']
-const VOUCHER_SLOTS_RECEIPT = ['Accountant', 'Checked By', 'Received Payment', 'Approved By']
-
+// A voucher's signature chain is built from three parts:
+//   • the two fixed preparer/checker slots,
+//   • an OPTIONAL 5th signatory (max 5 slots) — an extra approval step signed
+//     by role/permission like any other approver, part of the chain,
+//   • a two-slot tail: the final (management) approval and the receiver
+//     acknowledgement, whose order flips in money-receipt mode.
+const VOUCHER_BASE_SLOTS = ['Accountant', 'Checked By']
+function voucherTailSlots(doc) {
+  return usesMoneyReceipt(doc)
+    ? ['Received Payment', 'Approved By'] // receiver recorded before final approval
+    : ['Managing Director/Director', 'Received Payments']
+}
 export function usesMoneyReceipt(doc) {
   return isVoucherType(doc?.type) && !!doc?.moneyReceipt
 }
-export function voucherSlotLabels(doc) {
-  return usesMoneyReceipt(doc) ? VOUCHER_SLOTS_RECEIPT : VOUCHER_SLOTS_DEFAULT
+// Whether the optional 5th signatory is enabled (never exceeds 5 slots total).
+export function hasExtraApprover(doc) {
+  return isVoucherType(doc?.type) && !!doc?.extraApprover
 }
-// Empty slots for a voucher's current receiver mode — used while it is an
-// unsigned draft (never rewrites applied signatures).
+export function voucherSlotLabels(doc) {
+  const extra = hasExtraApprover(doc) ? [(doc?.extraApproverLabel || '').trim() || 'Additional Approver'] : []
+  return [...VOUCHER_BASE_SLOTS, ...extra, ...voucherTailSlots(doc)]
+}
+// Empty slots for a voucher's current receiver/signatory config — used while it
+// is an unsigned draft (never rewrites applied signatures).
 export function rebuildVoucherSlots(doc) {
   return voucherSlotLabels(doc).map((label) => ({ label, signed: false }))
 }
-// Index of the receiver-acknowledgement slot for a voucher, else -1.
+// Index of the receiver-acknowledgement slot for a voucher, else -1. It is
+// always one of the last two slots (before the final approval in receipt mode,
+// last otherwise) so the maths holds whether or not the 5th signatory is on.
 export function receivedSlotIndex(doc) {
   if (!isVoucherType(doc?.type)) return -1
-  return usesMoneyReceipt(doc) ? 2 : 3
+  const n = voucherSlotLabels(doc).length
+  return usesMoneyReceipt(doc) ? n - 2 : n - 1
 }
-// Final (management) slot, receiver-mode aware. For money-receipt vouchers the
-// last slot ("Approved By") is management; otherwise fall back to the type's.
+// Final (management) slot, receiver- and 5th-signatory-aware. For money-receipt
+// vouchers the last slot ("Approved By") is management; otherwise it's the slot
+// before the receiver acknowledgement. Non-vouchers fall back to the type's.
 export function docFinalSlotIndex(doc) {
-  if (usesMoneyReceipt(doc)) return 3
+  if (isVoucherType(doc?.type)) {
+    const n = voucherSlotLabels(doc).length
+    return usesMoneyReceipt(doc) ? n - 1 : n - 2
+  }
   return finalSlotIndex(doc?.type)
 }
 
@@ -368,11 +400,17 @@ export function newFinDoc(type, company, user) {
       linkedVoucherId: '',
       linkedVoucherType: '',
       linkedVoucherNumber: '',
-      // Payment references (Phase J) — captured per payment mode.
+      // Payment references (Phase J) — captured per payment mode. The account
+      // number is masked wherever it's displayed (maskAccount).
       bankTxnId: '',
       beftnRef: '',
       cardRef: '',
       otherRef: '',
+      payAccountNo: '',
+      // Optional 5th signatory (Gate 2). Off by default → the standard 4-slot
+      // chain; on → one extra approval slot signed by role/permission.
+      extraApprover: false,
+      extraApproverLabel: '',
       // Money-receipt / external-receiver routing (Phase I). When on, the payee
       // is outside the company: a money receipt is required and the approval
       // chain reorders so the receiver is recorded before final approval.
@@ -381,7 +419,7 @@ export function newFinDoc(type, company, user) {
       receiptNo: '',
       receivedFrom: '',
       purpose: '',
-      paymentMethod: 'Cash', // Cash | Bank Transfer | Cheque | Others
+      paymentMethod: 'Cash', // one of VOUCHER_PAYMENT_METHODS
       chequeNo: '',
       paymentDated: '',
       bank: '',

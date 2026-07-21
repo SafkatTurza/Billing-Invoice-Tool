@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
-import { FIN_TYPES, FIN_STATUS, requisitionTotal, voucherTotal, voucherAccent, voucherLabel, isVoucherType, pushTimeline, docFxRate, docBaseAmount } from '../../lib/finance.js'
+import { FIN_TYPES, FIN_STATUS, requisitionTotal, voucherTotal, voucherAccent, voucherLabel, voucherBadgeLines, isVoucherType, isPrimary, maskAccount, voucherDirection, pushTimeline, docFxRate, docBaseAmount } from '../../lib/finance.js'
 import { can } from '../../lib/roles.js'
 import { formatMoney, formatDate } from '../../lib/format.js'
 import { amountInWords } from '../../lib/amountInWords.js'
@@ -144,6 +144,25 @@ export default function FinanceDocPreview({ type }) {
           <b>Sent back for correction</b> by {doc.sentBackBy || 'Unknown'} on {formatDate(doc.sentBackAt)}.
           {doc.sentBackReason ? <div style={{ marginTop: 4 }}>Reason: {doc.sentBackReason}</div> : null}
           {canManage ? <div style={{ marginTop: 4 }}>Edit the document and save to resubmit for approval.</div> : null}
+        </div>
+      )}
+
+      {/* Linked / internal record notice + transaction grouping (on-screen). */}
+      {isVoucherType(doc.type) && !isPrimary(doc) && (
+        <div className="warn-banner no-print" style={{ marginBottom: 18 }}>
+          <b>LINKED INTERNAL RECORD — NO ADDITIONAL FINANCIAL IMPACT.</b>{' '}
+          {doc.linkedVoucherNumber ? `The financial transaction is booked under ${doc.linkedVoucherNumber}${doc.transactionId ? ` (${doc.transactionId})` : ''}.` : 'This document does not post to the ledger.'}
+        </div>
+      )}
+      {isVoucherType(doc.type) && doc.transactionId && (
+        <div className="row between center no-print" style={{ marginBottom: 18, gap: 8, flexWrap: 'wrap' }}>
+          <span className="small muted">
+            Transaction: <span className="mono bold">{doc.transactionId}</span>{' '}
+            <span className="badge badge-blue" style={{ marginLeft: 6 }}>{isPrimary(doc) ? 'Primary — posts to ledger' : 'Linked — no impact'}</span>
+          </span>
+          <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/finance/transaction/${encodeURIComponent(doc.transactionId)}`)}>
+            <Icon.eye width={14} height={14} /> View Transaction
+          </button>
         </div>
       )}
 
@@ -292,12 +311,35 @@ function RequisitionPaper({ doc, company }) {
 
 function VoucherPaper({ doc, company }) {
   const isDebit = doc.voucherType === 'debit'
+  const isCash = doc.voucherType === 'cash'
+  const isReceipt = voucherDirection(doc) === 'in'
+  const linked = !isPrimary(doc)
   const accent = voucherAccent(doc)
   const total = voucherTotal(doc)
   const lines = (doc.lines || []).filter((l) => Number(l.amount) > 0)
-  const paymentLine = [doc.paymentMethod, doc.chequeNo && `Cheque #${doc.chequeNo}`].filter(Boolean).join(' — ') || 'N/A'
+  const badge = voucherBadgeLines(doc)
+  // Per-type section wording.
+  const purposeLabel = isDebit ? 'Being Charged For' : isReceipt ? 'Received For' : 'Paid For'
+  const partyLabel = isReceipt ? 'Received with thanks from' : 'Paid to / received by'
+  const acctLabel = isReceipt ? 'Received Into' : 'Payment Account'
+  // Payment mode + masked references.
+  const method = doc.paymentMethod
+  const refBits = []
+  if (doc.chequeNo) refBits.push(`Cheque #${doc.chequeNo}`)
+  if (doc.bankTxnId && method === 'Bank Transfer') refBits.push(`Txn ${doc.bankTxnId}`)
+  if (doc.beftnRef && method === 'BEFTN') refBits.push(`BEFTN ${doc.beftnRef}`)
+  if (doc.cardRef && method === 'Card') refBits.push(`Card ${maskAccount(doc.cardRef)}`)
+  if (doc.otherRef && (method === 'Online / MFS' || method === 'Others')) refBits.push(doc.otherRef)
+  if (doc.payAccountNo && (method === 'Bank Transfer' || method === 'BEFTN')) refBits.push(`A/C ${maskAccount(doc.payAccountNo)}`)
+  const paymentLine = [method, ...refBits].filter(Boolean).join(' — ') || 'N/A'
   return (
     <div>
+      {linked && (
+        <div className="voucher-linked-strip" style={{ borderColor: accent, color: accent }}>
+          LINKED INTERNAL RECORD — NO ADDITIONAL FINANCIAL IMPACT
+          {doc.linkedVoucherNumber ? ` · Booked under ${doc.linkedVoucherNumber}` : ''}
+        </div>
+      )}
       <div className="fin-letterhead">
         <div className="fl-logo">{company.logo ? <img src={company.logo} alt="" /> : (company.name || 'D')[0]}</div>
         <div className="fl-center">
@@ -305,14 +347,15 @@ function VoucherPaper({ doc, company }) {
           {company.email && <div className="fl-ref">Email: {company.email}</div>}
         </div>
         <div className="voucher-badge" style={{ borderColor: accent, color: accent }}>
-          {isDebit ? 'DEBIT' : 'PAYMENT'}
+          {badge[0]}
           <br />
-          VOUCHER
+          {badge[1]}
         </div>
       </div>
 
       <div className="row between" style={{ margin: '14px 0 6px' }}>
         <div className="mono small">SL No: {doc.docNumber}</div>
+        {doc.transactionId && <div className="mono small">Txn: {doc.transactionId}</div>}
         <div className="small">Date: {formatDate(doc.date)}</div>
       </div>
 
@@ -326,7 +369,7 @@ function VoucherPaper({ doc, company }) {
         </div>
       )}
       <div className="voucher-row">
-        <span className="vr-label">Received with thanks from</span>
+        <span className="vr-label">{partyLabel}</span>
         <span className="vr-fill">{doc.receivedFrom}</span>
       </div>
       {doc.moneyReceipt && (
@@ -339,7 +382,7 @@ function VoucherPaper({ doc, company }) {
         </div>
       )}
       <div className="voucher-row">
-        <span className="vr-label">Purpose OF</span>
+        <span className="vr-label">{purposeLabel}</span>
         <span className="vr-fill" style={{ whiteSpace: 'pre-wrap' }}>{doc.purpose}</span>
       </div>
       {doc.requisitionNumber && (
@@ -348,17 +391,29 @@ function VoucherPaper({ doc, company }) {
           <span className="vr-fill mono">{doc.requisitionNumber}</span>
         </div>
       )}
+      {linked && doc.linkedVoucherNumber && (
+        <div className="voucher-row">
+          <span className="vr-label">Linked to Primary</span>
+          <span className="vr-fill mono">{doc.linkedVoucherNumber}</span>
+        </div>
+      )}
       <div className="voucher-row">
-        <span className="vr-label">By Cash/Cheque/Others</span>
+        <span className="vr-label">{isCash ? 'By Cash' : 'By'}</span>
         <span className="vr-fill">{paymentLine}</span>
         <span className="vr-label">Dated</span>
         <span className="vr-fill" style={{ maxWidth: 120 }}>{doc.paymentDated ? formatDate(doc.paymentDated) : 'N/A'}</span>
       </div>
+      {!isCash && (
+        <div className="voucher-row">
+          <span className="vr-label">Bank</span>
+          <span className="vr-fill">{doc.bank || 'N/A'}</span>
+          <span className="vr-label">Branch</span>
+          <span className="vr-fill">{doc.branch || 'N/A'}</span>
+        </div>
+      )}
       <div className="voucher-row">
-        <span className="vr-label">Bank</span>
-        <span className="vr-fill">{doc.bank || 'N/A'}</span>
-        <span className="vr-label">Branch</span>
-        <span className="vr-fill">{doc.branch || 'N/A'}</span>
+        <span className="vr-label">{acctLabel}</span>
+        <span className="vr-fill"><AccountName id={doc.accountId} /></span>
       </div>
 
       {/* Optional per-head breakdown */}
@@ -386,8 +441,8 @@ function VoucherPaper({ doc, company }) {
       )}
 
       <div className="voucher-row" style={{ marginTop: 12 }}>
-        <span className="vr-label">Total Amount</span>
-        <span style={{ border: `1px solid ${accent}`, borderRadius: 6, padding: '4px 14px', fontWeight: 800, minWidth: 120, textAlign: 'center' }}>
+        <span className="vr-label">{linked ? 'Documented Amount' : 'Total Amount'}</span>
+        <span style={{ border: `1.5px solid ${accent}`, borderRadius: 6, padding: '4px 14px', fontWeight: 800, minWidth: 120, textAlign: 'center', color: accent }}>
           {formatMoney(total, doc.currency)}
         </span>
         <span className="vr-label" style={{ marginLeft: 12 }}>Amount in Word</span>
@@ -403,7 +458,20 @@ function VoucherPaper({ doc, company }) {
         </div>
       )}
 
+      {linked && (
+        <div className="voucher-linked-note" style={{ color: accent }}>
+          This is an internal record only. The financial transaction is recorded on
+          {doc.linkedVoucherNumber ? ` ${doc.linkedVoucherNumber}` : ' the primary voucher'} — this voucher adds no further ledger impact.
+        </div>
+      )}
+
       <SignRow slots={doc.signSlots} />
+
+      {/* Clerical footer — auto-filled from recording metadata (print-only). */}
+      <div className="voucher-accounts-line">
+        <span>For Accounts Use Only</span>
+        <span>Accounts Recorded By: {doc.createdByName || '—'}{doc.createdAt ? ` · ${formatDate(doc.createdAt)}` : ''}</span>
+      </div>
     </div>
   )
 }
@@ -411,4 +479,9 @@ function VoucherPaper({ doc, company }) {
 function HeadName({ id }) {
   const { heads } = useFinance()
   return <>{heads.find((h) => h.id === id)?.name || '—'}</>
+}
+
+function AccountName({ id }) {
+  const { accounts } = useFinance()
+  return <>{accounts.find((a) => a.id === id)?.name || '—'}</>
 }

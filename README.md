@@ -234,6 +234,42 @@ A centralized company-finance module alongside billing:
   combine every currency into one BDT figure, while the per-currency ledger, statements and trial
   balance keep their original currency. Threshold-based approval routing also compares the BDT base.
 
+### Voucher Management — Payment / Cash / Debit (Phase J)
+
+- **Three voucher types on one document** — a voucher is now **Payment**, **Cash**, or **Debit**,
+  chosen with a toggle. **Cash** vouchers are physical cash and support both directions:
+  **Cash Payment** (cash out) and **Cash Receipt** (cash in). A Cash Receipt Voucher is kept
+  deliberately **separate** from a client-facing Money Receipt.
+- **One financial transaction, recorded once** — every voucher is either the **Primary**
+  transaction (it posts to the ledger) or a **Linked / Internal Record** (documentation only, with
+  **no additional financial impact**). A linked record references its primary, inherits the shared
+  **Transaction ID**, and is clearly stamped *LINKED INTERNAL RECORD — NO ADDITIONAL FINANCIAL
+  IMPACT* on screen and in print. A single guard (`ledgerPostPlan`) guarantees the same transaction
+  can never be booked twice — not by a linked record, not by a re-approval, and not by a second
+  document sharing the Transaction ID.
+- **Transaction ID grouping + Transaction Detail** — a primary voucher mints a `TXN-YYYYMMDD-001`
+  id (yearly reset) that groups it with any linked documents. A **Transaction Detail** view lists
+  the primary, every linked record, and the posted ledger entries, so the one real financial impact
+  is auditable at a glance.
+- **Expanded payment modes** — Cash, Bank Transfer, **BEFTN** (a *mode*, not an account), Cheque,
+  Card, Online / MFS, and Others, each with its own reference field (bank txn id, BEFTN ref, cheque
+  no., card ref, wallet/gateway txn id). **Account and card numbers are masked** in the printed
+  voucher (e.g. `•••• 1234`).
+- **Configurable signatures (4, optionally 5)** — the standard four-slot chain
+  (`Accountant → Checked By → Managing Director/Director → Received`) can be expanded to an optional
+  **5th signatory** (max 5), an extra approval step that is **signed by role/permission** like any
+  other approver and is part of the sequential chain. This composes cleanly with the money-receipt
+  reorder.
+- **Three printable templates** — Payment (navy), Cash (green) and Debit (teal-green), each with a
+  boxed amount panel, per-type section wording, direction-aware labels, the Transaction ID, and a
+  print-only *For Accounts Use Only / Accounts Recorded By* clerical line auto-filled from the
+  recording metadata.
+- **Voucher dashboard filters** — the voucher list filters by **type** (Payment / Cash / Debit),
+  **role** (Primary / Linked), and status, and search also matches the Transaction ID and the linked
+  primary's number.
+- **Numbering** — separate running sequences per type: `PV-YYYYMMDD-001`, `CV-YYYYMMDD-001`,
+  `DV-YYYYMMDD-001`, each resetting to `001` at the start of the year.
+
 ### Finance access control (privacy)
 
 All finance **data entry** — requisitions/PRs, payment & debit vouchers, salary

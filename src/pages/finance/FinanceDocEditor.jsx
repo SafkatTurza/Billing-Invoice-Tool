@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
-import { FIN_TYPES, newFinDoc, newReqItem, newVoucherLine, requisitionTotal, voucherTotal, FIN_STATUS, pushTimeline, docAmount, needsFxRate, rebuildVoucherSlots } from '../../lib/finance.js'
+import { FIN_TYPES, newFinDoc, newReqItem, newVoucherLine, requisitionTotal, voucherTotal, FIN_STATUS, pushTimeline, docAmount, needsFxRate, rebuildVoucherSlots, VOUCHER_PAYMENT_METHODS, voucherDirection, isPrimary, voucherLabel, isVoucherType } from '../../lib/finance.js'
 import { CURRENCIES } from '../../lib/format.js'
 import { amountInWords } from '../../lib/amountInWords.js'
 import AttachmentField from '../../components/AttachmentField.jsx'
@@ -37,6 +37,11 @@ export default function FinanceDocEditor({ type }) {
     if (!isReq && doc.moneyReceipt) {
       if (!(doc.attachments?.length > 0)) return toast.error('Attach the money receipt before submitting.')
       if (!(doc.receiverName || '').trim()) return toast.error('Enter who received the payment.')
+    }
+    // A linked/internal voucher documents an existing transaction — it must
+    // reference the primary voucher it belongs to.
+    if (isVoucherType(type) && !isPrimary(doc) && !doc.linkedVoucherId) {
+      return toast.error('Select the primary voucher this linked record belongs to.')
     }
     const total = isReq ? requisitionTotal(doc) : voucherTotal(doc)
     // Keep the single amount field in sync with an itemised breakdown, so the
@@ -294,20 +299,52 @@ function RequisitionBody({ doc, patch }) {
   )
 }
 
-const PAYMENT_METHODS = ['Cash', 'Bank Transfer', 'Cheque', 'Others']
-
 function VoucherBody({ doc, patch }) {
   const { accounts, heads, employees, finDocs } = useFinance()
   const isDebit = doc.voucherType === 'debit'
+  const isCash = doc.voucherType === 'cash'
+  const isReceipt = voucherDirection(doc) === 'in' // cash receipt = money IN
+  const linked = !isPrimary(doc)
   const expenseHeads = heads.filter((h) => h.kind === 'expense')
   const lines = doc.lines || []
-  const isCheque = doc.paymentMethod === 'Cheque'
-  const showBank = isCheque || doc.paymentMethod === 'Bank Transfer'
+  const method = doc.paymentMethod
+  const isCheque = method === 'Cheque'
+  const isBeftn = method === 'BEFTN'
+  const isCard = method === 'Card'
+  const isOnline = method === 'Online / MFS'
+  const showBank = isCheque || method === 'Bank Transfer' || isBeftn
+  const showAcctNo = method === 'Bank Transfer' || isBeftn
   const total = voucherTotal(doc)
   const anySigned = (doc.signSlots || []).some((s) => s.signed)
-  // Toggling receiver mode reorders the approval chain, so rebuild the (still
-  // empty) slots to match. Locked once any signature has been applied.
+  // Toggling receiver mode / the 5th signatory reorders or resizes the approval
+  // chain, so rebuild the (still empty) slots to match. Locked once signing has
+  // begun. Money receipts only apply to money-OUT vouchers.
   const setReceiverMode = (on) => patch({ moneyReceipt: on, signSlots: rebuildVoucherSlots({ ...doc, moneyReceipt: on }) })
+  const setExtraApprover = (on) => patch({ extraApprover: on, signSlots: rebuildVoucherSlots({ ...doc, extraApprover: on }) })
+  // Cash vouchers are physical cash, so fix the mode to Cash on switch.
+  const setVoucherType = (vt) => patch({ voucherType: vt, paymentMethod: vt === 'cash' ? 'Cash' : doc.paymentMethod })
+  // A cash receipt brings money in and never uses an external money receipt;
+  // clearing it rebuilds the (still empty) approval slots to match.
+  const setCashDirection = (cd) => {
+    const receiptOff = cd === 'receipt' ? false : doc.moneyReceipt
+    patch({ cashDirection: cd, moneyReceipt: receiptOff, signSlots: rebuildVoucherSlots({ ...doc, moneyReceipt: receiptOff }) })
+  }
+
+  // Existing primary vouchers a linked/internal record can attach to.
+  const primaryVouchers = finDocs.filter(
+    (d) => isVoucherType(d.type) && isPrimary(d) && !d.deleted && d.id !== doc.id && (d.transactionId || d.docNumber),
+  )
+  const setFinancialRole = (role) => {
+    if (role === 'primary') return patch({ financialRole: 'primary', linkedVoucherId: '', linkedVoucherType: '', linkedVoucherNumber: '', transactionId: doc.autoNumber ? '' : doc.transactionId })
+    patch({ financialRole: 'linked' })
+  }
+  const onSelectPrimary = (pid) => {
+    if (!pid) return patch({ linkedVoucherId: '', linkedVoucherType: '', linkedVoucherNumber: '', transactionId: '' })
+    const p = finDocs.find((d) => d.id === pid)
+    if (!p) return
+    // Inherit the primary's grouping id so both documents share one Transaction ID.
+    patch({ linkedVoucherId: p.id, linkedVoucherType: p.voucherType || 'payment', linkedVoucherNumber: p.docNumber, transactionId: p.transactionId || '' })
+  }
 
   // Approved requisitions this voucher can settle.
   const approvedReqs = finDocs.filter((d) => d.type === 'requisition' && d.status === FIN_STATUS.APPROVED && !d.deleted)
@@ -347,25 +384,93 @@ function VoucherBody({ doc, patch }) {
 
   return (
     <div className="form-section">
-      <h3>{isDebit ? 'Debit' : 'Payment'} Voucher Details</h3>
+      <h3>{voucherLabel(doc)} Details</h3>
 
-      {/* Payment vs Debit — one type, chosen here. */}
+      {/* Payment / Cash / Debit — one type, chosen here. */}
       <div className="field">
         <label>Voucher Type</label>
         <div className="row gap-16" style={{ flexWrap: 'wrap' }}>
           <label className="row gap-8 center" style={{ cursor: 'pointer' }}>
-            <input type="radio" name="voucherType" checked={!isDebit} onChange={() => patch({ voucherType: 'payment' })} />
+            <input type="radio" name="voucherType" checked={doc.voucherType === 'payment'} onChange={() => setVoucherType('payment')} />
             Payment Voucher <span className="muted small">(money paid out)</span>
           </label>
           <label className="row gap-8 center" style={{ cursor: 'pointer' }}>
-            <input type="radio" name="voucherType" checked={isDebit} onChange={() => patch({ voucherType: 'debit' })} />
+            <input type="radio" name="voucherType" checked={isCash} onChange={() => setVoucherType('cash')} />
+            Cash Voucher <span className="muted small">(physical cash)</span>
+          </label>
+          <label className="row gap-8 center" style={{ cursor: 'pointer' }}>
+            <input type="radio" name="voucherType" checked={isDebit} onChange={() => setVoucherType('debit')} />
             Debit Voucher <span className="muted small">(charge to an account)</span>
           </label>
         </div>
       </div>
 
+      {/* Cash direction — in or out. */}
+      {isCash && (
+        <div className="field">
+          <label>Cash Direction</label>
+          <div className="row gap-16" style={{ flexWrap: 'wrap' }}>
+            <label className="row gap-8 center" style={{ cursor: 'pointer' }}>
+              <input type="radio" name="cashDirection" checked={doc.cashDirection !== 'receipt'} onChange={() => setCashDirection('payment')} />
+              Cash Payment <span className="muted small">(cash out)</span>
+            </label>
+            <label className="row gap-8 center" style={{ cursor: 'pointer' }}>
+              <input type="radio" name="cashDirection" checked={doc.cashDirection === 'receipt'} onChange={() => setCashDirection('receipt')} />
+              Cash Receipt <span className="muted small">(cash in)</span>
+            </label>
+          </div>
+          <div className="small muted" style={{ marginTop: 4 }}>
+            Kept separate from a Money Receipt — a Cash Receipt Voucher records physical cash coming in.
+          </div>
+        </div>
+      )}
+
+      {/* Primary vs Linked / internal record. Only a primary posts to the
+          ledger; a linked record documents the same transaction with zero
+          additional financial impact. */}
+      <div className="field">
+        <label>Financial Role</label>
+        <div className="row gap-16" style={{ flexWrap: 'wrap' }}>
+          <label className="row gap-8 center" style={{ cursor: anySigned ? 'not-allowed' : 'pointer' }}>
+            <input type="radio" name="financialRole" checked={!linked} disabled={anySigned} onChange={() => setFinancialRole('primary')} />
+            Primary Transaction <span className="muted small">(records to the ledger)</span>
+          </label>
+          <label className="row gap-8 center" style={{ cursor: anySigned ? 'not-allowed' : 'pointer' }}>
+            <input type="radio" name="financialRole" checked={linked} disabled={anySigned} onChange={() => setFinancialRole('linked')} />
+            Linked / Internal Record <span className="muted small">(no additional ledger impact)</span>
+          </label>
+        </div>
+      </div>
+      {linked && (
+        <div className="grid grid-2">
+          <div className="field">
+            <label>
+              Primary Voucher <span className="req">*</span>
+            </label>
+            <select className="select" value={doc.linkedVoucherId || ''} onChange={(e) => onSelectPrimary(e.target.value)}>
+              <option value="">— Select the primary voucher —</option>
+              {primaryVouchers.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.docNumber} — {voucherLabel(p)} {p.transactionId ? `· ${p.transactionId}` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="field" style={{ gridColumn: 'span 2' }}>
+            <div className="warn-banner" style={{ margin: 0 }}>
+              <b>Linked internal record — no additional financial impact.</b>{' '}
+              {doc.linkedVoucherNumber
+                ? `A financial transaction already exists under ${doc.linkedVoucherNumber}${doc.transactionId ? ` (${doc.transactionId})` : ''}. This document will NOT create an additional ledger transaction.`
+                : 'Select the primary voucher above. This document will not post to the ledger.'}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* External receiver / money receipt (Phase I). Reorders the approval
-          chain so the receiver is recorded before final approval. */}
+          chain so the receiver is recorded before final approval. Only applies
+          to money-OUT vouchers — a cash receipt brings money in. */}
+      {!isReceipt && (
       <div className="field">
         <label>Payment Receiver</label>
         <label className="row gap-8 center" style={{ cursor: anySigned ? 'not-allowed' : 'pointer' }}>
@@ -375,7 +480,8 @@ function VoucherBody({ doc, patch }) {
         </label>
         {anySigned && <div className="small muted" style={{ marginTop: 4 }}>Receiver mode is locked once signing has begun.</div>}
       </div>
-      {doc.moneyReceipt && (
+      )}
+      {!isReceipt && doc.moneyReceipt && (
         <div className="grid grid-2">
           <div className="field">
             <label>
@@ -414,7 +520,7 @@ function VoucherBody({ doc, patch }) {
           </select>
         </div>
         <div className="field">
-          <label>Received with thanks from</label>
+          <label>{isReceipt ? 'Received from (payer)' : 'Paid to / received by'}</label>
           <input className="input" value={doc.receivedFrom} onChange={(e) => patch({ receivedFrom: e.target.value })} />
         </div>
         <div className="field">
@@ -429,7 +535,7 @@ function VoucherBody({ doc, patch }) {
           </select>
         </div>
         <div className="field">
-          <label>Paid From (Account)</label>
+          <label>{isReceipt ? 'Received Into (Account)' : 'Payment Account'}</label>
           <select className="select" value={doc.accountId} onChange={(e) => patch({ accountId: e.target.value })}>
             <option value="">— Select account —</option>
             {accounts.map((a) => (
@@ -446,36 +552,85 @@ function VoucherBody({ doc, patch }) {
         <AutoTextarea value={doc.purpose} onChange={(e) => patch({ purpose: e.target.value })} minHeight={50} />
       </div>
 
-      {/* Payment method + conditional cheque / bank fields */}
+      {/* Payment mode + conditional reference fields. Cash vouchers are
+          physical cash only, so the mode selector is hidden and fixed to Cash. */}
       <div className="grid grid-3">
-        <div className="field">
-          <label>Payment Method</label>
-          <select className="select" value={doc.paymentMethod} onChange={(e) => patch({ paymentMethod: e.target.value })}>
-            {PAYMENT_METHODS.map((m) => (
-              <option key={m}>{m}</option>
-            ))}
-          </select>
-        </div>
-        {isCheque && (
+        {!isCash ? (
           <div className="field">
-            <label>Cheque No.</label>
-            <input className="input" value={doc.chequeNo} onChange={(e) => patch({ chequeNo: e.target.value })} />
+            <label>Payment Mode</label>
+            <select className="select" value={doc.paymentMethod} onChange={(e) => patch({ paymentMethod: e.target.value })}>
+              {VOUCHER_PAYMENT_METHODS.map((m) => (
+                <option key={m}>{m}</option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <div className="field">
+            <label>Payment Mode</label>
+            <input className="input" value="Cash (physical)" disabled />
           </div>
         )}
         <div className="field">
           <label>Dated</label>
           <input type="date" className="input" value={doc.paymentDated} onChange={(e) => patch({ paymentDated: e.target.value })} />
         </div>
-        {showBank && (
+        {!isCash && (
           <>
-            <div className="field">
-              <label>Bank</label>
-              <input className="input" value={doc.bank} onChange={(e) => patch({ bank: e.target.value })} placeholder="N/A" />
-            </div>
-            <div className="field">
-              <label>Branch</label>
-              <input className="input" value={doc.branch} onChange={(e) => patch({ branch: e.target.value })} placeholder="N/A" />
-            </div>
+            {isCheque && (
+              <div className="field">
+                <label>Cheque No.</label>
+                <input className="input" value={doc.chequeNo} onChange={(e) => patch({ chequeNo: e.target.value })} />
+              </div>
+            )}
+            {(doc.paymentMethod === 'Bank Transfer') && (
+              <div className="field">
+                <label>Bank Txn / Ref ID</label>
+                <input className="input" value={doc.bankTxnId} onChange={(e) => patch({ bankTxnId: e.target.value })} placeholder="transaction reference" />
+              </div>
+            )}
+            {isBeftn && (
+              <div className="field">
+                <label>BEFTN Reference</label>
+                <input className="input" value={doc.beftnRef} onChange={(e) => patch({ beftnRef: e.target.value })} placeholder="BEFTN batch / ref" />
+              </div>
+            )}
+            {isCard && (
+              <div className="field">
+                <label>Card Reference</label>
+                <input className="input" value={doc.cardRef} onChange={(e) => patch({ cardRef: e.target.value })} placeholder="card no. / auth code" />
+                <div className="small muted" style={{ marginTop: 4 }}>Only the last 4 digits are shown on the printed voucher.</div>
+              </div>
+            )}
+            {isOnline && (
+              <div className="field">
+                <label>Online / MFS Txn ID</label>
+                <input className="input" value={doc.otherRef} onChange={(e) => patch({ otherRef: e.target.value })} placeholder="bKash / Nagad / gateway txn id" />
+              </div>
+            )}
+            {doc.paymentMethod === 'Others' && (
+              <div className="field">
+                <label>Reference</label>
+                <input className="input" value={doc.otherRef} onChange={(e) => patch({ otherRef: e.target.value })} placeholder="payment reference" />
+              </div>
+            )}
+            {showAcctNo && (
+              <div className="field">
+                <label>Account No.</label>
+                <input className="input" value={doc.payAccountNo} onChange={(e) => patch({ payAccountNo: e.target.value })} placeholder="masked on the printed voucher" />
+              </div>
+            )}
+            {showBank && (
+              <>
+                <div className="field">
+                  <label>Bank</label>
+                  <input className="input" value={doc.bank} onChange={(e) => patch({ bank: e.target.value })} placeholder="N/A" />
+                </div>
+                <div className="field">
+                  <label>Branch</label>
+                  <input className="input" value={doc.branch} onChange={(e) => patch({ branch: e.target.value })} placeholder="N/A" />
+                </div>
+              </>
+            )}
           </>
         )}
       </div>
@@ -564,6 +719,33 @@ function VoucherBody({ doc, patch }) {
           <b>In words:</b> {amountInWords(total, doc.currency)}
         </div>
       )}
+
+      {/* Signatures — the standard 4-slot chain, optionally expanded to a 5th
+          approval slot signed by role/permission (max 5). */}
+      <div className="field mt-16" style={{ borderTop: '1px solid var(--border)', paddingTop: 14 }}>
+        <label>Signatures</label>
+        <label className="row gap-8 center" style={{ cursor: anySigned ? 'not-allowed' : 'pointer' }}>
+          <input type="checkbox" checked={!!doc.extraApprover} disabled={anySigned} onChange={(e) => setExtraApprover(e.target.checked)} />
+          Add a 5th signatory <span className="muted small">(extra approval step, signed by role/permission)</span>
+        </label>
+        {doc.extraApprover && (
+          <div className="field" style={{ maxWidth: 320, marginTop: 8 }}>
+            <label>5th Signatory Label</label>
+            <input
+              className="input"
+              value={doc.extraApproverLabel || ''}
+              disabled={anySigned}
+              onChange={(e) => patch({ extraApproverLabel: e.target.value })}
+              placeholder="e.g. Additional Approver"
+            />
+          </div>
+        )}
+        <div className="small muted" style={{ marginTop: 4 }}>
+          {doc.extraApprover ? 'Chain: Accountant → Checked By → 5th Signatory → ' : 'Chain: Accountant → Checked By → '}
+          {doc.moneyReceipt ? 'Received Payment → Approved By' : 'Managing Director/Director → Received Payment'}.
+          {anySigned ? ' Locked once signing has begun.' : ''}
+        </div>
+      </div>
     </div>
   )
 }

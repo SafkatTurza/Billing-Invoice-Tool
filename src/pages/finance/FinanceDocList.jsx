@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
 import { can } from '../../lib/roles.js'
-import { FIN_TYPES, FIN_STATUS, isVoucherType, voucherLabel, voucherTotal } from '../../lib/finance.js'
+import { FIN_TYPES, FIN_STATUS, isVoucherType, isPrimary, voucherLabel, voucherTotal } from '../../lib/finance.js'
 import { formatMoney, formatDate } from '../../lib/format.js'
 import { Icon } from '../../components/Icons.jsx'
 import '../../styles/documents.css'
@@ -29,27 +29,33 @@ export default function FinanceDocList({ type }) {
 
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [typeFilter, setTypeFilter] = useState('all') // payment | cash | debit
+  const [roleFilter, setRoleFilter] = useState('all') // primary | linked
 
   // The unified 'voucher' list also shows legacy payment/debit vouchers.
   const inScope = (d) => (type === 'voucher' ? isVoucherType(d.type) : d.type === type)
+  const isVoucherList = type === 'voucher'
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase()
     return finDocs
       .filter((d) => inScope(d) && !d.deleted)
       .filter((d) => statusFilter === 'all' || d.status === statusFilter)
+      .filter((d) => !isVoucherList || typeFilter === 'all' || (d.voucherType || 'payment') === typeFilter)
+      .filter((d) => !isVoucherList || roleFilter === 'all' || (roleFilter === 'linked' ? !isPrimary(d) : isPrimary(d)))
       .filter(
         (d) =>
           !q ||
           (d.docNumber || '').toLowerCase().includes(q) ||
+          (d.transactionId || '').toLowerCase().includes(q) ||
+          (d.linkedVoucherNumber || '').toLowerCase().includes(q) ||
           (d.title || d.purpose || d.receivedFrom || '').toLowerCase().includes(q),
       )
       .sort((a, b) => new Date(b.date) - new Date(a.date))
-  }, [finDocs, type, query, statusFilter])
+  }, [finDocs, type, query, statusFilter, typeFilter, roleFilter, isVoucherList])
 
   const amountOf = (d) => (isVoucherType(d.type) ? voucherTotal(d) : Number(d.amount) || Number(d.total) || 0)
   const canManage = can(currentUser.role, 'financeManage')
-  const isVoucherList = type === 'voucher'
 
   return (
     <div>
@@ -73,7 +79,22 @@ export default function FinanceDocList({ type }) {
             </span>
             <input placeholder={`Search ${meta.plural.toLowerCase()}…`} value={query} onChange={(e) => setQuery(e.target.value)} />
           </div>
-          <select className="select" style={{ width: 180 }} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          {isVoucherList && (
+            <>
+              <select className="select" style={{ width: 150 }} value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+                <option value="all">All types</option>
+                <option value="payment">Payment</option>
+                <option value="cash">Cash</option>
+                <option value="debit">Debit</option>
+              </select>
+              <select className="select" style={{ width: 150 }} value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
+                <option value="all">Primary + Linked</option>
+                <option value="primary">Primary only</option>
+                <option value="linked">Linked only</option>
+              </select>
+            </>
+          )}
+          <select className="select" style={{ width: 160 }} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
             <option value="all">All statuses</option>
             {Object.values(FIN_STATUS).map((s) => (
               <option key={s} value={s}>
@@ -117,9 +138,11 @@ export default function FinanceDocList({ type }) {
                   <td className="small nowrap">{formatDate(d.date)}</td>
                   {isVoucherList && (
                     <td>
-                      <span className={`badge ${d.voucherType === 'debit' ? 'badge-amber' : 'badge-purple'}`}>
+                      <span className={`badge ${d.voucherType === 'cash' ? 'badge-green' : d.voucherType === 'debit' ? 'badge-teal' : 'badge-blue'}`}>
                         {voucherLabel(d).replace(' Voucher', '')}
+                        {d.voucherType === 'cash' && d.cashDirection === 'receipt' ? ' In' : ''}
                       </span>
+                      {!isPrimary(d) && <span className="badge badge-gray" style={{ marginLeft: 4 }}>Linked</span>}
                     </td>
                   )}
                   <td>{d.title || d.purpose || d.receivedFrom || '—'}</td>
