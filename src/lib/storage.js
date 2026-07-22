@@ -7,6 +7,8 @@ export const KEYS = {
   company: 'dcs_co', // legacy single-company (kept for migration)
   companies: 'dcs_companies', // multi-company array
   clientSeq: 'dcs_client_seq',
+  vendorSeq: 'dcs_vendor_seq',
+  partyCodeV1: 'dcs_party_code_v1', // one-time client/vendor ID backfill flag
   locks: 'dcs_locks',
   docs: 'dcs_docs',
   clients: 'dcs_clients',

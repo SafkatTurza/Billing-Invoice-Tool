@@ -4,6 +4,7 @@ import { ROLES } from '../lib/roles.js'
 import { uid } from '../lib/format.js'
 import { hashPassword, hashAnswer } from '../lib/security.js'
 import { commitDocNumber, generateUsername } from '../lib/numbering.js'
+import { genClientCode, genVendorCode } from '../lib/clientCode.js'
 
 const AppContext = createContext(null)
 
@@ -90,6 +91,40 @@ export function AppProvider({ children }) {
   useEffect(() => {
     ls.set(KEYS.vendors, vendors)
   }, [vendors])
+
+  // One-time backfill: give every existing client/vendor a human-readable ID.
+  // Runs once (flag-guarded); assigns codes only to records that lack one, so
+  // anything already coded (e.g. from the on-form quick-add) is left as-is.
+  useEffect(() => {
+    if (ls.get(KEYS.partyCodeV1, false)) return
+    // No commitSeq here: the assigned codes persist in the array, and the next
+    // suggestion scans them for the max — committing would reserve one extra and
+    // leave a gap (e.g. the first new client jumping to -003).
+    setClients((prev) => {
+      const arr = prev.map((c) => ({ ...c }))
+      let touched = false
+      arr.forEach((c) => {
+        if (!c.code) {
+          c.code = genClientCode(company, c.field || 'GEN', c.name, arr)
+          touched = true
+        }
+      })
+      return touched ? arr : prev
+    })
+    setVendors((prev) => {
+      const arr = prev.map((v) => ({ ...v }))
+      let touched = false
+      arr.forEach((v) => {
+        if (!v.code) {
+          v.code = genVendorCode(company, v.name, arr)
+          touched = true
+        }
+      })
+      return touched ? arr : prev
+    })
+    ls.set(KEYS.partyCodeV1, true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   useEffect(() => {
     ls.set(KEYS.style, style)
   }, [style])

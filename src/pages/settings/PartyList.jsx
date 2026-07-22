@@ -4,9 +4,18 @@ import { useToast } from '../../components/Toast.jsx'
 import Modal from '../../components/Modal.jsx'
 import { Icon } from '../../components/Icons.jsx'
 import { uid } from '../../lib/format.js'
+import {
+  CLIENT_FIELDS,
+  genClientCode,
+  genVendorCode,
+  commitClientSeq,
+  commitVendorSeq,
+} from '../../lib/clientCode.js'
 
 const EMPTY = {
   name: '',
+  code: '',
+  field: 'GEN',
   address: '',
   phone: '',
   email: '',
@@ -27,14 +36,39 @@ export default function PartyList({ kind }) {
 
   const [editing, setEditing] = useState(null) // party object or null
   const [open, setOpen] = useState(false)
+  // Whether the user has hand-edited the ID — once true we stop auto-suggesting.
+  const [codeTouched, setCodeTouched] = useState(false)
+
+  // Suggest an ID from the current name (+ industry for clients).
+  const suggest = (name, field) =>
+    isClient ? genClientCode(app.company, field || 'GEN', name, list) : genVendorCode(app.company, name, list)
 
   const startAdd = () => {
     setEditing({ ...EMPTY, id: uid(), contacts: [] })
+    setCodeTouched(false)
     setOpen(true)
   }
   const startEdit = (p) => {
-    setEditing(JSON.parse(JSON.stringify(p)))
+    const copy = JSON.parse(JSON.stringify(p))
+    if (!copy.field) copy.field = 'GEN'
+    if (!copy.code) copy.code = ''
+    setEditing(copy)
+    setCodeTouched(!!copy.code) // keep an existing ID; suggest only if missing
     setOpen(true)
+  }
+
+  // Name / industry changes refresh the suggested ID until it's hand-edited.
+  const onName = (v) =>
+    setEditing((e) => ({ ...e, name: v, ...(codeTouched ? {} : { code: suggest(v, e.field) }) }))
+  const onField = (v) =>
+    setEditing((e) => ({ ...e, field: v, ...(codeTouched ? {} : { code: suggest(e.name, v) }) }))
+  const onCode = (v) => {
+    setCodeTouched(true)
+    upd('code', v)
+  }
+  const regenerate = () => {
+    setCodeTouched(false)
+    setEditing((e) => ({ ...e, code: suggest(e.name, e.field) }))
   }
 
   const save = () => {
@@ -42,11 +76,21 @@ export default function PartyList({ kind }) {
       toast.error('Company Name is required.')
       return
     }
+    const code = (editing.code || '').trim() || suggest(editing.name, editing.field)
+    const clash = list.some((p) => p.id !== editing.id && (p.code || '').trim().toLowerCase() === code.toLowerCase())
+    if (clash) {
+      toast.error(`That ${label} ID (${code}) is already in use. Choose a different one.`)
+      return
+    }
+    const record = { ...editing, code }
     const exists = list.some((p) => p.id === editing.id)
     if (exists) {
-      setList(list.map((p) => (p.id === editing.id ? editing : p)))
+      setList(list.map((p) => (p.id === editing.id ? record : p)))
     } else {
-      setList([...list, editing])
+      setList([...list, record])
+      // Advance the running sequence off the pre-add list (matches quick-add).
+      if (isClient) commitClientSeq(list)
+      else commitVendorSeq(list)
     }
     toast.success(`${label} saved.`)
     setOpen(false)
@@ -96,7 +140,10 @@ export default function PartyList({ kind }) {
         list.map((p) => (
           <div key={p.id} className="list-item-card">
             <div>
-              <div className="bold">{p.name}</div>
+              <div className="row gap-8 center">
+                <span className="bold">{p.name}</span>
+                {p.code && <span className="party-id mono">{p.code}</span>}
+              </div>
               <div className="small muted">
                 {[p.email, p.phone].filter(Boolean).join(' · ') || 'No contact details'}
                 {p.contacts?.length > 0 && ` · ${p.contacts.length} contact person(s)`}
@@ -134,7 +181,37 @@ export default function PartyList({ kind }) {
             <label>
               Company Name <span className="req">*</span>
             </label>
-            <input className="input" autoFocus value={editing.name} onChange={(e) => upd('name', e.target.value)} />
+            <input className="input" autoFocus value={editing.name} onChange={(e) => onName(e.target.value)} />
+          </div>
+          <div className="grid grid-2">
+            {isClient && (
+              <div className="field">
+                <label>Industry / Field</label>
+                <select className="select" value={editing.field} onChange={(e) => onField(e.target.value)}>
+                  {CLIENT_FIELDS.map(([code, name]) => (
+                    <option key={code} value={code}>
+                      {name} ({code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div className="field">
+              <label>{label} ID</label>
+              <div className="row gap-8">
+                <input
+                  className="input mono"
+                  style={{ flex: 1 }}
+                  value={editing.code}
+                  placeholder="Auto"
+                  onChange={(e) => onCode(e.target.value)}
+                />
+                <button className="btn btn-ghost btn-sm" type="button" onClick={regenerate} title="Suggest an ID">
+                  Suggest
+                </button>
+              </div>
+              <div className="small muted mt-4">Auto-suggested — edit to set your own. Must be unique.</div>
+            </div>
           </div>
           <div className="field">
             <label>Address</label>

@@ -1,8 +1,18 @@
-// Client code generation — format: DCS26-RE-SHL-001
-// (companyCode + 2-digit year + industry field + name abbreviation + sequence)
-// Ported from the original Paynox source.
+// Party ID generation.
+//   Client — DCS26-RE-SHL-001  (companyCode + 2-digit year + industry field
+//             + name abbreviation + sequence)
+//   Vendor — DCS26-VN-ABC-001  (same family, fixed "VN" vendor marker)
+// The client scheme is ported from the original Paynox source; the vendor
+// scheme mirrors it so both read as one family and stay distinguishable.
 
 import { ls, KEYS } from './storage.js'
+
+// Company code prefix shared by both schemes.
+function companyCode(company) {
+  return ((company && (company.code || codeAbbrev(company.name))) || 'DCS')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '')
+}
 
 export const CLIENT_FIELDS = [
   ['RE', 'Real Estate'],
@@ -34,17 +44,36 @@ function nextClientSeq(clients) {
 }
 
 export function genClientCode(company, field, name, clients) {
-  const coCode = ((company && (company.code || codeAbbrev(company.name))) || 'DCS')
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, '')
   const yy = String(new Date().getFullYear()).slice(-2)
   const seq = nextClientSeq(clients)
-  return `${coCode}${yy}-${(field || 'GEN').toUpperCase()}-${codeAbbrev(name)}-${String(seq).padStart(3, '0')}`
+  return `${companyCode(company)}${yy}-${(field || 'GEN').toUpperCase()}-${codeAbbrev(name)}-${String(seq).padStart(3, '0')}`
 }
 
 // Commit the sequence (called when a coded client is actually saved).
 export function commitClientSeq(clients) {
   const seq = nextClientSeq(clients)
   ls.set(KEYS.clientSeq, seq)
+  return seq
+}
+
+// ── Vendor IDs — DCS26-VN-ABC-001, its own running sequence ──
+function nextVendorSeq(vendors) {
+  let mx = parseInt(ls.get(KEYS.vendorSeq, 0) || 0, 10) || 0
+  ;(vendors || []).forEach((v) => {
+    const m = /(\d+)\s*$/.exec(v.code || '')
+    if (m) mx = Math.max(mx, parseInt(m[1], 10))
+  })
+  return mx + 1
+}
+
+export function genVendorCode(company, name, vendors) {
+  const yy = String(new Date().getFullYear()).slice(-2)
+  const seq = nextVendorSeq(vendors)
+  return `${companyCode(company)}${yy}-VN-${codeAbbrev(name)}-${String(seq).padStart(3, '0')}`
+}
+
+export function commitVendorSeq(vendors) {
+  const seq = nextVendorSeq(vendors)
+  ls.set(KEYS.vendorSeq, seq)
   return seq
 }
