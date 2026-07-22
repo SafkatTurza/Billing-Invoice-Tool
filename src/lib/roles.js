@@ -110,13 +110,14 @@ const MATRIX = {
     financeFinalApprove: false, // cannot give management sign-off
     manageFinanceMasters: false,
     financeReports: true,
-    // Asset Management — Accounts owns purchase/financial data + operations,
-    // but not the terminal disposal/write-off sign-off.
+    // Asset Management — restricted internal module. Super Admin, Admin and
+    // Accounts have FULL and EQUAL access (no functional difference between
+    // the three), including disposal/write-off and category configuration.
     assetView: true,
     assetManage: true,
     assetFinancials: true,
-    assetDispose: false,
-    manageAssetCategories: false,
+    assetDispose: true,
+    manageAssetCategories: true,
   },
   [ROLES.BUSINESS]: {
     createInvoice: true,
