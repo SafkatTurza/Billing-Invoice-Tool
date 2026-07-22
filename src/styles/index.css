@@ -339,3 +339,31 @@ textarea {
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: #cfd4de; border-radius: 6px; }
 ::-webkit-scrollbar-thumb:hover { background: #b8bec9; }
+
+/* ── Responsive foundation ────────────────────────────────────
+   Reusable table-scroll wrapper: controlled horizontal scroll for
+   wide data tables (never global overflow-x:hidden). No financial
+   column is removed — hidden data stays reachable by scrolling. */
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.table-scroll > .table,
+.table-scroll > table { min-width: 640px; }
+
+/* Grid reflow across breakpoints */
+@media (max-width: 1024px) {
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+  .grid-2 { grid-template-columns: 1fr; }
+  .page-title { font-size: 20px; }
+}
+@media (max-width: 600px) {
+  .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .page-title { font-size: 19px; }
+  .card-pad { padding: 16px; }
+  .btn { padding: 9px 14px; }
+}

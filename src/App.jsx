@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useApp } from './context/AppContext.jsx'
 import { ToastProvider } from './components/Toast.jsx'
-import { Icon } from './components/Icons.jsx'
 
 import SetupWizard from './pages/SetupWizard.jsx'
 import Login from './pages/Login.jsx'
@@ -44,39 +43,11 @@ import Budgets from './pages/finance/Budgets.jsx'
 import Recurring from './pages/finance/Recurring.jsx'
 import { canAccessDocType, can } from './lib/roles.js'
 
-// SRS current.png: below 1280px the app shows a "Desktop Required" screen.
-function useIsDesktop() {
-  const [wide, setWide] = useState(() => window.innerWidth >= 1120)
-  useEffect(() => {
-    const onResize = () => setWide(window.innerWidth >= 1120)
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
-  }, [])
-  return wide
-}
-
-function DesktopRequired() {
-  return (
-    <div className="desktop-required">
-      <div className="dr-icon">
-        <Icon.monitor width={40} height={40} />
-      </div>
-      <h1>Desktop Required</h1>
-      <p>
-        DCS Billing System is designed for desktop use.
-        <br />
-        Please use a screen at least <b>1280px wide</b> for the best experience.
-      </p>
-    </div>
-  )
-}
-
 export default function App() {
   const { isSetupComplete, currentUser } = useApp()
-  const isDesktop = useIsDesktop()
 
-  if (!isDesktop) return <DesktopRequired />
-
+  // Paynox is fully responsive (320px and up) — no desktop gate. Layout
+  // adapts via breakpoints and an off-canvas sidebar drawer on small screens.
   return (
     <ToastProvider>
       <AppRoutes isSetupComplete={isSetupComplete} currentUser={currentUser} />

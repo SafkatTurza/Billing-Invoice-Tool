@@ -82,3 +82,15 @@
   margin: 28px 0 14px;
 }
 .section-head h3 { font-size: 16px; font-weight: 700; color: var(--navy); }
+
+/* ── Responsive card grids ───────────────────────────────────── */
+@media (max-width: 1024px) {
+  .dash-cards { grid-template-columns: repeat(2, 1fr); }
+  .fin-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .dash-cards,
+  .fin-grid { grid-template-columns: 1fr; }
+  .count-card .cc-num { font-size: 26px; }
+  .section-head { margin: 20px 0 12px; }
+}

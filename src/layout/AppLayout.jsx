@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext.jsx'
 import { useFinance } from '../context/FinanceContext.jsx'
 import { can, canAccessDocType, canSeeDocument } from '../lib/roles.js'
@@ -48,6 +48,8 @@ const FIN_REPORTS = [
 export default function AppLayout() {
   const { currentUser, docs } = useApp()
   const role = currentUser.role
+  const location = useLocation()
+  const [drawerOpen, setDrawerOpen] = useState(false)
   const [groups, setGroups] = useState({
     sales: true,
     purchases: true,
@@ -57,6 +59,26 @@ export default function AppLayout() {
     finReports: true,
   })
   const toggle = (id) => setGroups((g) => ({ ...g, [id]: !g[id] }))
+
+  // Close the mobile drawer whenever the route changes (a nav item was picked).
+  useEffect(() => {
+    setDrawerOpen(false)
+  }, [location.pathname])
+
+  // While the drawer is open: lock background scroll and close on Escape.
+  useEffect(() => {
+    if (!drawerOpen) return
+    const onKey = (e) => {
+      if (e.key === 'Escape') setDrawerOpen(false)
+    }
+    document.addEventListener('keydown', onKey)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prev
+    }
+  }, [drawerOpen])
 
   // A collapsible sub-group inside the Finance section.
   const FinSub = ({ id, label, items }) => (
@@ -98,16 +120,28 @@ export default function AppLayout() {
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
+      <div
+        className={`sidebar-overlay${drawerOpen ? ' show' : ''}`}
+        onClick={() => setDrawerOpen(false)}
+        aria-hidden="true"
+      />
+      <aside className={`sidebar${drawerOpen ? ' open' : ''}`}>
         <div className="sidebar-brand">
           <div className="mark">P</div>
           <div className="name">
             Paynox
             <span>© Paynox · by Safkat Turza</span>
           </div>
+          <button
+            className="drawer-close"
+            onClick={() => setDrawerOpen(false)}
+            aria-label="Close menu"
+          >
+            <Icon.x width={18} height={18} />
+          </button>
         </div>
 
-        <nav className="nav-scroll">
+        <nav className="nav-scroll" onClick={(e) => { if (e.target.closest('a')) setDrawerOpen(false) }}>
           <NavLink to="/dashboard" className="nav-item">
             <Icon.dashboard width={17} height={17} />
             Dashboard
@@ -185,7 +219,7 @@ export default function AppLayout() {
       </aside>
 
       <div className="main">
-        <Topbar />
+        <Topbar onMenu={() => setDrawerOpen(true)} />
         <main className="content">
           <ExpiryWatcher />
           <Outlet />
@@ -237,7 +271,7 @@ function initials(name = '') {
 }
 
 // ── Top bar: global search + notifications + logout ──────────
-function Topbar() {
+function Topbar({ onMenu }) {
   const { docs, currentUser, inAppNotifs, logout, markNotifRead, clearNotifs } = useApp()
   const { finDocs } = useFinance()
   const canFinance = can(currentUser.role, 'financeView')
@@ -328,6 +362,9 @@ function Topbar() {
 
   return (
     <header className="topbar">
+      <button className="nav-menu-btn" onClick={onMenu} aria-label="Open menu">
+        <Icon.menu width={20} height={20} />
+      </button>
       <div className="global-search" ref={searchRef}>
         <span className="icon">
           <Icon.search width={17} height={17} />

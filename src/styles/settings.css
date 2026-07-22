@@ -97,3 +97,20 @@
 .list-item-card:hover { border-color: #cdd3e0; }
 .user-status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
 .user-row.deactivated { opacity: 0.55; }
+
+/* ── Responsive: stack the tab rail above the panel ──────────── */
+@media (max-width: 768px) {
+  .settings-layout { flex-direction: column; gap: 16px; }
+  .settings-tabs {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .settings-tab { flex: 0 0 auto; }
+  .template-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .logo-upload { flex-direction: column; align-items: flex-start; }
+  .list-item-card { flex-direction: column; align-items: flex-start; gap: 10px; }
+}

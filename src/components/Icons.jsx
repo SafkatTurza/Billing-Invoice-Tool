@@ -71,6 +71,9 @@ export const Icon = {
   chevron: (p) => (
     <svg {...base} {...p}><path d="m6 9 6 6 6-6" /></svg>
   ),
+  menu: (p) => (
+    <svg {...base} {...p}><path d="M3 6h18M3 12h18M3 18h18" /></svg>
+  ),
   x: (p) => (
     <svg {...base} {...p}><path d="M18 6 6 18M6 6l12 12" /></svg>
   ),
