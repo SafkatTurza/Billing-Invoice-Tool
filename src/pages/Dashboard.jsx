@@ -5,6 +5,7 @@ import { can, canAccessDocType, canSeeDocument } from '../lib/roles.js'
 import { formatMoney, formatDate } from '../lib/format.js'
 import { Icon } from '../components/Icons.jsx'
 import StatusBadge from '../components/StatusBadge.jsx'
+import PageHeader from '../components/PageHeader.jsx'
 import '../styles/dashboard.css'
 
 // Count-card icon chips use one consistent brand blue rather than four
@@ -90,13 +91,13 @@ export default function Dashboard() {
 
   return (
     <div>
-      <h1 className="page-title">Dashboard</h1>
-      <p className="page-sub">
-        Welcome back, {currentUser.fullName.split(' ')[0]}. Here's your billing overview.
-      </p>
+      <PageHeader
+        title="Dashboard"
+        subtitle={`Welcome back, ${currentUser.fullName.split(' ')[0]}. Here's your billing overview.`}
+      />
 
       {/* Count cards */}
-      <div className="dash-cards mt-24">
+      <div className="dash-cards">
         {CARD_META.filter((c) => canAccessDocType(role, c.type)).map((c) => (
           <div key={c.type} className="count-card" onClick={() => navigate(`/${c.type}`)}>
             <div className="cc-top">

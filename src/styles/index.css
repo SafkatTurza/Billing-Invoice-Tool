@@ -1,48 +1,58 @@
 :root {
   /* ── Paynox brand ramp (raw) ─────────────────────────────────
-     High-energy palette: electric Blue = primary + structural,
-     Olive = secondary/neutral accent, Amber + Yellow = premium
-     highlights (~10%). Components reference the *role* tokens below,
-     not these raw hex. Deepened blue shades keep large fills readable. */
-  --brand-blue: #2323ff;        /* active states, links, large interactive */
-  --brand-blue-600: #1d1de0;    /* button fills (white text ≥8:1) */
-  --brand-blue-700: #1717b8;    /* hover / pressed */
-  --brand-blue-900: #17177a;    /* structural: sidebar, strong headings */
-  --brand-blue-300: #9a9aff;    /* light tint (gradient ends, accents) */
-  --brand-blue-100: #ececff;    /* soft tint (selected rows, icon chips) */
+     Refined for a calm, premium enterprise feel. The primary is a
+     controlled professional indigo-blue (not the former electric
+     #2323ff), so large fills and active states read as trustworthy
+     rather than loud. Amber remains the single premium highlight,
+     used sparingly. Components reference the *role* tokens below. */
+  --brand-blue: #3355cc;        /* primary: active states, links, interactive */
+  --brand-blue-600: #2c49b8;    /* button fills (white text ≥7:1) */
+  --brand-blue-700: #243c99;    /* hover / pressed */
+  --brand-blue-900: #1b2a63;    /* strong headings / structural accents */
+  --brand-blue-300: #aebae9;    /* light tint (accents) */
+  --brand-blue-100: #eaeefb;    /* soft tint (selected rows, icon chips) */
+  --brand-blue-50: #f4f6fd;     /* faintest wash (hover rows, search field) */
 
-  --brand-olive: #807d52;       /* secondary / neutral accent */
+  --brand-olive: #7c7a52;       /* secondary / neutral accent */
   --brand-olive-dark: #5f5d3c;
   --brand-olive-text: #5c5a38;  /* olive at text size passes AA on white */
   --brand-olive-light: #edecdf;
 
-  --brand-amber: #ffbd24;       /* premium accent */
+  --brand-amber: #e5a812;       /* premium accent (calmer than #ffbd24) */
   --brand-amber-dark: #c88f12;
   --brand-amber-text: #8a6410;  /* amber at text size passes AA on white */
-  --brand-amber-light: #fff1cf;
+  --brand-amber-light: #fdf1d6;
 
-  --brand-yellow: #fff224;      /* selective highlight chips (dark text only) */
-  --brand-yellow-light: #fff8bf;
+  --brand-yellow: #f4c020;      /* selective highlight chips (dark text only) */
+  --brand-yellow-light: #fdf3c8;
 
   --brand-ink: #16162e;         /* deepest ink — logo letter on light mark */
-  --brand-gray: #cbcbcb;
+  --brand-gray: #d3d6de;
+
+  /* ── Sidebar surface (tokenised — was a hardcoded hex) ───────── */
+  --sidebar-bg: #1b2340;        /* deep, desaturated slate-navy — calm & premium */
+  --sidebar-bg-soft: rgba(255, 255, 255, 0.05);
+  --sidebar-fg: #b8bfd4;        /* resting item text */
+  --sidebar-fg-strong: #f2f4fb; /* group headers / active */
+  --sidebar-fg-muted: #7e88a6;  /* captions, meta */
 
   /* ── Semantic role tokens (what components use) ──────────────── */
   --background-primary: #ffffff;
-  --background-secondary: #f4f5f8; /* cool-neutral workspace to complement blue */
+  --background-secondary: #f5f6f9; /* soft neutral workspace */
   --surface-primary: #ffffff;
+  --surface-muted: #fafbfc;
   --surface-highlight: var(--brand-yellow-light);
   --surface-premium: var(--brand-amber-light);
 
-  --text-primary: #33333a;
-  --text-secondary: #4c4c5a;
-  --text-muted: #767683;
-  --text-faint: #9a9aa6;
+  --text-primary: #1f2430;
+  --text-secondary: #464c5a;
+  --text-muted: #6b7280;
+  --text-faint: #98a0ad;
 
-  --border-primary: #e5e5ea;
+  --border-primary: #e6e8ee;
   --border-secondary: var(--brand-gray);
 
-  --brand-dark: var(--brand-blue-900);            /* sidebar, strong headings */
+  --brand-dark: var(--brand-blue-900);            /* strong headings */
   --brand-primary: var(--brand-blue);             /* active nav/tabs, large links */
   --brand-primary-strong: var(--brand-blue-600);  /* button fills, small link text */
   --brand-primary-hover: var(--brand-blue-700);
@@ -50,19 +60,46 @@
   --accent-gold: var(--brand-amber);
 
   /* ── Semantic status (kept separate from brand) ──────────────── */
-  --green: #16a34a;
-  --amber: #d97706;
-  --red: #dc2626;
+  --green: #15964a;
+  --amber: #c67c0a;
+  --red: #d63b3b;
   --blue: #2563eb;
   --success: var(--green);
   --warning: var(--amber);
   --error: var(--red);
   --info: var(--blue);
 
-  --radius: 10px;
-  --shadow: 0 1px 3px rgba(40, 40, 40, 0.08), 0 1px 2px rgba(40, 40, 40, 0.05);
-  --shadow-lg: 0 10px 30px rgba(40, 40, 40, 0.14);
+  /* ── Typography scale ────────────────────────────────────────
+     One hierarchy the whole product inherits (spec §4). */
   --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, monospace;
+  --fs-page-title: 24px;
+  --fs-section: 18px;
+  --fs-card-title: 15px;
+  --fs-body: 14px;
+  --fs-table: 13.5px;
+  --fs-secondary: 12.5px;
+  --fs-caption: 11.5px;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  /* ── Radius scale ────────────────────────────────────────────── */
+  --radius-sm: 6px;
+  --radius: 9px;
+  --radius-lg: 13px;
+  --radius-pill: 999px;
+
+  /* ── Elevation — restrained (spec: minimal shadows) ──────────── */
+  --shadow-xs: 0 1px 2px rgba(23, 27, 40, 0.05);
+  --shadow: 0 1px 2px rgba(23, 27, 40, 0.06), 0 1px 3px rgba(23, 27, 40, 0.05);
+  --shadow-md: 0 2px 6px rgba(23, 27, 40, 0.07), 0 4px 12px rgba(23, 27, 40, 0.05);
+  --shadow-lg: 0 8px 28px rgba(23, 27, 40, 0.14);
+
+  /* ── Control sizing (consistent heights, spec §3) ────────────── */
+  --control-h: 38px;
+  --control-h-sm: 32px;
 
   /* Responsive breakpoints (documented; used in @media below) */
   --bp-desktop: 1024px;
@@ -86,9 +123,22 @@ body {
   font-family: var(--font);
   background: var(--background-secondary);
   color: var(--text-primary);
-  font-size: 14px;
+  font-size: var(--fs-body);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'cv05', 'cv08', 'ss01';
+}
+
+/* Tabular figures everywhere numbers must align (financial scanning, §4/§13). */
+.mono,
+.table td,
+.table th,
+.num,
+[class*='-num'],
+[class*='-val'] {
+  font-variant-numeric: tabular-nums;
 }
 
 a {
@@ -105,8 +155,14 @@ input,
 select,
 textarea {
   font-family: inherit;
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--text-primary);
+}
+
+/* Visible, consistent keyboard focus for interactive chrome (a11y §28). */
+:focus-visible {
+  outline: 2px solid var(--brand-blue);
+  outline-offset: 2px;
 }
 
 /* ── Buttons ─────────────────────────────────────────────── */
@@ -115,12 +171,13 @@ textarea {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 9px 16px;
+  height: var(--control-h);
+  padding: 0 15px;
   border: 1px solid transparent;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-semibold);
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, opacity 0.15s;
   white-space: nowrap;
 }
 .btn:disabled {
@@ -130,11 +187,12 @@ textarea {
 .btn-primary {
   background: var(--brand-primary-strong);
   color: #fff;
+  box-shadow: var(--shadow-xs);
 }
 .btn-primary:hover:not(:disabled) {
   background: var(--brand-primary-hover);
 }
-/* .btn-teal folds into the single slate primary (spec: one interactive color) */
+/* .btn-teal folds into the single primary (spec: one interactive color) */
 .btn-teal {
   background: var(--brand-primary-strong);
   color: #fff;
@@ -142,22 +200,24 @@ textarea {
 .btn-teal:hover:not(:disabled) {
   background: var(--brand-primary-hover);
 }
-/* Secondary/outline button: slate text + border on white */
+/* Secondary/outline button: neutral surface + subtle border */
 .btn-secondary {
   background: #fff;
-  border-color: var(--brand-blue);
-  color: var(--brand-primary-strong);
+  border-color: var(--border-secondary);
+  color: var(--text-primary);
 }
 .btn-secondary:hover:not(:disabled) {
-  background: var(--brand-blue-100);
+  background: var(--surface-muted);
+  border-color: var(--text-faint);
 }
 .btn-ghost {
   background: transparent;
   border-color: var(--border-primary);
-  color: var(--text-primary);
+  color: var(--text-secondary);
 }
 .btn-ghost:hover:not(:disabled) {
-  background: var(--brand-blue-100);
+  background: var(--surface-muted);
+  color: var(--text-primary);
 }
 /* Olive secondary accent action */
 .btn-olive {
@@ -170,22 +230,24 @@ textarea {
 /* Premium amber action — reserved for high-value/premium CTAs only */
 .btn-gold {
   background: var(--brand-amber);
-  color: var(--brand-ink);
+  color: #fff;
 }
 .btn-gold:hover:not(:disabled) {
   background: var(--brand-amber-dark);
 }
 .btn-danger {
   background: #fff;
-  border-color: #f3c6c6;
+  border-color: #eec2c2;
   color: var(--red);
 }
 .btn-danger:hover:not(:disabled) {
-  background: #fdf0f0;
+  background: #fdf2f2;
+  border-color: #e3a3a3;
 }
 .btn-sm {
-  padding: 6px 12px;
-  font-size: 13px;
+  height: var(--control-h-sm);
+  padding: 0 11px;
+  font-size: var(--fs-secondary);
 }
 
 /* ── Forms ───────────────────────────────────────────────── */
@@ -196,76 +258,124 @@ textarea {
   margin-bottom: 14px;
 }
 .field label {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--text-muted);
+  font-size: var(--fs-secondary);
+  font-weight: var(--fw-semibold);
+  color: var(--text-secondary);
 }
 .field .req {
   color: var(--red);
+}
+.field .hint {
+  font-size: var(--fs-caption);
+  color: var(--text-faint);
 }
 .input,
 .select,
 .textarea {
   width: 100%;
-  padding: 9px 11px;
-  border: 1px solid var(--border-primary);
-  border-radius: 8px;
+  height: var(--control-h);
+  padding: 0 11px;
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--radius-sm);
   background: #fff;
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
+}
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--text-faint);
 }
 .input:focus,
 .select:focus,
 .textarea:focus {
   border-color: var(--brand-blue);
-  box-shadow: 0 0 0 3px rgba(35, 35, 255, 0.2);
+  box-shadow: 0 0 0 3px rgba(51, 85, 204, 0.16);
 }
-.input:disabled {
-  background: #f4f5f8;
+.input:disabled,
+.select:disabled {
+  background: var(--surface-muted);
   color: var(--text-muted);
+  cursor: not-allowed;
 }
 .textarea {
+  height: auto;
+  padding: 9px 11px;
   resize: vertical;
   min-height: 70px;
+}
+.select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
 }
 
 /* ── Cards ───────────────────────────────────────────────── */
 .card {
   background: var(--surface-primary);
   border: 1px solid var(--border-primary);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
 }
 .card-pad {
   padding: 20px;
+}
+
+/* ── Reusable page header (spec §10) ─────────────────────────── */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.page-header .ph-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 /* ── Tables ──────────────────────────────────────────────── */
 .table {
   width: 100%;
   border-collapse: collapse;
+  font-size: var(--fs-table);
 }
 .table th {
   text-align: left;
-  font-size: 11.5px;
+  font-size: var(--fs-caption);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text-muted);
-  font-weight: 700;
-  padding: 11px 14px;
+  font-weight: var(--fw-semibold);
+  padding: 10px 14px;
   border-bottom: 1px solid var(--border-primary);
-  background: #fafbfc;
+  background: var(--surface-muted);
+  white-space: nowrap;
 }
 .table td {
-  padding: 12px 14px;
+  padding: 11px 14px;
   border-bottom: 1px solid var(--border-primary);
   vertical-align: middle;
+  color: var(--text-secondary);
+}
+.table tbody tr {
+  transition: background 0.1s;
 }
 .table tbody tr:hover {
-  background: #fafbfd;
+  background: var(--brand-blue-50);
 }
 .table tbody tr:last-child td {
   border-bottom: none;
+}
+/* Sticky header for long data tables (spec §16). */
+.table-sticky thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 /* ── Badges ──────────────────────────────────────────────── */
@@ -273,17 +383,18 @@ textarea {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1.4;
+  padding: 2px 9px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-secondary);
+  font-weight: var(--fw-semibold);
+  line-height: 1.5;
+  white-space: nowrap;
 }
 .badge-gray { background: #eef0f4; color: #55607a; }
-.badge-blue { background: #e5eefc; color: var(--blue); }
-.badge-green { background: #e3f6ec; color: var(--green); }
-.badge-amber { background: #fdf0dd; color: var(--amber); }
-.badge-red { background: #fce8e8; color: var(--red); }
+.badge-blue { background: #e5eefc; color: #1d4ed8; }
+.badge-green { background: #e3f5ea; color: #0f7a3b; }
+.badge-amber { background: #fbeecf; color: #9a5f08; }
+.badge-red { background: #fbe4e4; color: #b92c2c; }
 .badge-teal { background: var(--brand-blue-100); color: var(--brand-primary-strong); }
 .badge-slate { background: var(--brand-blue-100); color: var(--brand-primary-strong); }
 .badge-olive { background: var(--brand-olive-light); color: var(--brand-olive-text); }
@@ -292,20 +403,20 @@ textarea {
 
 /* Client / vendor ID chip shown in the party list */
 .party-id {
-  font-size: 11.5px;
-  font-weight: 600;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-semibold);
   color: var(--brand-primary-strong);
   background: var(--brand-blue-100);
   border: 1px solid var(--border-primary);
   padding: 1px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   letter-spacing: 0.01em;
   white-space: nowrap;
 }
 
 /* Budget utilisation bar (Phase E) */
-.budget-bar { height: 8px; border-radius: 999px; background: #eef0f4; overflow: hidden; width: 100%; }
-.budget-bar-fill { height: 100%; border-radius: 999px; transition: width .2s ease; }
+.budget-bar { height: 8px; border-radius: var(--radius-pill); background: #eef0f4; overflow: hidden; width: 100%; }
+.budget-bar-fill { height: 100%; border-radius: var(--radius-pill); transition: width .2s ease; }
 
 /* ── Utility ─────────────────────────────────────────────── */
 .row { display: flex; }
@@ -320,9 +431,10 @@ textarea {
 .wrap { flex-wrap: wrap; }
 .muted { color: var(--text-muted); }
 .faint { color: var(--text-faint); }
-.small { font-size: 12.5px; }
-.bold { font-weight: 700; }
-.mono { font-family: ui-monospace, 'SF Mono', Menlo, monospace; }
+.small { font-size: var(--fs-secondary); }
+.bold { font-weight: var(--fw-bold); }
+.semibold { font-weight: var(--fw-semibold); }
+.mono { font-family: var(--font-mono); }
 .mt-4 { margin-top: 4px; }
 .mt-8 { margin-top: 8px; }
 .mt-16 { margin-top: 16px; }
@@ -333,13 +445,16 @@ textarea {
 .nowrap { white-space: nowrap; }
 
 .page-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--brand-dark);
+  font-size: var(--fs-page-title);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  line-height: 1.2;
 }
 .page-sub {
   color: var(--text-muted);
-  margin-top: 2px;
+  font-size: var(--fs-body);
+  margin-top: 3px;
 }
 
 .grid { display: grid; gap: 16px; }
@@ -355,13 +470,23 @@ textarea {
 
 .empty {
   text-align: center;
-  padding: 48px 20px;
+  padding: 44px 20px;
   color: var(--text-muted);
+}
+.empty .empty-title {
+  font-weight: var(--fw-semibold);
+  color: var(--text-secondary);
+  font-size: var(--fs-card-title);
+}
+.empty .empty-sub {
+  font-size: var(--fs-secondary);
+  color: var(--text-faint);
+  margin-top: 4px;
 }
 
 /* ── Scrollbar ───────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-thumb { background: #cfd4de; border-radius: 6px; }
+::-webkit-scrollbar-thumb { background: #d0d4dd; border-radius: 6px; }
 ::-webkit-scrollbar-thumb:hover { background: #b8bec9; }
 
 /* ── Responsive foundation ────────────────────────────────────
@@ -382,11 +507,10 @@ textarea {
 }
 @media (max-width: 768px) {
   .grid-2 { grid-template-columns: 1fr; }
-  .page-title { font-size: 20px; }
+  .page-title { font-size: 21px; }
 }
 @media (max-width: 600px) {
   .grid-3, .grid-4 { grid-template-columns: 1fr; }
-  .page-title { font-size: 19px; }
+  .page-title { font-size: 20px; }
   .card-pad { padding: 16px; }
-  .btn { padding: 9px 14px; }
 }

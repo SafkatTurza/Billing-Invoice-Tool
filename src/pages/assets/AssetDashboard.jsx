@@ -4,6 +4,7 @@ import { useAssets } from '../../context/AssetContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
 import { can } from '../../lib/roles.js'
 import { formatMoney } from '../../lib/format.js'
+import PageHeader from '../../components/PageHeader.jsx'
 import {
   matchesFilters, warrantyStatus, lifetimeRepairCost, repairCostInYear, isTerminal,
 } from '../../lib/assets.js'
@@ -54,8 +55,10 @@ export default function AssetDashboard() {
 
   return (
     <div>
-      <h1 className="page-title">Asset Dashboard</h1>
-      <p className="page-sub">Company-owned equipment at a glance. Every card opens the matching filtered register.</p>
+      <PageHeader
+        title="Asset Dashboard"
+        subtitle="Company-owned equipment at a glance. Every card opens the matching filtered register."
+      />
 
       <div className="asset-kpi-section">Overview</div>
       <div className="asset-kpis">

@@ -7,6 +7,7 @@ import { useToast } from '../../components/Toast.jsx'
 import { can } from '../../lib/roles.js'
 import { Icon } from '../../components/Icons.jsx'
 import AssetForm from '../../components/assets/AssetForm.jsx'
+import PageHeader from '../../components/PageHeader.jsx'
 import { exportReport } from '../../lib/reportExport.js'
 import { formatMoney, formatDate } from '../../lib/format.js'
 import {
@@ -104,17 +105,14 @@ export default function AssetRegister() {
 
   return (
     <div>
-      <div className="row between center wrap gap-12">
-        <div>
-          <h1 className="page-title">Asset Register</h1>
-          <p className="page-sub">{filtered.length} of {assets.length} assets{activeView ? ` · ${QUICK_VIEWS.find((v) => v.id === activeView)?.label || ''}` : ''}</p>
-        </div>
-        <div className="row gap-8 wrap">
-          <button className="btn btn-ghost" onClick={() => setShowFilters((s) => !s)}><Icon.search width={15} height={15} /> Filters</button>
-          <button className="btn btn-ghost" onClick={exportXlsx}><Icon.download width={15} height={15} /> Export</button>
-          {canManage && <button className="btn btn-primary" onClick={() => setAdding(true)}><Icon.plus width={16} height={16} /> Add Asset</button>}
-        </div>
-      </div>
+      <PageHeader
+        title="Asset Register"
+        subtitle={`${filtered.length} of ${assets.length} assets${activeView ? ` · ${QUICK_VIEWS.find((v) => v.id === activeView)?.label || ''}` : ''}`}
+      >
+        <button className="btn btn-ghost" onClick={() => setShowFilters((s) => !s)}><Icon.search width={15} height={15} /> Filters</button>
+        <button className="btn btn-ghost" onClick={exportXlsx}><Icon.download width={15} height={15} /> Export</button>
+        {canManage && <button className="btn btn-primary" onClick={() => setAdding(true)}><Icon.plus width={16} height={16} /> Add Asset</button>}
+      </PageHeader>
 
       {/* Quick views */}
       <div className="asset-quickviews mt-16">

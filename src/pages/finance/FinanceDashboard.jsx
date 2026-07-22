@@ -6,6 +6,7 @@ import { FIN_STATUS, isExpenseTxn, billDue, billOverdue, txnBase } from '../../l
 import { can } from '../../lib/roles.js'
 import { formatMoney, formatDate } from '../../lib/format.js'
 import { Icon } from '../../components/Icons.jsx'
+import PageHeader from '../../components/PageHeader.jsx'
 import '../../styles/dashboard.css'
 
 function ym(dateStr) {
@@ -94,10 +95,12 @@ export default function FinanceDashboard() {
 
   return (
     <div>
-      <h1 className="page-title">Finance Dashboard</h1>
-      <p className="page-sub">Approved expenses vs. earnings for {formatDate(thisMonth + '-01').replace(/^\d+ /, '')}. Only approved items count here.</p>
+      <PageHeader
+        title="Finance Dashboard"
+        subtitle={`Approved expenses vs. earnings for ${formatDate(thisMonth + '-01').replace(/^\d+ /, '')}. Only approved items count here.`}
+      />
 
-      <div className="fin-kpis mt-24">
+      <div className="fin-kpis">
         <div className="fin-kpi">
           <div className="k-label">Billing Income (Paid)</div>
           <div className="k-val in">

@@ -1,87 +1,122 @@
+/* ── KPI cards — compact, consistent, information-focused (spec §11-12).
+   The three former KPI systems (.count-card / .fin-kpi / .asset-kpi) now share
+   one visual spec so Finance, Billing and Assets read as one product. */
 .dash-cards {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+  gap: 14px;
 }
 .count-card {
   background: #fff;
   border: 1px solid var(--border-primary);
-  border-radius: var(--radius);
-  padding: 18px 20px;
-  box-shadow: var(--shadow);
+  border-radius: var(--radius-lg);
+  padding: 15px 16px;
+  box-shadow: var(--shadow-xs);
   cursor: pointer;
-  transition: transform 0.12s, box-shadow 0.12s;
+  transition: border-color 0.12s, box-shadow 0.12s, transform 0.12s;
+  min-height: 92px;
 }
-.count-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
-.count-card .cc-top { display: flex; justify-content: space-between; align-items: center; }
+.count-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--brand-blue-300);
+}
+.count-card .cc-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+/* Subtle tinted icon chip — no large solid-colour box (spec §12). */
 .count-card .cc-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  background: var(--brand-blue-100);
+  color: var(--brand-primary-strong);
+  flex-shrink: 0;
 }
-.count-card .cc-num { font-size: 30px; font-weight: 800; color: var(--brand-dark); margin-top: 12px; line-height: 1; }
-.count-card .cc-label { color: var(--text-muted); font-size: 13px; margin-top: 5px; }
+.count-card .cc-icon svg { width: 17px; height: 17px; }
+.count-card .cc-num {
+  font-size: 24px;
+  font-weight: var(--fw-bold);
+  color: var(--text-primary);
+  margin-top: 10px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.count-card .cc-label {
+  color: var(--text-muted);
+  font-size: var(--fs-secondary);
+  font-weight: var(--fw-medium);
+}
+.count-card .cc-top .cc-label { color: var(--text-secondary); font-weight: var(--fw-semibold); }
+.count-card .cc-num + .cc-label { margin-top: 4px; font-weight: var(--fw-regular); font-size: var(--fs-caption); color: var(--text-faint); }
 
+/* ── Financial summary cards ─────────────────────────────────── */
 .fin-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: 14px;
 }
 .fin-card {
   background: #fff;
   border: 1px solid var(--border-primary);
-  border-radius: var(--radius);
-  padding: 20px;
-  box-shadow: var(--shadow);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  box-shadow: var(--shadow-xs);
 }
-.fin-card h4 { font-size: 14px; color: var(--brand-dark); font-weight: 700; }
-.fin-card .fc-sub { color: var(--text-muted); font-size: 12px; margin-bottom: 12px; }
-.fin-line { display: flex; justify-content: space-between; padding: 7px 0; font-size: 13.5px; }
+.fin-card h4 { font-size: var(--fs-card-title); color: var(--text-primary); font-weight: var(--fw-semibold); }
+.fin-card .fc-sub { color: var(--text-muted); font-size: var(--fs-secondary); margin-bottom: 12px; margin-top: 2px; }
+.fin-line { display: flex; justify-content: space-between; align-items: baseline; padding: 7px 0; font-size: var(--fs-table); }
 .fin-line + .fin-line { border-top: 1px dashed var(--border-primary); }
 .fin-line .fl-label { color: var(--text-muted); }
-.fin-line .fl-val { font-weight: 700; }
+.fin-line .fl-val { font-weight: var(--fw-bold); color: var(--text-primary); font-variant-numeric: tabular-nums; }
 .fin-line .fl-val.green { color: var(--green); }
 
+/* ── Quick create — compact action row (spec §14) ────────────── */
 .quick-create {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
+  gap: 10px;
 }
 .qc-btn {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 14px 16px;
+  padding: 11px 13px;
   border: 1px solid var(--border-primary);
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: #fff;
-  font-weight: 600;
-  color: var(--text-primary);
-  transition: border-color 0.12s, background 0.12s;
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-table);
+  color: var(--text-secondary);
+  transition: border-color 0.12s, background 0.12s, color 0.12s;
 }
-.qc-btn:hover { border-color: var(--brand-blue); background: var(--brand-blue-100); }
+.qc-btn:hover { border-color: var(--brand-blue); background: var(--brand-blue-50); color: var(--text-primary); }
 .qc-btn .qc-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  background: var(--brand-olive-light);
-  color: var(--brand-olive-text);
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--brand-blue-100);
+  color: var(--brand-primary-strong);
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .section-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 28px 0 14px;
+  gap: 12px;
+  margin: 26px 0 13px;
 }
-.section-head h3 { font-size: 16px; font-weight: 700; color: var(--brand-dark); }
+.section-head h3 { font-size: var(--fs-section); font-weight: var(--fw-semibold); color: var(--text-primary); letter-spacing: -0.01em; }
 
 /* ── Responsive card grids ───────────────────────────────────── */
 @media (max-width: 1024px) {
@@ -91,6 +126,6 @@
 @media (max-width: 600px) {
   .dash-cards,
   .fin-grid { grid-template-columns: 1fr; }
-  .count-card .cc-num { font-size: 26px; }
+  .count-card .cc-num { font-size: 22px; }
   .section-head { margin: 20px 0 12px; }
 }

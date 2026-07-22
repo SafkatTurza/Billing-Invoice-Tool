@@ -11,97 +11,147 @@ import { SessionExpiryBanner } from '../components/Banners.jsx'
 import { formatMoney, formatDateTime } from '../lib/format.js'
 import '../styles/layout.css'
 
-// Sidebar groups mirror the original Paynox layout: Sales & Payments
-// (Estimates before Invoices) and Purchases (PO/WO) + Money Receipt.
-const SALES = [
-  { type: 'estimates', label: 'Estimates', icon: Icon.estimate },
-  { type: 'invoices', label: 'Invoices', icon: Icon.invoice },
-]
-const PURCHASES = [
-  { type: 'purchase-orders', label: 'Purchase Orders', icon: Icon.po },
-  { type: 'work-orders', label: 'Work Orders', icon: Icon.wo },
+// ── Single-open accordion navigation (spec §6) ──────────────────
+// Major modules are collapsed by default; only the group owning the active
+// route opens. The former 3-level Finance nesting (module → subcategory →
+// item) is flattened into clean top-level groups so users see every module
+// at a glance without a wall of submenus. Routes & permissions are unchanged;
+// only the grouping in the sidebar changed. Doc-type items carry `docType`
+// (per-item role gate + live count); finance/asset items are route-only and
+// inherit the group's `perm` gate.
+const NAV_GROUPS = [
+  {
+    id: 'sales',
+    label: 'Sales & Payments',
+    icon: Icon.invoice,
+    items: [
+      { to: '/estimates', label: 'Estimates', docType: 'estimates' },
+      { to: '/invoices', label: 'Invoices', docType: 'invoices' },
+    ],
+  },
+  {
+    id: 'purchases',
+    label: 'Purchases',
+    icon: Icon.po,
+    items: [
+      { to: '/purchase-orders', label: 'Purchase Orders', docType: 'purchase-orders' },
+      { to: '/work-orders', label: 'Work Orders', docType: 'work-orders' },
+      { to: '/money-receipt', label: 'Money Receipt', docType: 'money-receipt' },
+    ],
+  },
+  {
+    id: 'finance',
+    label: 'Finance',
+    icon: Icon.money,
+    perm: 'financeView',
+    items: [
+      { to: '/finance', label: 'Overview', end: true },
+      { to: '/finance/requisition', label: 'Requisitions' },
+      { to: '/finance/voucher', label: 'Vouchers' },
+      { to: '/finance/expenses', label: 'Daily Expenses' },
+      { to: '/finance/bills', label: 'Bills & Payables' },
+      { to: '/finance/income', label: 'Income & Investment' },
+      { to: '/finance/recurring', label: 'Recurring' },
+      { to: '/finance/ledger', label: 'Ledger' },
+      { to: '/finance/gl', label: 'General Ledger' },
+    ],
+  },
+  {
+    id: 'payroll',
+    label: 'Payroll & People',
+    icon: Icon.users,
+    perm: 'financeView',
+    items: [
+      { to: '/finance/employees', label: 'Employees' },
+      { to: '/finance/salary-sheet', label: 'Salary Sheets' },
+      { to: '/finance/loans', label: 'Loans & Advances' },
+    ],
+  },
+  {
+    id: 'assets',
+    label: 'Asset Management',
+    icon: Icon.monitor,
+    perm: 'assetView',
+    items: [
+      { to: '/assets', label: 'Dashboard', end: true },
+      { to: '/assets/register', label: 'Asset Register' },
+      { to: '/assets/reports', label: 'Reports' },
+    ],
+  },
+  {
+    id: 'reports',
+    label: 'Reports',
+    icon: Icon.estimate,
+    perm: 'financeView',
+    items: [
+      { to: '/finance/budgets', label: 'Budgets' },
+      { to: '/finance/reports', label: 'Monthly Report' },
+      { to: '/finance/statements', label: 'Financial Reports' },
+      { to: '/finance/insights', label: 'Insights & Forecast' },
+    ],
+  },
 ]
 
-// Finance sub-groups: three buckets so the module reads at a glance instead of
-// a flat 16-item list. Overview stays pinned above these. Order within each
-// bucket is kept intact so nothing feels relocated.
-const FIN_TRANSACTIONS = [
-  { to: '/finance/requisition', label: 'Requisitions', icon: Icon.invoice },
-  { to: '/finance/voucher', label: 'Vouchers', icon: Icon.money },
-  { to: '/finance/expenses', label: 'Daily Expenses', icon: Icon.po },
-  { to: '/finance/bills', label: 'Bills & Payables', icon: Icon.receipt },
-  { to: '/finance/income', label: 'Income & Investment', icon: Icon.money },
-  { to: '/finance/recurring', label: 'Recurring', icon: Icon.audit },
-]
-const FIN_PAYROLL = [
-  { to: '/finance/employees', label: 'Employees', icon: Icon.users },
-  { to: '/finance/salary-sheet', label: 'Salary Sheets', icon: Icon.wo },
-  { to: '/finance/loans', label: 'Loans & Advances', icon: Icon.money },
-]
-// "Ledgers" (the books) split out from analytical reports so neither bucket
-// gets too long — one nesting level, no items moved out of Finance.
-const FIN_LEDGERS = [
-  { to: '/finance/ledger', label: 'Ledger', icon: Icon.audit },
-  { to: '/finance/gl', label: 'General Ledger', icon: Icon.audit },
-]
-const FIN_REPORTS = [
-  { to: '/finance/budgets', label: 'Budgets', icon: Icon.estimate },
-  { to: '/finance/reports', label: 'Monthly Report', icon: Icon.estimate },
-  { to: '/finance/statements', label: 'Financial Reports', icon: Icon.estimate },
-  { to: '/finance/insights', label: 'Insights & Forecast', icon: Icon.monitor },
-]
-
-// Asset Management module — kept lean (Register does the heavy lifting via
-// filters & quick-views, so we avoid a page per asset state).
-const ASSETS = [
-  { to: '/assets', label: 'Dashboard', icon: Icon.dashboard, end: true },
-  { to: '/assets/register', label: 'Asset Register', icon: Icon.invoice },
-  { to: '/assets/reports', label: 'Reports', icon: Icon.estimate },
-]
-
-// Each Finance sub-group paired with its collapse-state key — used to
-// force-expand the group that contains the active route.
-const FIN_GROUPS = [
-  ['finTxn', FIN_TRANSACTIONS],
-  ['finPayroll', FIN_PAYROLL],
-  ['finLedgers', FIN_LEDGERS],
-  ['finReports', FIN_REPORTS],
-]
-const pathInItems = (pathname, items) =>
-  items.some((it) => pathname === it.to || pathname.startsWith(it.to + '/'))
+// Items a role may see within a group (doc-type items honour canAccessDocType).
+function visibleItems(group, role) {
+  return group.items.filter((it) => !it.docType || canAccessDocType(role, it.docType))
+}
+// A group renders only when its perm passes and it has at least one visible item.
+function groupVisible(group, role) {
+  if (group.perm && !can(role, group.perm)) return false
+  return visibleItems(group, role).length > 0
+}
+// The group that owns the active route = longest matching item path. Using
+// longest-prefix (not `end`) resolves the /finance vs /finance/employees
+// overlap: Payroll's exact item beats Finance's shorter Overview prefix.
+function findActiveGroup(pathname) {
+  let bestId = null
+  let bestLen = -1
+  for (const g of NAV_GROUPS) {
+    for (const it of g.items) {
+      if ((pathname === it.to || pathname.startsWith(it.to + '/')) && it.to.length > bestLen) {
+        bestLen = it.to.length
+        bestId = g.id
+      }
+    }
+  }
+  return bestId
+}
 
 // Hoisted to module scope on purpose. Defining these inside AppLayout made them
 // a new component type on every render, so React unmounted & remounted the nav
 // subtree on each navigation — which collapsed the scroll container and reset
 // the sidebar's scroll position. As stable types, navigation only patches the
 // active class in place and the scroll position is preserved for free.
-function NavDoc({ d, sub, role, counts }) {
-  if (!canAccessDocType(role, d.type)) return null
+function NavGroup({ group, role, counts, open, active, onToggle }) {
+  const items = visibleItems(group, role)
   return (
-    <NavLink to={`/${d.type}`} className={`nav-item${sub ? ' sub' : ''}`}>
-      <d.icon width={17} height={17} />
-      {d.label}
-      {counts[d.type] ? <span className="count">{counts[d.type]}</span> : null}
-    </NavLink>
-  )
-}
-
-function FinSub({ id, label, items, open, onToggle }) {
-  return (
-    <>
-      <button className="nav-group-toggle sub" onClick={() => onToggle(id)}>
-        {label}
+    <div className={`nav-group-block${active ? ' has-active' : ''}`}>
+      <button
+        className={`nav-group-toggle${open ? ' open' : ''}${active ? ' active' : ''}`}
+        onClick={() => onToggle(group.id)}
+        aria-expanded={open}
+      >
+        <group.icon width={18} height={18} />
+        <span className="ngt-label">{group.label}</span>
         <span className={`arr${open ? ' open' : ''}`}>
-          <Icon.chevron width={12} height={12} />
+          <Icon.chevron width={14} height={14} />
         </span>
       </button>
-      {open &&
-        items.map((it) => (
-          <NavLink key={it.to} to={it.to} className="nav-item sub2">
-            <it.icon width={16} height={16} /> {it.label}
-          </NavLink>
-        ))}
-    </>
+      {open && (
+        <div className="nav-group-items">
+          {items.map((it) => (
+            <NavLink key={it.to} to={it.to} end={it.end} className="nav-item sub">
+              <span className="ni-dot" />
+              <span className="ni-label">{it.label}</span>
+              {it.docType && counts[it.docType] ? (
+                <span className="count">{counts[it.docType]}</span>
+              ) : null}
+            </NavLink>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -111,29 +161,25 @@ export default function AppLayout() {
   const location = useLocation()
   const navScrollRef = useRef(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const [groups, setGroups] = useState({
-    sales: true,
-    purchases: true,
-    finance: true,
-    finTxn: true,
-    finPayroll: true,
-    finLedgers: true,
-    finReports: true,
-    assets: true,
-  })
-  const toggle = useCallback((id) => setGroups((g) => ({ ...g, [id]: !g[id] })), [])
+  // Single-open accordion: at most one top-level group is expanded. Seeded to
+  // the group owning the current route so a deep-link / refresh lands with the
+  // right module open (spec §6).
+  const activeGroup = findActiveGroup(location.pathname)
+  const [openGroup, setOpenGroup] = useState(activeGroup)
+  // Opening a group collapses whichever was open; clicking the open one closes it.
+  const toggle = useCallback((id) => setOpenGroup((cur) => (cur === id ? null : id)), [])
 
   // Close the mobile drawer whenever the route changes (a nav item was picked).
   useEffect(() => {
     setDrawerOpen(false)
   }, [location.pathname])
 
-  // Keep the Finance sub-group that owns the active route expanded (so it's
-  // visible on deep-link / refresh, and re-opens when navigating into it). Runs
-  // only on route change, so a user's manual collapse otherwise sticks.
+  // Keep the group that owns the active route expanded (visible on deep-link /
+  // refresh, and re-opens when navigating into it). Standalone routes (Dashboard
+  // / Settings) own no group, so the current expansion is left untouched.
   useEffect(() => {
-    const hit = FIN_GROUPS.find(([, items]) => pathInItems(location.pathname, items))
-    if (hit) setGroups((g) => (g[hit[0]] && g.finance ? g : { ...g, finance: true, [hit[0]]: true }))
+    const g = findActiveGroup(location.pathname)
+    if (g) setOpenGroup(g)
   }, [location.pathname])
 
   // Bring the active item into view *only if it isn't already visible*, and
@@ -181,8 +227,6 @@ export default function AppLayout() {
     return c
   }, [liveDocs, currentUser])
 
-  const isBT = role === 'Business Team'
-
   return (
     <div className="app-shell">
       <div
@@ -207,87 +251,35 @@ export default function AppLayout() {
         </div>
 
         <nav className="nav-scroll" ref={navScrollRef} onClick={(e) => { if (e.target.closest('a')) setDrawerOpen(false) }}>
-          <NavLink to="/dashboard" className="nav-item">
-            <Icon.dashboard width={17} height={17} />
-            Dashboard
+          <NavLink to="/dashboard" className="nav-item standalone">
+            <Icon.dashboard width={18} height={18} />
+            <span className="ni-label">Dashboard</span>
           </NavLink>
 
-          <button className="nav-group-toggle" onClick={() => toggle('sales')}>
-            <Icon.estimate width={16} height={16} />
-            Sales &amp; Payments
-            <span className={`arr${groups.sales ? ' open' : ''}`}>
-              <Icon.chevron width={13} height={13} />
-            </span>
-          </button>
-          {groups.sales && SALES.map((d) => <NavDoc key={d.type} d={d} sub role={role} counts={counts} />)}
-
-          {!isBT && (
-            <>
-              <button className="nav-group-toggle" onClick={() => toggle('purchases')}>
-                <Icon.po width={16} height={16} />
-                Purchases
-                <span className={`arr${groups.purchases ? ' open' : ''}`}>
-                  <Icon.chevron width={13} height={13} />
-                </span>
-              </button>
-              {groups.purchases && PURCHASES.map((d) => <NavDoc key={d.type} d={d} sub role={role} counts={counts} />)}
-              <NavDoc d={{ type: 'money-receipt', label: 'Money Receipt', icon: Icon.receipt }} role={role} counts={counts} />
-            </>
-          )}
-
-          {can(role, 'financeView') && (
-            <>
-              <button className="nav-group-toggle" onClick={() => toggle('finance')}>
-                <Icon.money width={16} height={16} />
-                Finance
-                <span className={`arr${groups.finance ? ' open' : ''}`}>
-                  <Icon.chevron width={13} height={13} />
-                </span>
-              </button>
-              {groups.finance && (
-                <>
-                  <NavLink to="/finance" end className="nav-item sub">
-                    <Icon.dashboard width={16} height={16} /> Overview
-                  </NavLink>
-                  <FinSub id="finTxn" label="Transactions" items={FIN_TRANSACTIONS} open={groups.finTxn} onToggle={toggle} />
-                  <FinSub id="finPayroll" label="Payroll &amp; People" items={FIN_PAYROLL} open={groups.finPayroll} onToggle={toggle} />
-                  <FinSub id="finLedgers" label="Ledgers" items={FIN_LEDGERS} open={groups.finLedgers} onToggle={toggle} />
-                  <FinSub id="finReports" label="Reports &amp; Analysis" items={FIN_REPORTS} open={groups.finReports} onToggle={toggle} />
-                </>
-              )}
-            </>
-          )}
-
-          {can(role, 'assetView') && (
-            <>
-              <button className="nav-group-toggle" onClick={() => toggle('assets')}>
-                <Icon.monitor width={16} height={16} />
-                Asset Management
-                <span className={`arr${groups.assets ? ' open' : ''}`}>
-                  <Icon.chevron width={13} height={13} />
-                </span>
-              </button>
-              {groups.assets &&
-                ASSETS.map((it) => (
-                  <NavLink key={it.to} to={it.to} end={it.end} className="nav-item sub">
-                    <it.icon width={16} height={16} /> {it.label}
-                  </NavLink>
-                ))}
-            </>
-          )}
+          {NAV_GROUPS.filter((g) => groupVisible(g, role)).map((g) => (
+            <NavGroup
+              key={g.id}
+              group={g}
+              role={role}
+              counts={counts}
+              open={openGroup === g.id}
+              active={activeGroup === g.id}
+              onToggle={toggle}
+            />
+          ))}
 
           {can(role, 'recycleBin') && (
-            <NavLink to="/recycle-bin" className="nav-item">
-              <Icon.trash width={17} height={17} />
-              Recycle Bin
+            <NavLink to="/recycle-bin" className="nav-item standalone">
+              <Icon.trash width={18} height={18} />
+              <span className="ni-label">Recycle Bin</span>
             </NavLink>
           )}
 
           <div className="nav-divider" />
 
-          <NavLink to="/settings" className="nav-item">
-            <Icon.settings width={17} height={17} />
-            Settings
+          <NavLink to="/settings" className="nav-item standalone">
+            <Icon.settings width={18} height={18} />
+            <span className="ni-label">Settings</span>
           </NavLink>
         </nav>
 

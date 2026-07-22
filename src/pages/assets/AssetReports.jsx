@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext.jsx'
 import { useToast } from '../../components/Toast.jsx'
 import { can } from '../../lib/roles.js'
 import { Icon } from '../../components/Icons.jsx'
+import PageHeader from '../../components/PageHeader.jsx'
 import { exportReport } from '../../lib/reportExport.js'
 import { formatMoney, formatDate } from '../../lib/format.js'
 import {
@@ -126,8 +127,10 @@ export default function AssetReports() {
 
   return (
     <div>
-      <h1 className="page-title">Asset Reports</h1>
-      <p className="page-sub">Download Excel reports, or scan the live summaries below.{!canMoney && ' Financial columns are hidden for your role.'}</p>
+      <PageHeader
+        title="Asset Reports"
+        subtitle={`Download Excel reports, or scan the live summaries below.${!canMoney ? ' Financial columns are hidden for your role.' : ''}`}
+      />
 
       <div className="asset-kpi-section">Export</div>
       <div className="quick-create">

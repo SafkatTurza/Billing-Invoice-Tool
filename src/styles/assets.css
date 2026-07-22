@@ -10,18 +10,18 @@
 .asset-kpi {
   background: #fff;
   border: 1px solid var(--border-primary);
-  border-radius: var(--radius);
-  padding: 16px 18px;
-  box-shadow: var(--shadow);
+  border-radius: var(--radius-lg);
+  padding: 15px 16px;
+  box-shadow: var(--shadow-xs);
   cursor: pointer;
   transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
-.asset-kpi:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); border-color: var(--brand-blue-300); }
-.asset-kpi .ak-num { font-size: 26px; font-weight: 800; color: var(--brand-dark); line-height: 1; }
-.asset-kpi .ak-label { color: var(--text-muted); font-size: 12.5px; }
+.asset-kpi:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); border-color: var(--brand-blue-300); }
+.asset-kpi .ak-num { font-size: 24px; font-weight: var(--fw-bold); color: var(--text-primary); line-height: 1; letter-spacing: -0.02em; }
+.asset-kpi .ak-label { color: var(--text-muted); font-size: var(--fs-secondary); font-weight: var(--fw-medium); }
 .asset-kpi.warn .ak-num { color: var(--amber); }
 .asset-kpi.bad .ak-num { color: var(--red); }
 .asset-kpi.good .ak-num { color: var(--green); }
