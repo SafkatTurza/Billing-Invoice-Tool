@@ -24,7 +24,7 @@ export default function Payslip() {
     return (
       <div className="empty">
         Payslip not found.{' '}
-        <a style={{ color: 'var(--navy)', fontWeight: 600 }} onClick={() => navigate(`/finance/salary-sheet/${id}`)}>
+        <a style={{ color: 'var(--brand-dark)', fontWeight: 600 }} onClick={() => navigate(`/finance/salary-sheet/${id}`)}>
           Back
         </a>
       </div>

@@ -20,8 +20,8 @@
   align-items: center;
   gap: 9px;
 }
-.settings-tab:hover { background: #fff; color: var(--text); }
-.settings-tab.active { background: #fff; border-color: var(--border); color: var(--navy); font-weight: 600; box-shadow: var(--shadow); }
+.settings-tab:hover { background: #fff; color: var(--text-primary); }
+.settings-tab.active { background: #fff; border-color: var(--border-primary); color: var(--brand-dark); font-weight: 600; box-shadow: var(--shadow); }
 .settings-panel { flex: 1; min-width: 0; }
 
 .logo-upload {
@@ -33,7 +33,7 @@
   width: 90px;
   height: 90px;
   border-radius: 12px;
-  border: 1px dashed var(--border);
+  border: 1px dashed var(--border-primary);
   background: #fafbfc;
   display: flex;
   align-items: center;
@@ -48,7 +48,7 @@
   width: 46px;
   height: 40px;
   border-radius: 8px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-primary);
   padding: 0;
   cursor: pointer;
 }
@@ -60,7 +60,7 @@
   max-width: 560px;
 }
 .template-card {
-  border: 2px solid var(--border);
+  border: 2px solid var(--border-primary);
   border-radius: 10px;
   background: #fff;
   padding: 0;
@@ -72,12 +72,12 @@
 .template-card:hover { border-color: #cdd3e0; }
 .template-card.active { border-color: var(--brand-slate); box-shadow: 0 0 0 3px rgba(109, 129, 150, 0.22); }
 .template-card:disabled { cursor: not-allowed; opacity: 0.7; }
-.tc-thumb { border-bottom: 1px solid var(--border); background: #fff; }
-.tc-name { font-weight: 700; font-size: 13px; padding: 8px 10px 2px; color: var(--navy); }
+.tc-thumb { border-bottom: 1px solid var(--border-primary); background: #fff; }
+.tc-name { font-weight: 700; font-size: 13px; padding: 8px 10px 2px; color: var(--brand-dark); }
 .tc-desc { font-size: 11px; color: var(--text-muted); padding: 0 10px 10px; line-height: 1.35; }
 
 .contact-block {
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-primary);
   border-radius: 10px;
   padding: 14px;
   margin-top: 10px;
@@ -85,7 +85,7 @@
 }
 
 .list-item-card {
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-primary);
   border-radius: 10px;
   padding: 14px 16px;
   display: flex;

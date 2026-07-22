@@ -159,7 +159,7 @@ export default function Loans() {
           {(editing.repayments || []).length > 0 && (
             <>
               <div className="divider" />
-              <label style={{ fontWeight: 700, color: 'var(--navy)' }}>Repayment history</label>
+              <label style={{ fontWeight: 700, color: 'var(--brand-dark)' }}>Repayment history</label>
               <table className="table mt-8">
                 <thead>
                   <tr><th>Date</th><th className="text-right">Amount</th><th>Note</th></tr>

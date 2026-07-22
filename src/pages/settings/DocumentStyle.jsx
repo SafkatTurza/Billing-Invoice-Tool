@@ -99,7 +99,7 @@ export default function DocumentStyle() {
       <div
         style={{
           marginTop: 8,
-          border: '1px solid var(--border)',
+          border: '1px solid var(--border-primary)',
           borderRadius: 10,
           overflow: 'hidden',
           maxWidth: 420,

@@ -70,7 +70,7 @@ export default function Budgets() {
     toast.success('Budget saved.')
   }
 
-  const barColor = (pct) => (pct == null ? 'var(--border)' : pct > 100 ? 'var(--red)' : pct >= 80 ? 'var(--amber)' : 'var(--green)')
+  const barColor = (pct) => (pct == null ? 'var(--border-primary)' : pct > 100 ? 'var(--red)' : pct >= 80 ? 'var(--amber)' : 'var(--green)')
 
   return (
     <div>
@@ -153,7 +153,7 @@ export default function Budgets() {
           </tbody>
           {totals.budget > 0 && (
             <tfoot>
-              <tr style={{ fontWeight: 700, borderTop: '2px solid var(--border)' }}>
+              <tr style={{ fontWeight: 700, borderTop: '2px solid var(--border-primary)' }}>
                 <td>Total</td>
                 <td>{formatMoney(totals.budget, 'BDT')}</td>
                 <td className="text-right nowrap ledger-out">{formatMoney(totals.actual, 'BDT')}</td>

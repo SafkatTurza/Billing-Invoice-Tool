@@ -37,7 +37,7 @@ export default function SalaryCertificate() {
     return (
       <div className="empty">
         Employee not found.{' '}
-        <a style={{ color: 'var(--navy)', fontWeight: 600 }} onClick={() => navigate('/finance/employees')}>Back</a>
+        <a style={{ color: 'var(--brand-dark)', fontWeight: 600 }} onClick={() => navigate('/finance/employees')}>Back</a>
       </div>
     )
   }

@@ -77,7 +77,7 @@ export default function Forgot({ onBack }) {
 
           {step === 2 && (
             <>
-              <div className="auth-note" style={{ background: '#f7f8fb', borderColor: '#dfe3ec', color: 'var(--text)', fontWeight: 600 }}>
+              <div className="auth-note" style={{ background: '#f7f8fb', borderColor: '#dfe3ec', color: 'var(--text-primary)', fontWeight: 600 }}>
                 <div>{user.securityQuestion}</div>
               </div>
               <div className="field">

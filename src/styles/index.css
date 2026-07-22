@@ -9,6 +9,7 @@
   --brand-slate: #6d8196;       /* active states, large/bold interactive */
   --brand-slate-600: #5b6e82;   /* button fills + normal-size link text (a11y) */
   --brand-slate-700: #4e5f71;   /* hover/active */
+  --brand-slate-300: #8a9bad;   /* light slate tint (gradient ends, accents) */
   --brand-slate-100: #eef1f4;   /* soft slate tint (selected rows, icon chips) */
   --brand-gray: #cbcbcb;
   --brand-ivory: #ffffe3;
@@ -48,17 +49,6 @@
   --error: var(--red);
   --info: var(--blue);
 
-  /* ── Legacy aliases — mapped to Paynox roles so existing rules
-     keep working during the rebrand; retired in the cleanup phase. */
-  --navy: var(--brand-charcoal);
-  --navy-dark: var(--brand-charcoal);
-  --teal: var(--brand-slate);
-  --teal-light: #8a9bad;
-  --bg: var(--background-secondary);
-  --surface: var(--surface-primary);
-  --border: var(--border-primary);
-  --text: var(--text-primary);
-
   --radius: 10px;
   --shadow: 0 1px 3px rgba(40, 40, 40, 0.08), 0 1px 2px rgba(40, 40, 40, 0.05);
   --shadow-lg: 0 10px 30px rgba(40, 40, 40, 0.14);
@@ -84,8 +74,8 @@ body,
 
 body {
   font-family: var(--font);
-  background: var(--bg);
-  color: var(--text);
+  background: var(--background-secondary);
+  color: var(--text-primary);
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -106,7 +96,7 @@ select,
 textarea {
   font-family: inherit;
   font-size: 14px;
-  color: var(--text);
+  color: var(--text-primary);
 }
 
 /* ── Buttons ─────────────────────────────────────────────── */
@@ -200,7 +190,7 @@ textarea {
 .textarea {
   width: 100%;
   padding: 9px 11px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-primary);
   border-radius: 8px;
   background: #fff;
   outline: none;
@@ -223,8 +213,8 @@ textarea {
 
 /* ── Cards ───────────────────────────────────────────────── */
 .card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--surface-primary);
+  border: 1px solid var(--border-primary);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
 }
@@ -245,12 +235,12 @@ textarea {
   color: var(--text-muted);
   font-weight: 700;
   padding: 11px 14px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-primary);
   background: #fafbfc;
 }
 .table td {
   padding: 12px 14px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-primary);
   vertical-align: middle;
 }
 .table tbody tr:hover {
@@ -311,7 +301,7 @@ textarea {
 .page-title {
   font-size: 22px;
   font-weight: 700;
-  color: var(--navy);
+  color: var(--brand-dark);
 }
 .page-sub {
   color: var(--text-muted);
@@ -325,7 +315,7 @@ textarea {
 
 .divider {
   height: 1px;
-  background: var(--border);
+  background: var(--border-primary);
   margin: 16px 0;
 }
 

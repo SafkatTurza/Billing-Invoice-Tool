@@ -142,7 +142,7 @@ export default function SalarySheetEditor() {
         </p>
         <div className="grid grid-3">
           {doc.components.map((c) => (
-            <div key={c.id} className="row gap-8 center" style={{ border: '1px solid var(--border)', borderRadius: 8, padding: 8 }}>
+            <div key={c.id} className="row gap-8 center" style={{ border: '1px solid var(--border-primary)', borderRadius: 8, padding: 8 }}>
               <input className="input" style={{ flex: 1 }} value={c.label} onChange={(e) => updComponent(c.id, { label: e.target.value })} />
               <select className="select" style={{ width: 120 }} value={c.type} onChange={(e) => updComponent(c.id, { type: e.target.value })}>
                 <option value="earning">Earning +</option>
@@ -219,7 +219,7 @@ export default function SalarySheetEditor() {
                     {(totals.compTotals[c.id] || 0).toLocaleString()}
                   </td>
                 ))}
-                <td style={{ fontWeight: 800, padding: '8px', color: 'var(--navy)' }}>{totals.net.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                <td style={{ fontWeight: 800, padding: '8px', color: 'var(--brand-dark)' }}>{totals.net.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                 <td colSpan={2}></td>
               </tr>
             </tfoot>

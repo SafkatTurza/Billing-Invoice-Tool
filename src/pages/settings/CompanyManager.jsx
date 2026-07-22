@@ -211,7 +211,7 @@ export default function CompanyManager() {
           </div>
 
           <div className="divider" />
-          <label style={{ fontWeight: 700, color: 'var(--navy)' }}>Default Bank Information</label>
+          <label style={{ fontWeight: 700, color: 'var(--brand-dark)' }}>Default Bank Information</label>
           <div className="grid grid-3 mt-8">
             {[
               ['bankName', 'Bank Name'],

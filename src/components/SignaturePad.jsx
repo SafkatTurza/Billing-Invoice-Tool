@@ -85,7 +85,7 @@ export default function SignaturePad({ initial, onSave, onClose }) {
             ref={canvasRef}
             width={440}
             height={160}
-            style={{ border: '1px solid var(--border)', borderRadius: 8, width: '100%', touchAction: 'none', cursor: 'crosshair' }}
+            style={{ border: '1px solid var(--border-primary)', borderRadius: 8, width: '100%', touchAction: 'none', cursor: 'crosshair' }}
             onMouseDown={start}
             onMouseMove={move}
             onMouseUp={end}
@@ -105,7 +105,7 @@ export default function SignaturePad({ initial, onSave, onClose }) {
             <input type="file" accept="image/*" hidden onChange={onUpload} />
           </label>
           {uploaded && (
-            <div style={{ marginTop: 12, border: '1px solid var(--border)', borderRadius: 8, padding: 10, background: '#fff' }}>
+            <div style={{ marginTop: 12, border: '1px solid var(--border-primary)', borderRadius: 8, padding: 10, background: '#fff' }}>
               <img src={uploaded} alt="signature" style={{ maxHeight: 90, maxWidth: '100%' }} />
             </div>
           )}

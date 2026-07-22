@@ -25,7 +25,7 @@ export default function StorageMeter() {
         <span className="faint">of ~{formatBytes(quota)}</span>
       </div>
       <div className="usage-bar">
-        <div style={{ width: pct + '%', background: pct > 85 ? 'var(--amber)' : 'var(--teal)' }} />
+        <div style={{ width: pct + '%', background: pct > 85 ? 'var(--amber)' : 'var(--brand-primary)' }} />
       </div>
       <div className="small faint">
         Scans are compressed and capped at 2 MB each. At ~60 documents/month this comfortably fits.

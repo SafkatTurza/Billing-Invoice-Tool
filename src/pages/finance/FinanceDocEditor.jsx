@@ -722,7 +722,7 @@ function VoucherBody({ doc, patch }) {
 
       {/* Signatures — the standard 4-slot chain, optionally expanded to a 5th
           approval slot signed by role/permission (max 5). */}
-      <div className="field mt-16" style={{ borderTop: '1px solid var(--border)', paddingTop: 14 }}>
+      <div className="field mt-16" style={{ borderTop: '1px solid var(--border-primary)', paddingTop: 14 }}>
         <label>Signatures</label>
         <label className="row gap-8 center" style={{ cursor: anySigned ? 'not-allowed' : 'pointer' }}>
           <input type="checkbox" checked={!!doc.extraApprover} disabled={anySigned} onChange={(e) => setExtraApprover(e.target.checked)} />

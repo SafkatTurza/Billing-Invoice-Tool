@@ -32,7 +32,7 @@ export default function SalarySheetPreview() {
     return (
       <div className="empty">
         Not found.{' '}
-        <a style={{ color: 'var(--navy)', fontWeight: 600 }} onClick={() => navigate('/finance/salary-sheet')}>
+        <a style={{ color: 'var(--brand-dark)', fontWeight: 600 }} onClick={() => navigate('/finance/salary-sheet')}>
           Back
         </a>
       </div>
@@ -98,7 +98,7 @@ export default function SalarySheetPreview() {
 
       {/* Approval */}
       <div className="card card-pad no-print" style={{ marginBottom: 18 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--navy)', marginBottom: 4 }}>Approval Chain</h3>
+        <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--brand-dark)', marginBottom: 4 }}>Approval Chain</h3>
         <p className="small muted mb-16">Signed in order; management (Authorised By) signs last. On final sign the salary posts to the ledger.</p>
         <ApprovalChain
           type="salary-sheet"
@@ -115,8 +115,8 @@ export default function SalarySheetPreview() {
       {/* Payslips (after approval) */}
       {approved && (
         <div className="card no-print" style={{ marginBottom: 18 }}>
-          <div className="row between center" style={{ padding: '12px 18px', borderBottom: '1px solid var(--border)' }}>
-            <span style={{ fontWeight: 700, color: 'var(--navy)' }}>Payslips — Payroll Receipt Copies</span>
+          <div className="row between center" style={{ padding: '12px 18px', borderBottom: '1px solid var(--border-primary)' }}>
+            <span style={{ fontWeight: 700, color: 'var(--brand-dark)' }}>Payslips — Payroll Receipt Copies</span>
             <div className="row gap-8">
               <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/finance/salary-sheet/${doc.id}/payslips`)}>
                 <Icon.receipt width={14} height={14} /> Bulk Payslips
@@ -153,7 +153,7 @@ export default function SalarySheetPreview() {
 
       {doc.attachments?.length > 0 && (
         <div className="card card-pad no-print" style={{ marginBottom: 18 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--navy)', marginBottom: 10 }}>Attachments</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--brand-dark)', marginBottom: 10 }}>Attachments</h3>
           <AttachmentList value={doc.attachments} />
         </div>
       )}

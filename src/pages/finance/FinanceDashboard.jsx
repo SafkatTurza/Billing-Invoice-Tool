@@ -174,7 +174,7 @@ export default function FinanceDashboard() {
 
       <div className="grid grid-2 mt-24" style={{ alignItems: 'start' }}>
         <div className="card">
-          <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', fontWeight: 700, color: 'var(--navy)' }}>
+          <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border-primary)', fontWeight: 700, color: 'var(--brand-dark)' }}>
             Expense by Head (this month, BDT)
           </div>
           {byHead.length === 0 ? (
@@ -194,7 +194,7 @@ export default function FinanceDashboard() {
         </div>
 
         <div className="card">
-          <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', fontWeight: 700, color: 'var(--navy)' }}>
+          <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border-primary)', fontWeight: 700, color: 'var(--brand-dark)' }}>
             Recent Transactions
           </div>
           {recent.length === 0 ? (

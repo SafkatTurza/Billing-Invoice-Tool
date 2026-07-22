@@ -22,7 +22,7 @@ export default function BulkPayslips() {
     return (
       <div className="empty">
         Not found.{' '}
-        <a style={{ color: 'var(--navy)', fontWeight: 600 }} onClick={() => navigate('/finance/salary-sheet')}>Back</a>
+        <a style={{ color: 'var(--brand-dark)', fontWeight: 600 }} onClick={() => navigate('/finance/salary-sheet')}>Back</a>
       </div>
     )
   }

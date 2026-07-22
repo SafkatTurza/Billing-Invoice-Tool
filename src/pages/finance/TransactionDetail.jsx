@@ -70,7 +70,7 @@ export default function TransactionDetail() {
           {/* Primary document */}
           {primary && (
             <div className="card mt-24">
-              <div className="card-pad" style={{ borderBottom: '1px solid var(--border)' }}>
+              <div className="card-pad" style={{ borderBottom: '1px solid var(--border-primary)' }}>
                 <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Primary Transaction</h3>
                 <p className="small muted" style={{ margin: '4px 0 0' }}>This document records the financial transaction to the ledger.</p>
               </div>
@@ -96,7 +96,7 @@ export default function TransactionDetail() {
           {/* Linked / internal records */}
           {linked.length > 0 && (
             <div className="card mt-24">
-              <div className="card-pad" style={{ borderBottom: '1px solid var(--border)' }}>
+              <div className="card-pad" style={{ borderBottom: '1px solid var(--border-primary)' }}>
                 <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Linked / Internal Records</h3>
                 <p className="small muted" style={{ margin: '4px 0 0' }}>Documentation only — these add no further ledger impact.</p>
               </div>
@@ -123,7 +123,7 @@ export default function TransactionDetail() {
 
           {/* Ledger entries */}
           <div className="card mt-24">
-            <div className="card-pad" style={{ borderBottom: '1px solid var(--border)' }}>
+            <div className="card-pad" style={{ borderBottom: '1px solid var(--border-primary)' }}>
               <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Ledger Entries</h3>
             </div>
             {txns.length === 0 ? (

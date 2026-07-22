@@ -110,7 +110,7 @@ function MyAccount() {
       </button>
 
       <div className="divider" />
-      <h4 style={{ color: 'var(--navy)' }}>My Signature</h4>
+      <h4 style={{ color: 'var(--brand-dark)' }}>My Signature</h4>
       <p className="small muted mt-8" style={{ maxWidth: 520 }}>
         Used to sign and approve finance documents (requisitions, vouchers). Only you can apply your
         signature, and you set the date each time.
@@ -120,7 +120,7 @@ function MyAccount() {
           style={{
             width: 200,
             height: 80,
-            border: '1px solid var(--border)',
+            border: '1px solid var(--border-primary)',
             borderRadius: 8,
             background: '#fff',
             display: 'flex',
@@ -141,7 +141,7 @@ function MyAccount() {
       </div>
 
       <div className="divider" />
-      <h4 style={{ color: 'var(--navy)' }}>Attachment Storage</h4>
+      <h4 style={{ color: 'var(--brand-dark)' }}>Attachment Storage</h4>
       <div className="mt-8">
         <StorageMeter />
       </div>

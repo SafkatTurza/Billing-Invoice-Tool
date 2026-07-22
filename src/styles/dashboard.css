@@ -5,7 +5,7 @@
 }
 .count-card {
   background: #fff;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-primary);
   border-radius: var(--radius);
   padding: 18px 20px;
   box-shadow: var(--shadow);
@@ -23,7 +23,7 @@
   justify-content: center;
   color: #fff;
 }
-.count-card .cc-num { font-size: 30px; font-weight: 800; color: var(--navy); margin-top: 12px; line-height: 1; }
+.count-card .cc-num { font-size: 30px; font-weight: 800; color: var(--brand-dark); margin-top: 12px; line-height: 1; }
 .count-card .cc-label { color: var(--text-muted); font-size: 13px; margin-top: 5px; }
 
 .fin-grid {
@@ -33,15 +33,15 @@
 }
 .fin-card {
   background: #fff;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-primary);
   border-radius: var(--radius);
   padding: 20px;
   box-shadow: var(--shadow);
 }
-.fin-card h4 { font-size: 14px; color: var(--navy); font-weight: 700; }
+.fin-card h4 { font-size: 14px; color: var(--brand-dark); font-weight: 700; }
 .fin-card .fc-sub { color: var(--text-muted); font-size: 12px; margin-bottom: 12px; }
 .fin-line { display: flex; justify-content: space-between; padding: 7px 0; font-size: 13.5px; }
-.fin-line + .fin-line { border-top: 1px dashed var(--border); }
+.fin-line + .fin-line { border-top: 1px dashed var(--border-primary); }
 .fin-line .fl-label { color: var(--text-muted); }
 .fin-line .fl-val { font-weight: 700; }
 .fin-line .fl-val.green { color: var(--green); }
@@ -56,11 +56,11 @@
   align-items: center;
   gap: 10px;
   padding: 14px 16px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-primary);
   border-radius: 10px;
   background: #fff;
   font-weight: 600;
-  color: var(--text);
+  color: var(--text-primary);
   transition: border-color 0.12s, background 0.12s;
 }
 .qc-btn:hover { border-color: var(--brand-slate); background: var(--brand-slate-100); }
@@ -81,7 +81,7 @@
   align-items: center;
   margin: 28px 0 14px;
 }
-.section-head h3 { font-size: 16px; font-weight: 700; color: var(--navy); }
+.section-head h3 { font-size: 16px; font-weight: 700; color: var(--brand-dark); }
 
 /* ── Responsive card grids ───────────────────────────────────── */
 @media (max-width: 1024px) {

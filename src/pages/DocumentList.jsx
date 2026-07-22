@@ -105,7 +105,7 @@ export default function DocumentList({ type }) {
         {filtered.length === 0 ? (
           <div className="empty">
             No {meta.plural.toLowerCase()} found.{' '}
-            <a style={{ color: 'var(--navy)', fontWeight: 600 }} onClick={() => navigate(`/${type}/new`)}>
+            <a style={{ color: 'var(--brand-dark)', fontWeight: 600 }} onClick={() => navigate(`/${type}/new`)}>
               Create one →
             </a>
           </div>

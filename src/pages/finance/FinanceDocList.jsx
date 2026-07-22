@@ -110,7 +110,7 @@ export default function FinanceDocList({ type }) {
             {canManage && (
               <>
                 {' '}
-                <a style={{ color: 'var(--navy)', fontWeight: 600 }} onClick={() => navigate(`/finance/${type}/new`)}>
+                <a style={{ color: 'var(--brand-dark)', fontWeight: 600 }} onClick={() => navigate(`/finance/${type}/new`)}>
                   Create one →
                 </a>
               </>

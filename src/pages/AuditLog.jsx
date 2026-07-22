@@ -25,7 +25,7 @@ export default function AuditLog() {
       <p className="page-sub">Every significant action in the system. Visible to Admin & Super Admin only.</p>
 
       <div className="card mt-24">
-        <div style={{ padding: 14, borderBottom: '1px solid var(--border)' }}>
+        <div style={{ padding: 14, borderBottom: '1px solid var(--border-primary)' }}>
           <div className="global-search" style={{ maxWidth: 360 }}>
             <span className="icon">
               <Icon.search width={16} height={16} />

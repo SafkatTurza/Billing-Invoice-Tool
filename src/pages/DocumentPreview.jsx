@@ -30,7 +30,7 @@ export default function DocumentPreview({ type }) {
     return (
       <div className="empty">
         Document not found.{' '}
-        <a style={{ color: 'var(--navy)', fontWeight: 600 }} onClick={() => navigate(`/${type}`)}>
+        <a style={{ color: 'var(--brand-dark)', fontWeight: 600 }} onClick={() => navigate(`/${type}`)}>
           Back to list
         </a>
       </div>

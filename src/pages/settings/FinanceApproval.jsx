@@ -21,7 +21,7 @@ export default function FinanceApproval() {
       <p className="page-sub">How finance documents are routed for sign-off.</p>
       <div className="divider" />
 
-      <h4 style={{ color: 'var(--navy)' }}>Threshold-based routing</h4>
+      <h4 style={{ color: 'var(--brand-dark)' }}>Threshold-based routing</h4>
       <p className="small muted mt-8" style={{ maxWidth: 560 }}>
         Segregation of duties always applies: the person who prepares a document can never check or
         approve it, and no one may sign two slots. This rule adds an amount gate on top of that.

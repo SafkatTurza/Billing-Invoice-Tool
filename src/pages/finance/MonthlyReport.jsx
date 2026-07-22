@@ -129,8 +129,8 @@ export default function MonthlyReport() {
 
       {/* Pending — separate, not part of the approved total */}
       <div className="card mt-24 no-print">
-        <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontWeight: 700, color: 'var(--navy)' }}>Pending Approval</span>
+        <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border-primary)', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontWeight: 700, color: 'var(--brand-dark)' }}>Pending Approval</span>
           <span className="badge badge-amber">{pending.length}</span>
           <span className="small muted">not counted in the report above until approved</span>
         </div>

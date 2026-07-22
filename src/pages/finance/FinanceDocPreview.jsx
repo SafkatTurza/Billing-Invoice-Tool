@@ -39,7 +39,7 @@ export default function FinanceDocPreview({ type }) {
     return (
       <div className="empty">
         Not found.{' '}
-        <a style={{ color: 'var(--navy)', fontWeight: 600 }} onClick={() => navigate(`/finance/${type}`)}>
+        <a style={{ color: 'var(--brand-dark)', fontWeight: 600 }} onClick={() => navigate(`/finance/${type}`)}>
           Back
         </a>
       </div>
@@ -169,7 +169,7 @@ export default function FinanceDocPreview({ type }) {
       {/* Approval chain (interactive) — hidden once reversed */}
       {meta.approvable && doc.status !== FIN_STATUS.REVERSED && (
         <div className="card card-pad no-print" style={{ marginBottom: 18 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--navy)', marginBottom: 4 }}>Approval Chain</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--brand-dark)', marginBottom: 4 }}>Approval Chain</h3>
           <p className="small muted mb-16">
             Signatures are applied in order and the maker can't approve their own document. Once the
             deciding signature is applied, the document is approved and its amount is added to expenses.
@@ -190,7 +190,7 @@ export default function FinanceDocPreview({ type }) {
       {/* Approval timeline (history) */}
       {meta.approvable && (doc.timeline?.length > 0) && (
         <div className="card card-pad no-print" style={{ marginBottom: 18 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--navy)', marginBottom: 10 }}>Approval Timeline</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--brand-dark)', marginBottom: 10 }}>Approval Timeline</h3>
           <ApprovalTimeline timeline={doc.timeline} />
         </div>
       )}
@@ -198,7 +198,7 @@ export default function FinanceDocPreview({ type }) {
       {/* Attachments */}
       {doc.attachments?.length > 0 && (
         <div className="card card-pad no-print" style={{ marginBottom: 18 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--navy)', marginBottom: 10 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--brand-dark)', marginBottom: 10 }}>
             Supporting Documents ({doc.attachments.length})
           </h3>
           <AttachmentList value={doc.attachments} />

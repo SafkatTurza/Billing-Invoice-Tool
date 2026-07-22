@@ -53,7 +53,7 @@ export default function DataBackup() {
 
       <div className="grid grid-2">
         <div className="card card-pad" style={{ boxShadow: 'none' }}>
-          <h4 style={{ color: 'var(--navy)' }}>Export All Data</h4>
+          <h4 style={{ color: 'var(--brand-dark)' }}>Export All Data</h4>
           <p className="small muted mt-8">
             Downloads a single JSON file containing company profile, all documents, clients, vendors,
             users, and style settings.
@@ -64,7 +64,7 @@ export default function DataBackup() {
         </div>
 
         <div className="card card-pad" style={{ boxShadow: 'none' }}>
-          <h4 style={{ color: 'var(--navy)' }}>Import Data</h4>
+          <h4 style={{ color: 'var(--brand-dark)' }}>Import Data</h4>
           <p className="small muted mt-8" style={{ color: 'var(--amber)' }}>
             ⚠ Importing replaces ALL current data. Export your current data first if you need to keep
             it.

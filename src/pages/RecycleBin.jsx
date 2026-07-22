@@ -29,7 +29,7 @@ export default function RecycleBin() {
       <h1 className="page-title">Recycle Bin</h1>
       <p className="page-sub">Deleted documents are kept for {RETENTION_DAYS} days before permanent removal.</p>
 
-      {finDeleted.length > 0 && <h3 className="section-title mt-24" style={{ fontSize: 15, color: 'var(--navy)' }}>Billing Documents</h3>}
+      {finDeleted.length > 0 && <h3 className="section-title mt-24" style={{ fontSize: 15, color: 'var(--brand-dark)' }}>Billing Documents</h3>}
       <div className="card mt-24">
         {deleted.length === 0 ? (
           <div className="empty">Recycle Bin is empty.</div>
@@ -96,7 +96,7 @@ export default function RecycleBin() {
       {/* Finance documents (requisitions, vouchers, expenses, income, salary) */}
       {finDeleted.length > 0 && (
         <>
-          <h3 className="section-title mt-24" style={{ fontSize: 15, color: 'var(--navy)' }}>Finance Documents</h3>
+          <h3 className="section-title mt-24" style={{ fontSize: 15, color: 'var(--brand-dark)' }}>Finance Documents</h3>
           <div className="card mt-16">
             <div className="table-scroll"><table className="table">
               <thead>

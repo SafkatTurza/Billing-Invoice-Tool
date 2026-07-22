@@ -268,7 +268,7 @@ export default function FinancialReports() {
 function ReportCard({ title, children }) {
   return (
     <div className="card report-card">
-      <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', fontWeight: 700, color: 'var(--navy)' }}>{title}</div>
+      <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border-primary)', fontWeight: 700, color: 'var(--brand-dark)' }}>{title}</div>
       {children}
     </div>
   )

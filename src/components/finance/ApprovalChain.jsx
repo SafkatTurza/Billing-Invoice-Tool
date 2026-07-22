@@ -249,7 +249,7 @@ export default function ApprovalChain({ type, doc, slots, settings, onSign, onRe
                 will be applied with the date below, with your consent.
               </p>
               {currentUser.signatureImg ? (
-                <div style={{ border: '1px solid var(--border)', borderRadius: 8, padding: 10, marginBottom: 12, background: '#fff' }}>
+                <div style={{ border: '1px solid var(--border-primary)', borderRadius: 8, padding: 10, marginBottom: 12, background: '#fff' }}>
                   <img src={currentUser.signatureImg} alt="your signature" style={{ maxHeight: 70 }} />
                 </div>
               ) : (

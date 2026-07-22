@@ -25,7 +25,7 @@ export default function IncomeReceipt() {
     return (
       <div className="empty">
         Receipt not found.{' '}
-        <a style={{ color: 'var(--navy)', fontWeight: 600 }} onClick={() => navigate('/finance/income')}>
+        <a style={{ color: 'var(--brand-dark)', fontWeight: 600 }} onClick={() => navigate('/finance/income')}>
           Back
         </a>
       </div>
@@ -60,7 +60,7 @@ export default function IncomeReceipt() {
 
       {doc.attachments?.length > 0 && (
         <div className="card card-pad no-print" style={{ marginBottom: 18 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--navy)', marginBottom: 10 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--brand-dark)', marginBottom: 10 }}>
             Supporting Documents ({doc.attachments.length})
           </h3>
           <AttachmentList value={doc.attachments} />

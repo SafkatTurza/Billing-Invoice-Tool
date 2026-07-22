@@ -165,7 +165,7 @@ export default function PartyList({ kind }) {
 
           <div className="divider" />
           <div className="row between center">
-            <label style={{ fontWeight: 700, color: 'var(--navy)' }}>Contact Persons</label>
+            <label style={{ fontWeight: 700, color: 'var(--brand-dark)' }}>Contact Persons</label>
             <button className="btn btn-ghost btn-sm" onClick={addContact}>
               <Icon.plus width={14} height={14} /> Add Contact
             </button>

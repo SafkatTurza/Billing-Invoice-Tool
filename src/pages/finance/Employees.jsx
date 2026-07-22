@@ -187,7 +187,7 @@ export default function Employees() {
           </div>
 
           <div className="divider" />
-          <label style={{ fontWeight: 700, color: 'var(--navy)' }}>Bank Details (profile only — never on payslip)</label>
+          <label style={{ fontWeight: 700, color: 'var(--brand-dark)' }}>Bank Details (profile only — never on payslip)</label>
           <div className="grid grid-2 mt-8">
             <div className="field">
               <label>Bank Name</label>
