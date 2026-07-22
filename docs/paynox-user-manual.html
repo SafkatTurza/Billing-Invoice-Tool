@@ -1,0 +1,753 @@
+<title>Paynox — User Manual</title>
+<style>
+  /* ============================================================
+     Paynox — User Manual
+     A handbook, not a landing page: Deep-Navy + gold identity,
+     serif reading column, sans headings/labels, mono for the
+     document identifiers users actually type and read.
+     Screen: two columns (sticky contents rail + reading column).
+     Print: single ink-on-white column with clean page breaks.
+     ============================================================ */
+
+  :root {
+    /* neutrals biased toward the navy accent, not pure grey */
+    --paper: #ffffff;
+    --ground: #f4f6f9;
+    --ink: #1a2331;
+    --ink-soft: #53606f;
+    --ink-faint: #8b95a4;
+    /* brand */
+    --navy: #1e3a5f;
+    --navy-deep: #14283f;
+    --gold: #a9781a;        /* gold at text size, AA on white */
+    --gold-bright: #d4a72c; /* gold for rules & fills */
+    --rule: #e4e8ee;
+    --rule-strong: #ccd4de;
+    --surface: #f8fafc;
+    /* semantic callouts */
+    --note-ink: #1d4ed8;   --note-bg: #eef3ff;   --note-edge: #bcd0ff;
+    --imp-ink: #b0530a;    --imp-bg: #fdf2e5;    --imp-edge: #f3cf9f;
+    --tip-ink: #157347;    --tip-bg: #e9f6ee;    --tip-edge: #b6e0c6;
+    --warn-ink: #b42318;   --warn-bg: #fdeceb;   --warn-edge: #f4c0bc;
+
+    --font-display: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-body: ui-serif, Georgia, "Iowan Old Style", "Palatino Linotype", "Times New Roman", serif;
+    --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+
+    --measure: 68ch;
+    --rail: 260px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #16212f;
+      --ground: #0f1824;
+      --ink: #dde5ef;
+      --ink-soft: #a4b2c4;
+      --ink-faint: #6d7a8b;
+      --navy: #8fb2d8;
+      --navy-deep: #cdddee;
+      --gold: #e0b657;
+      --gold-bright: #e0b657;
+      --rule: #26344a;
+      --rule-strong: #33445d;
+      --surface: #1b2838;
+      --note-ink: #9ec0ff; --note-bg: #172438; --note-edge: #2c4467;
+      --imp-ink: #f0b878;  --imp-bg: #2a2013;  --imp-edge: #5a4322;
+      --tip-ink: #86d3a5;  --tip-bg: #142519;  --tip-edge: #2a4a35;
+      --warn-ink: #f2a8a1; --warn-bg: #2c1614; --warn-edge: #5a2b28;
+    }
+  }
+  /* Viewer toggle wins over OS in both directions */
+  :root[data-theme="light"] {
+    --paper:#fff; --ground:#f4f6f9; --ink:#1a2331; --ink-soft:#53606f; --ink-faint:#8b95a4;
+    --navy:#1e3a5f; --navy-deep:#14283f; --gold:#a9781a; --gold-bright:#d4a72c;
+    --rule:#e4e8ee; --rule-strong:#ccd4de; --surface:#f8fafc;
+    --note-ink:#1d4ed8; --note-bg:#eef3ff; --note-edge:#bcd0ff;
+    --imp-ink:#b0530a; --imp-bg:#fdf2e5; --imp-edge:#f3cf9f;
+    --tip-ink:#157347; --tip-bg:#e9f6ee; --tip-edge:#b6e0c6;
+    --warn-ink:#b42318; --warn-bg:#fdeceb; --warn-edge:#f4c0bc;
+  }
+  :root[data-theme="dark"] {
+    --paper:#16212f; --ground:#0f1824; --ink:#dde5ef; --ink-soft:#a4b2c4; --ink-faint:#6d7a8b;
+    --navy:#8fb2d8; --navy-deep:#cdddee; --gold:#e0b657; --gold-bright:#e0b657;
+    --rule:#26344a; --rule-strong:#33445d; --surface:#1b2838;
+    --note-ink:#9ec0ff; --note-bg:#172438; --note-edge:#2c4467;
+    --imp-ink:#f0b878; --imp-bg:#2a2013; --imp-edge:#5a4322;
+    --tip-ink:#86d3a5; --tip-bg:#142519; --tip-edge:#2a4a35;
+    --warn-ink:#f2a8a1; --warn-bg:#2c1614; --warn-edge:#5a2b28;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.68;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* ---- Cover ---- */
+  .cover {
+    background:
+      radial-gradient(1200px 400px at 80% -50%, rgba(212,167,44,0.16), transparent 60%),
+      linear-gradient(160deg, var(--navy-deep), var(--navy) 78%);
+    color: #eaf0f7;
+    padding: 64px 40px 52px;
+  }
+  :root[data-theme="dark"] .cover, .cover { color: #eaf0f7; }
+  .cover-inner { max-width: 1140px; margin: 0 auto; }
+  .brand-row { display: flex; align-items: center; gap: 14px; margin-bottom: 40px; }
+  .mark {
+    width: 46px; height: 46px; border-radius: 11px;
+    background: var(--gold-bright); color: #16162e;
+    display: grid; place-items: center;
+    font-family: var(--font-display); font-weight: 800; font-size: 22px;
+    box-shadow: 0 6px 22px rgba(0,0,0,0.28);
+  }
+  .brand-row .b-name { font-family: var(--font-display); font-weight: 700; font-size: 16px; letter-spacing: .02em; }
+  .brand-row .b-sub { font-size: 12.5px; color: #9db4cf; font-family: var(--font-display); }
+  .eyebrow {
+    font-family: var(--font-display); text-transform: uppercase;
+    letter-spacing: .22em; font-size: 12px; font-weight: 600;
+    color: var(--gold-bright); margin-bottom: 18px;
+  }
+  h1.cover-title {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(38px, 6vw, 66px); line-height: 1.02;
+    letter-spacing: -0.02em; margin: 0 0 20px; text-wrap: balance; max-width: 16ch;
+  }
+  .cover-lede { font-size: clamp(17px, 2.2vw, 21px); color: #cdd9e7; max-width: 60ch; margin: 0 0 30px; line-height: 1.55; }
+  .cover-meta { display: flex; flex-wrap: wrap; gap: 10px 26px; font-family: var(--font-display); font-size: 13px; color: #b6c6d8; align-items: center; }
+  .cover-meta b { color: #eaf0f7; font-weight: 600; }
+  .print-btn {
+    font-family: var(--font-display); font-weight: 600; font-size: 13.5px;
+    background: var(--gold-bright); color: #16162e; border: none;
+    padding: 10px 18px; border-radius: 9px; cursor: pointer; margin-left: auto;
+    display: inline-flex; align-items: center; gap: 8px; transition: transform .12s, box-shadow .12s;
+  }
+  .print-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(0,0,0,0.25); }
+  .print-btn:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+
+  /* ---- Shell ---- */
+  .shell {
+    max-width: 1140px; margin: 0 auto; padding: 0 40px;
+    display: grid; grid-template-columns: var(--rail) minmax(0, 1fr); gap: 52px;
+    align-items: start;
+  }
+  /* Contents rail (screen, wide only) */
+  .rail { position: sticky; top: 24px; align-self: start; padding: 28px 0; max-height: calc(100vh - 40px); overflow-y: auto; }
+  .rail h2 { font-family: var(--font-display); font-size: 12px; text-transform: uppercase; letter-spacing: .16em; color: var(--ink-faint); margin: 0 0 12px; font-weight: 700; }
+  .rail ol { list-style: none; margin: 0; padding: 0; counter-reset: nav; }
+  .rail a {
+    display: block; font-family: var(--font-display); font-size: 13.5px; line-height: 1.35;
+    color: var(--ink-soft); text-decoration: none; padding: 5px 10px 5px 12px;
+    border-left: 2px solid transparent; border-radius: 0 6px 6px 0; transition: color .12s, background .12s, border-color .12s;
+  }
+  .rail a:hover { color: var(--navy); background: var(--surface); }
+  .rail a.active { color: var(--navy); border-left-color: var(--gold-bright); background: var(--surface); font-weight: 600; }
+  :root[data-theme="dark"] .rail a.active, .rail a.active { }
+
+  /* Article */
+  article { padding: 40px 0 96px; min-width: 0; }
+  .inline-contents { display: none; }
+
+  section { scroll-margin-top: 20px; padding-top: 30px; }
+  section + section { margin-top: 8px; }
+  .sec-head { display: flex; align-items: baseline; gap: 14px; border-bottom: 2px solid var(--rule); padding-bottom: 12px; margin-bottom: 22px; }
+  .sec-num { font-family: var(--font-display); font-weight: 800; font-size: 15px; color: var(--gold); letter-spacing: .04em; font-variant-numeric: tabular-nums; flex-shrink: 0; padding-top: 6px; }
+  h2.sec-title { font-family: var(--font-display); font-weight: 750; font-size: clamp(24px, 3.4vw, 32px); letter-spacing: -0.018em; margin: 0; color: var(--navy); text-wrap: balance; }
+  h3 { font-family: var(--font-display); font-weight: 700; font-size: 19px; letter-spacing: -0.01em; color: var(--ink); margin: 34px 0 6px; }
+  h4 { font-family: var(--font-display); font-weight: 650; font-size: 15.5px; color: var(--ink); margin: 22px 0 4px; }
+  p { margin: 12px 0; max-width: var(--measure); }
+  .lede { font-size: 19px; color: var(--ink-soft); max-width: var(--measure); }
+  a.xref { color: var(--navy); text-decoration: underline; text-decoration-color: var(--rule-strong); text-underline-offset: 2px; }
+  a.xref:hover { text-decoration-color: var(--gold-bright); }
+
+  ul, ol.steps { max-width: var(--measure); padding-left: 0; }
+  ul { list-style: none; margin: 12px 0; }
+  ul li { position: relative; padding-left: 22px; margin: 7px 0; }
+  ul li::before { content: ""; position: absolute; left: 4px; top: 12px; width: 6px; height: 6px; border-radius: 50%; background: var(--gold-bright); }
+  ol.steps { counter-reset: step; list-style: none; margin: 16px 0; }
+  ol.steps > li { position: relative; padding-left: 44px; margin: 12px 0; min-height: 28px; }
+  ol.steps > li::before {
+    counter-increment: step; content: counter(step);
+    position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-radius: 8px;
+    background: var(--navy); color: #fff; font-family: var(--font-display); font-weight: 700;
+    font-size: 14px; display: grid; place-items: center; font-variant-numeric: tabular-nums;
+  }
+  :root[data-theme="dark"] ol.steps > li::before { color: #0f1824; }
+  strong { font-weight: 700; color: var(--ink); }
+
+  code, .kbd, .mono { font-family: var(--font-mono); font-size: 0.86em; }
+  code { background: var(--surface); border: 1px solid var(--rule); padding: 1px 6px; border-radius: 5px; color: var(--navy); white-space: nowrap; }
+  .ui { font-family: var(--font-display); font-weight: 600; font-size: 0.92em; color: var(--ink); background: var(--surface); border: 1px solid var(--rule); padding: 1px 7px; border-radius: 5px; white-space: nowrap; }
+  .path { font-family: var(--font-display); font-weight: 600; font-size: 0.9em; color: var(--gold); }
+
+  /* Role pills */
+  .roles { display: inline-flex; flex-wrap: wrap; gap: 6px; vertical-align: middle; }
+  .pill { font-family: var(--font-display); font-weight: 650; font-size: 11.5px; letter-spacing: .02em; padding: 2px 9px; border-radius: 999px; border: 1px solid; white-space: nowrap; }
+  .pill.sa { color:#8a6410; background: #fff6df; border-color:#f0dca6; }
+  .pill.admin { color:#1e3a5f; background:#e9eff6; border-color:#c3d3e6; }
+  .pill.acc { color:#157347; background:#e9f6ee; border-color:#b6e0c6; }
+  .pill.biz { color:#54606e; background:#eef1f4; border-color:#d5dbe2; }
+  :root[data-theme="dark"] .pill.sa { color:#e6c877; background:#2a2211; border-color:#544521; }
+  :root[data-theme="dark"] .pill.admin { color:#9fc0e6; background:#1a2740; border-color:#33456180; }
+  :root[data-theme="dark"] .pill.acc { color:#86d3a5; background:#152619; border-color:#2a4a35; }
+  :root[data-theme="dark"] .pill.biz { color:#aeb9c6; background:#1c2735; border-color:#33445d; }
+
+  /* Callouts */
+  .callout { border: 1px solid var(--rule); border-left: 4px solid var(--ink-faint); background: var(--surface); border-radius: 0 10px 10px 0; padding: 14px 18px; margin: 20px 0; max-width: var(--measure); }
+  .callout p { margin: 6px 0; max-width: none; }
+  .callout .tag { font-family: var(--font-display); font-weight: 700; font-size: 11.5px; text-transform: uppercase; letter-spacing: .1em; display: block; margin-bottom: 2px; }
+  .callout.note { border-left-color: var(--note-ink); background: var(--note-bg); }
+  .callout.note .tag { color: var(--note-ink); }
+  .callout.important { border-left-color: var(--imp-ink); background: var(--imp-bg); }
+  .callout.important .tag { color: var(--imp-ink); }
+  .callout.tip { border-left-color: var(--tip-ink); background: var(--tip-bg); }
+  .callout.tip .tag { color: var(--tip-ink); }
+  .callout.warn { border-left-color: var(--warn-ink); background: var(--warn-bg); }
+  .callout.warn .tag { color: var(--warn-ink); }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin: 20px 0; border: 1px solid var(--rule); border-radius: 10px; }
+  table { border-collapse: collapse; width: 100%; font-family: var(--font-display); font-size: 13.5px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  thead th { background: var(--surface); color: var(--navy); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; position: sticky; top: 0; }
+  tbody tr:last-child td { border-bottom: none; }
+  td.mono, th.mono { font-family: var(--font-mono); }
+  .yes { color: var(--tip-ink); font-weight: 700; }
+  .no { color: var(--warn-ink); font-weight: 700; }
+  .lim { color: var(--imp-ink); font-weight: 650; font-size: 12.5px; }
+  .cap { color: var(--ink-soft); font-weight: 550; }
+
+  /* Role cards */
+  .rolegrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin: 22px 0; }
+  .rolecard { border: 1px solid var(--rule); border-top: 3px solid var(--gold-bright); border-radius: 12px; padding: 18px 18px 16px; background: var(--paper); }
+  .rolecard h4 { margin: 0 0 4px; font-size: 16px; }
+  .rolecard .who { font-family: var(--font-body); font-size: 14px; color: var(--ink-soft); font-style: italic; margin: 0 0 10px; }
+  .rolecard ul { margin: 0; font-size: 14px; }
+  .rolecard ul li { font-family: var(--font-display); }
+
+  hr.soft { border: none; border-top: 1px solid var(--rule); margin: 40px 0 0; max-width: var(--measure); }
+
+  .foot { max-width: 1140px; margin: 0 auto; padding: 30px 40px 60px; color: var(--ink-faint); font-family: var(--font-display); font-size: 12.5px; }
+  .foot a { color: var(--navy); }
+
+  :focus-visible { outline: 3px solid var(--gold-bright); outline-offset: 2px; border-radius: 3px; }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+  html { scroll-behavior: smooth; }
+
+  /* ---- Narrow ---- */
+  @media (max-width: 900px) {
+    .shell { grid-template-columns: 1fr; gap: 0; padding: 0 22px; }
+    .rail { display: none; }
+    .cover { padding: 44px 22px 38px; }
+    .foot { padding: 24px 22px 48px; }
+    .inline-contents { display: block; margin: 30px 0 8px; }
+    body { font-size: 16px; }
+    article { padding: 20px 0 64px; }
+  }
+
+  /* ---- Print / PDF ---- */
+  @media print {
+    :root {
+      --paper:#fff; --ground:#fff; --ink:#111; --ink-soft:#333; --ink-faint:#666;
+      --navy:#1e3a5f; --navy-deep:#14283f; --gold:#8a6410; --gold-bright:#c88f12;
+      --rule:#d7dce3; --rule-strong:#bcc4cf; --surface:#f5f6f8;
+    }
+    body { font-size: 10.8pt; line-height: 1.5; background: #fff; }
+    .rail, .print-btn, .theme-hint { display: none !important; }
+    .shell { display: block; max-width: none; padding: 0 8mm; }
+    .cover { background: #fff !important; color: #14283f !important; padding: 0 0 14pt; border-bottom: 2pt solid var(--gold-bright); margin-bottom: 8pt; }
+    .cover .eyebrow { color: var(--gold) !important; }
+    .cover-lede, .cover-meta, .cover-meta b, .brand-row .b-sub { color: #333 !important; }
+    .brand-row .b-name, h1.cover-title { color: #14283f !important; }
+    .mark { box-shadow: none; }
+    .inline-contents { display: block; break-after: page; }
+    article { padding: 6pt 0 0; }
+    section { break-inside: auto; }
+    .sec-head { break-after: avoid; }
+    h2.sec-title, h3, h4 { break-after: avoid; }
+    .callout, table, .rolecard, figure { break-inside: avoid; }
+    section.major { break-before: page; }
+    a.xref { color: var(--navy); text-decoration: none; }
+    p, ul, ol { max-width: none; }
+    .table-wrap { overflow: visible; }
+    thead th { position: static; }
+  }
+</style>
+
+<header class="cover">
+  <div class="cover-inner">
+    <div class="brand-row">
+      <div class="mark" aria-hidden="true">P</div>
+      <div>
+        <div class="b-name">Paynox</div>
+        <div class="b-sub">Billing &amp; Finance · by Safkat Turza · DreamCore Studio</div>
+      </div>
+      <button class="print-btn" onclick="window.print()" type="button">⤓ Print / Save as PDF</button>
+    </div>
+    <div class="eyebrow">Complete User Manual</div>
+    <h1 class="cover-title">Everything you can do in Paynox.</h1>
+    <p class="cover-lede">A working guide to the whole system — from first-launch setup and signing in, through invoices and the full finance module, approvals, payroll, and reports. Written for the people who use it every day.</p>
+    <div class="cover-meta">
+      <span>Version <b>1.0</b></span>
+      <span>Updated <b>22 July 2026</b></span>
+      <span>Audience <b>All roles</b></span>
+      <span>Runs entirely in your browser — <b>no server, no cloud</b></span>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+  <!-- Sticky contents rail (screen, wide) -->
+  <nav class="rail" aria-label="Contents">
+    <h2>Contents</h2>
+    <ol>
+      <li><a href="#about">1 · About Paynox</a></li>
+      <li><a href="#roles">2 · Roles &amp; permissions</a></li>
+      <li><a href="#setup">3 · First-time setup</a></li>
+      <li><a href="#signin">4 · Signing in &amp; recovery</a></li>
+      <li><a href="#dashboard">5 · The dashboard</a></li>
+      <li><a href="#documents">6 · Billing documents</a></li>
+      <li><a href="#finance">7 · The finance module</a></li>
+      <li><a href="#approvals">8 · Approvals &amp; signatures</a></li>
+      <li><a href="#payroll">9 · Payroll &amp; salary</a></li>
+      <li><a href="#loans">10 · Loans &amp; advances</a></li>
+      <li><a href="#reports">11 · Reports &amp; insight</a></li>
+      <li><a href="#settings">12 · Settings</a></li>
+      <li><a href="#data">13 · Data, backup &amp; safety</a></li>
+      <li><a href="#reference">14 · Quick reference</a></li>
+    </ol>
+  </nav>
+
+  <article>
+    <!-- Inline contents for narrow screens + print -->
+    <nav class="inline-contents callout" aria-label="Contents">
+      <span class="tag" style="color:var(--gold)">Contents</span>
+      <ol class="steps" style="counter-reset:none; margin-top:8px">
+        <li style="padding-left:0"><a class="xref" href="#about">About Paynox</a> · <a class="xref" href="#roles">Roles &amp; permissions</a> · <a class="xref" href="#setup">First-time setup</a> · <a class="xref" href="#signin">Signing in &amp; recovery</a> · <a class="xref" href="#dashboard">The dashboard</a> · <a class="xref" href="#documents">Billing documents</a> · <a class="xref" href="#finance">The finance module</a> · <a class="xref" href="#approvals">Approvals &amp; signatures</a> · <a class="xref" href="#payroll">Payroll &amp; salary</a> · <a class="xref" href="#loans">Loans &amp; advances</a> · <a class="xref" href="#reports">Reports &amp; insight</a> · <a class="xref" href="#settings">Settings</a> · <a class="xref" href="#data">Data, backup &amp; safety</a> · <a class="xref" href="#reference">Quick reference</a></li>
+      </ol>
+    </nav>
+
+    <!-- 1 -->
+    <section id="about">
+      <div class="sec-head"><span class="sec-num">01</span><h2 class="sec-title">About Paynox</h2></div>
+      <p class="lede">Paynox is a complete billing and company-finance system for DreamCore Studio. It creates and manages professional documents — invoices, estimates, purchase orders, work orders and money receipts — and runs a full finance back office alongside them: requisitions, vouchers, expenses, bills, payroll, ledgers and reports.</p>
+      <p>Everything runs inside your web browser. There is no server to log into and no data sent to the cloud — your records live on the computer you use Paynox on, and you move them between machines with a backup file (see <a class="xref" href="#data">§13</a>). That makes Paynox fast and private, and it makes one habit important: <strong>keep backups</strong>.</p>
+      <h3>What Paynox gives you</h3>
+      <ul>
+        <li><strong>Billing documents</strong> with line items, tax and discount rules, amount-in-words, brand styling, and export to PDF, Excel and Word.</li>
+        <li><strong>A finance module</strong> that turns approved paperwork into a real ledger — so dashboards, reports and statements reflect money that has actually been approved and moved.</li>
+        <li><strong>Role-based access</strong> so each person sees and does exactly what their job allows.</li>
+        <li><strong>An approval chain with real signatures</strong>, segregation of duties, and a full audit trail on every document.</li>
+        <li><strong>Payroll</strong> — employees, salary sheets, payslips, disbursement and certificates — and a <strong>loans &amp; advances</strong> register with a permanent audit history.</li>
+      </ul>
+      <div class="callout note"><span class="tag">Good to know</span><p>Paynox is fully responsive. On a phone or tablet the sidebar becomes a slide-in drawer you open with the menu button (☰) in the top bar. Everything in this manual works the same on every screen size.</p></div>
+    </section>
+
+    <!-- 2 -->
+    <section id="roles" class="major">
+      <div class="sec-head"><span class="sec-num">02</span><h2 class="sec-title">Roles &amp; permissions</h2></div>
+      <p>Every user has one of four roles. Your role decides which menu items you see, which documents you can open, and whether you can create, approve, or only view. Menu items you have no access to are simply hidden.</p>
+
+      <div class="rolegrid">
+        <div class="rolecard">
+          <h4>Super Admin <span class="pill sa">SA</span></h4>
+          <p class="who">The system owner — created once, at setup.</p>
+          <ul>
+            <li>Everything, everywhere</li>
+            <li>Manage all users &amp; security</li>
+            <li>Finance data entry <em>and</em> final sign-off</li>
+            <li>Finance masters, backups, audit log</li>
+          </ul>
+        </div>
+        <div class="rolecard">
+          <h4>Admin <span class="pill admin">Management</span></h4>
+          <p class="who">Management — reviews and authorises.</p>
+          <ul>
+            <li>All billing documents</li>
+            <li>Views finance &amp; gives <strong>final</strong> sign-off</li>
+            <li>Cannot create or edit finance entries</li>
+            <li>Manages Accounts &amp; Business users</li>
+          </ul>
+        </div>
+        <div class="rolecard">
+          <h4>Accounts <span class="pill acc">Finance</span></h4>
+          <p class="who">The finance department — prepares &amp; records.</p>
+          <ul>
+            <li>Creates all finance documents</li>
+            <li>Signs preparer / checker slots</li>
+            <li>Cannot give management final sign-off</li>
+            <li>Sees its own estimates only</li>
+          </ul>
+        </div>
+        <div class="rolecard">
+          <h4>Business Team <span class="pill biz">Sales</span></h4>
+          <p class="who">Client-facing sales staff.</p>
+          <ul>
+            <li>Invoices &amp; estimates only</li>
+            <li>No purchase/work orders or receipts</li>
+            <li>No finance access at all</li>
+            <li>No revenue figures; own estimates only</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Permission matrix</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Capability</th><th>Super Admin</th><th>Admin</th><th>Accounts</th><th>Business Team</th></tr></thead>
+          <tbody>
+            <tr><td>Invoices &amp; Estimates</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
+            <tr><td>Purchase / Work Orders</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="no">Hidden</td></tr>
+            <tr><td>Money Receipts</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="no">Hidden</td></tr>
+            <tr><td>See all estimates</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="lim">Own only</td><td class="lim">Own only</td></tr>
+            <tr><td>Revenue figures</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="no">Hidden</td></tr>
+            <tr><td>View finance module</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="no">No</td></tr>
+            <tr><td>Create / edit finance docs</td><td class="yes">Yes</td><td class="no">No</td><td class="yes">Yes</td><td class="no">No</td></tr>
+            <tr><td>Sign preparer / checker slots</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="no">No</td></tr>
+            <tr><td>Management final sign-off</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td></tr>
+            <tr><td>Finance masters (accounts/heads)</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td><td class="no">No</td></tr>
+            <tr><td>Manage users</td><td class="yes">All</td><td class="lim">Acc + Biz</td><td class="no">No</td><td class="no">No</td></tr>
+            <tr><td>Delete · Recycle Bin · Audit Log</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td></tr>
+            <tr><td>Security settings · backups</td><td class="yes">Yes</td><td class="cap">Backup only</td><td class="no">No</td><td class="no">No</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout important"><span class="tag">Why finance is locked down</span><p>All finance <strong>data entry</strong> is reserved for <span class="pill acc">Accounts</span> and <span class="pill sa">Super Admin</span>. <span class="pill admin">Admin</span> is management: it can view and give the final approval, but never create or edit finance records. This separation is deliberate — it keeps preparation and authorisation in different hands.</p></div>
+    </section>
+
+    <!-- 3 -->
+    <section id="setup" class="major">
+      <div class="sec-head"><span class="sec-num">03</span><h2 class="sec-title">First-time setup</h2></div>
+      <p>The very first time Paynox opens on a computer, it runs a one-time <span class="ui">Setup Wizard</span> to create the Super Admin account. You only do this once per installation.</p>
+      <ol class="steps">
+        <li>Enter the Super Admin's <strong>full name</strong>.</li>
+        <li>Set a <strong>security answer</strong> (used later for password recovery — remember it exactly, including spelling).</li>
+        <li>Select <span class="ui">Create Super Admin Account</span>. Paynox generates your <strong>User ID</strong> and a <strong>temporary password</strong> and shows them <em>once</em>.</li>
+        <li>Copy both down, then choose <span class="ui">Continue to Login</span>.</li>
+        <li>Sign in with the generated credentials. Paynox immediately asks you to <strong>set your own password</strong> before you can go further.</li>
+      </ol>
+      <div class="callout warn"><span class="tag">Write it down</span><p>The generated password is shown only once. If you lose it before setting your own, you'll need the security answer to recover the account. Your User ID looks like <code>DCS-A1B2C3</code>.</p></div>
+      <p>After setup you land on the dashboard as Super Admin. From there you create the rest of your team under <span class="path">Settings → Users</span> (see <a class="xref" href="#settings">§12</a>).</p>
+    </section>
+
+    <!-- 4 -->
+    <section id="signin" class="major">
+      <div class="sec-head"><span class="sec-num">04</span><h2 class="sec-title">Signing in &amp; account recovery</h2></div>
+      <h3>Logging in</h3>
+      <p>Sign in with your <strong>User ID</strong> (for example <code>DCS-A1B2C3</code>) and your password. If an administrator has just created or reset your account, Paynox asks you to set a new password on first login.</p>
+      <h3>Requesting an account</h3>
+      <p>New staff can request access from the login screen via <span class="ui">Sign up</span>. This creates a <strong>pending</strong> account — it doesn't work until an administrator approves it and assigns a role under <span class="path">Settings → Users</span>. The person also sets a security question during signup, for recovery.</p>
+      <h3>Forgot your password</h3>
+      <ol class="steps">
+        <li>Choose <span class="ui">Forgot password</span> on the login screen.</li>
+        <li>Enter your User ID and answer your <strong>security question</strong>.</li>
+        <li>Set a new password and sign in.</li>
+      </ol>
+      <h3>Changing your password anytime</h3>
+      <p>Once signed in, update your password under <span class="path">Settings → My Account</span>.</p>
+      <div class="callout note"><span class="tag">While you work</span>
+        <p><strong>Session warning.</strong> Sessions last 30 days; Paynox shows a banner about five minutes before one expires so you can extend it without losing work.</p>
+        <p><strong>Document locking.</strong> When you open a document to edit, it locks for everyone else — they see it read-only and can send a <em>request to edit</em>. Locks auto-release after 30 minutes of inactivity, and an administrator can force-unlock. Your in-progress edits are also kept as a recoverable draft.</p>
+      </div>
+    </section>
+
+    <!-- 5 -->
+    <section id="dashboard" class="major">
+      <div class="sec-head"><span class="sec-num">05</span><h2 class="sec-title">The dashboard</h2></div>
+      <p>The dashboard is your landing page and it adapts to your role. You'll typically see:</p>
+      <ul>
+        <li><strong>Document count cards</strong> — how many invoices, estimates and so on you have.</li>
+        <li><strong>Financial summary</strong> — grouped by currency and never mixed or auto-converted, so figures stay honest. Hidden for <span class="pill biz">Business Team</span>.</li>
+        <li><strong>Quick-create</strong> buttons for the documents you're allowed to make.</li>
+        <li><strong>Recent documents</strong> for fast re-entry.</li>
+        <li><strong>Outstanding payables</strong> with an overdue count, once you use Bills (see <a class="xref" href="#finance">§7</a>).</li>
+      </ul>
+      <p>The top bar carries <strong>global search</strong> (it spans billing <em>and</em> finance documents and jumps you straight to the right page), a <strong>notifications</strong> bell, and <strong>log out</strong>.</p>
+    </section>
+
+    <!-- 6 -->
+    <section id="documents" class="major">
+      <div class="sec-head"><span class="sec-num">06</span><h2 class="sec-title">Billing documents</h2></div>
+      <p class="lede">Invoices, Estimates, Purchase Orders, Work Orders and Money Receipts all share the same rhythm: pick a type, fill the form, preview, then export or print.</p>
+
+      <h3>Concepts that apply to every document</h3>
+      <ul>
+        <li><strong>Numbering.</strong> Each type is numbered <code>PREFIX-YYYYMMDD-SERIAL</code>. The serial is reserved the first time you save, so abandoned drafts never leave gaps, and counters never reset.</li>
+        <li><strong>Auto-save &amp; drafts.</strong> Work is saved as you go, with a save-status indicator; an interrupted edit can be recovered.</li>
+        <li><strong>Export.</strong> Every document exports to <strong>Excel</strong> (Summary / Line Items / Signatures sheets) and <strong>Word</strong>, and prints to <strong>PDF</strong> in A4 portrait — all generated in your browser.</li>
+        <li><strong>PDF templates.</strong> Choose <em>Modern</em>, <em>Simple</em> or <em>Flexible</em> under <span class="path">Settings → Document Style</span>; the choice, along with your brand colour and font, applies to every document.</li>
+        <li><strong>Attachments.</strong> Supporting files attach to a document (see limits in <a class="xref" href="#data">§13</a>).</li>
+      </ul>
+
+      <h3>Invoices &amp; Estimates</h3>
+      <p>Add line items with quantity and rate. The <strong>amount lock/unlock</strong> rule lets you type a line total directly or let it calculate — whichever you lock, the other follows. Pricing supports <strong>Discount</strong>, <strong>AIT</strong> and <strong>VAT</strong> (VAT only appears once AIT is in play), and the total is written out as <strong>amount-in-words</strong> in both international and Bangladesh (Lakh/Crore) styles. Add bank details and dynamic signature labels as needed.</p>
+      <div class="callout note"><span class="tag">Visibility</span><p>Estimates are private to their creator for <span class="pill acc">Accounts</span> and <span class="pill biz">Business Team</span> — one can't see the other's estimates. Administrators see all of them.</p></div>
+      <h4>Mark as Paid</h4>
+      <p>On an invoice, <span class="ui">Mark as Paid</span> records the payment and auto-generates a short receipt (<code>RCPT-…</code>), notifying the creator and administrators.</p>
+
+      <h3>Purchase Orders &amp; Work Orders</h3>
+      <p>These name a <strong>vendor</strong> and add a <strong>specification</strong> column. Payment is broken into <strong>milestones</strong> with a running total indicator that confirms your milestones add up to 100%.</p>
+
+      <h3>Money Receipts</h3>
+      <p>A client-facing acknowledgement capturing payment and transaction details. (Keep this distinct from the internal <em>Cash Receipt Voucher</em> in finance — see <a class="xref" href="#finance">§7</a>.)</p>
+    </section>
+
+    <!-- 7 -->
+    <section id="finance" class="major">
+      <div class="sec-head"><span class="sec-num">07</span><h2 class="sec-title">The finance module</h2></div>
+      <p class="lede">The finance module is the company's back office. Its guiding rule is simple: <strong>only approved paperwork that actually moves money posts to the ledger</strong> — so every dashboard, report and statement reflects reality, not intentions.</p>
+      <div class="callout important"><span class="tag">Who can do what</span><p>Creating and editing finance records is limited to <span class="pill acc">Accounts</span> and <span class="pill sa">Super Admin</span>. <span class="pill admin">Admin</span> can view and give final sign-off. <span class="pill biz">Business Team</span> has no finance access.</p></div>
+
+      <h3>Accounts &amp; heads (the foundation)</h3>
+      <p>Two masters, set up by Super Admin under <span class="path">Settings → Finance Accounts</span>, feed every finance form:</p>
+      <ul>
+        <li><strong>Accounts</strong> — your cash, bank and mobile-money (MFS) accounts. This is the <span class="ui">Deposited To</span> / paid-from list. Paynox ships with <em>Cash in Hand</em>, <em>Bank Account — Current</em>, <em>bKash</em> and <em>Nagad</em>; add your own real accounts and branches.</li>
+        <li><strong>Heads</strong> — your chart of income and expense categories. Income heads (the <span class="ui">Income Head</span> list) include <em>Sales</em>, <em>Service</em>, <em>Consulting</em>, <em>Rental</em>, <em>Interest</em>, <em>Commission</em> and <em>Other Income</em>; expense heads cover operations, admin, utilities, transport, salary, marketing and more.</li>
+      </ul>
+      <div class="callout tip"><span class="tag">Set opening balances</span><p>Each account starts at an opening balance of zero. Enter each account's real opening figure in <span class="path">Settings → Finance Accounts</span> so the ledger, statements and trial balance reflect your true cash position from day one.</p></div>
+
+      <h3>Requisitions</h3>
+      <p>A request to spend, approved in order: <strong>Proposed → Checked → Authorised</strong>. A voucher can later link to the requisition it settles.</p>
+
+      <h3>Vouchers</h3>
+      <p>The voucher is the workhorse. One document, three types chosen with a toggle:</p>
+      <ul>
+        <li><strong>Payment</strong> — money out (navy template).</li>
+        <li><strong>Cash</strong> — physical cash, in either direction: <em>Cash Payment</em> (out) or <em>Cash Receipt</em> (in) (green template).</li>
+        <li><strong>Debit</strong> — a debit voucher (teal template).</li>
+      </ul>
+      <p>Key behaviours:</p>
+      <ul>
+        <li><strong>Booked once.</strong> A voucher is either the <em>Primary</em> transaction (it posts to the ledger) or a <em>Linked / Internal Record</em> (documentation only, no extra financial impact). Linked records share a <strong>Transaction ID</strong> like <code>TXN-20260722-001</code> and can never double-post.</li>
+        <li><strong>Payment modes</strong> — Cash, Bank Transfer, BEFTN, Cheque, Card, Online/MFS, Others, each with its own reference field. Account and card numbers are <strong>masked</strong> in print (e.g. <code>•••• 1234</code>).</li>
+        <li><strong>Split by head</strong> — a voucher can split across expense heads, each line posting to its own head, and can record a cheque number.</li>
+        <li><strong>Signatures</strong> — the standard four-slot chain, expandable to an optional fifth signatory.</li>
+        <li><strong>Numbering</strong> — <code>PV-…</code>, <code>CV-…</code>, <code>DV-…</code> per type, resetting yearly.</li>
+      </ul>
+      <p>A <strong>Transaction Detail</strong> view groups the primary voucher, every linked record and the posted ledger entries, so the one real financial impact is auditable at a glance.</p>
+
+      <h3>Daily Expenses</h3>
+      <p>Record day-to-day spend straight to the ledger, attach the receipt, and pick the expense head and account it came from.</p>
+
+      <h3>Bills &amp; Payables</h3>
+      <p>Record vendor bills you <em>owe</em>, with a due date and an optional attached invoice. <strong>No cash moves on save</strong> — you <span class="ui">record payments</span> against the bill (full or partial), and only those payments post to the ledger. Bills show <strong>Open / Partial / Paid</strong>, an outstanding balance and an overdue aging bucket (0–30 / 31–60 / 61–90 / 90+ days).</p>
+
+      <h3>Income &amp; Investment</h3>
+      <p>Record money <em>in</em> — service income or capital/investment injections — straight to the ledger, so reports see the full picture rather than expenses alone. Each entry names an <span class="ui">Income Head</span> and the <span class="ui">Deposited To</span> account, and can carry a printable receipt. Investment is tracked separately from revenue.</p>
+
+      <h3>Recurring entries</h3>
+      <p>Templates for monthly costs (rent, internet, subscriptions) that spawn a Daily Expense or a Bill on a chosen day. Nothing posts automatically — a due entry shows a <span class="ui">Post now</span> button so a person stays in control, and each template remembers the last month it ran so it can't double-post.</p>
+
+      <h3>Budgets</h3>
+      <p>Set a monthly cap per expense head. The Budgets page compares the cap to this month's actual posted spend (vouchers, daily expenses and bill payments alike), with a bar that turns amber at 80% and red when a head goes over.</p>
+
+      <h3>Corrections &amp; housekeeping</h3>
+      <ul>
+        <li><strong>Account transfers (contra)</strong> — move money between your own accounts (Cash → Bank) from the Ledger. Posts a matched out+in pair and is excluded from income/expense figures.</li>
+        <li><strong>Void / reverse</strong> — reverse an approved voucher, requisition, expense or income (reason required). The ledger entries void and the item leaves all figures, but the record stays, marked <strong>Reversed</strong>, for audit.</li>
+        <li><strong>Duplicate-as-new</strong> — clone any finance document into a fresh draft with number, signatures and status cleared.</li>
+        <li><strong>Finance recycle bin</strong> — deleted finance documents keep for 30 days with Restore and permanent delete.</li>
+      </ul>
+
+      <h3>Multiple currencies</h3>
+      <p>Vouchers, income, bills and requisitions can be recorded in a foreign currency. Because rates change daily, you capture a per-document <strong>BDT exchange rate</strong>; the printed document shows the original amount <em>and</em> its BDT equivalent. Consolidated figures combine every currency into one BDT total, while per-currency ledgers and statements keep their original currency.</p>
+    </section>
+
+    <!-- 8 -->
+    <section id="approvals" class="major">
+      <div class="sec-head"><span class="sec-num">08</span><h2 class="sec-title">Approvals &amp; signatures</h2></div>
+      <p>Finance documents move through a signature chain. A document is only <strong>Approved</strong> once the management signature is applied.</p>
+      <h3>Your signature</h3>
+      <p>Store your own signature — draw it or upload it — under <span class="path">Settings → My Account</span>. When it's your turn, you apply that signature to your slot with a date you set.</p>
+      <h3>The rules that keep it honest</h3>
+      <ul>
+        <li><strong>In order.</strong> Slots are signed sequentially; management (CEO/MD) signs last.</li>
+        <li><strong>Segregation of duties.</strong> The person who prepares a document can't check or approve it, and no one signs two slots. The maker may only sign the first (preparer) slot.</li>
+        <li><strong>Reject</strong> — an approver can reject (terminal, reason required); the preparer is notified and can duplicate it as a fresh draft.</li>
+        <li><strong>Send back for correction</strong> — clears all signatures and returns the document to the preparer as an editable draft.</li>
+        <li><strong>Timeline.</strong> Every document carries a visible history — submitted, each signature, sent-back/rejected with reason, approved, reversed — with who and when.</li>
+        <li><strong>Notifications.</strong> Submitting or signing pings whoever can act next.</li>
+      </ul>
+      <div class="callout note"><span class="tag">Threshold routing (optional)</span><p>Under <span class="path">Settings → Approval Rules</span> you can set an amount gate. Below the threshold, the checker can finalise on their own and the management slot is optional; at or above it — or with routing off — the management final signature is required. Segregation of duties always applies on top.</p></div>
+      <div class="callout note"><span class="tag">External receivers</span><p>A voucher can be flagged as <em>paid to an outside party against a money receipt</em>. The chain reorders so the receiver is confirmed <em>before</em> final sign-off: <strong>Accountant → Checked By → Received Payment → Approved By</strong>. The money receipt is attached and reviewed by the approver before approval.</p></div>
+    </section>
+
+    <!-- 9 -->
+    <section id="payroll" class="major">
+      <div class="sec-head"><span class="sec-num">09</span><h2 class="sec-title">Payroll &amp; salary</h2></div>
+      <h3>Employees</h3>
+      <p>An employee master with IDs like <code>EMP-001</code> — name, department, designation, base salary, employment type and bank details (kept on the profile, never printed on a payslip).</p>
+      <h3>Salary sheets</h3>
+      <p>A salary sheet ("Employee Remuneration Requisition") is pre-filled from your active employees. Add <strong>configurable earning and deduction components</strong>, and it follows the same signature chain (<strong>Prepared → Checked → Authorised</strong>). On approval, the salary posts to the ledger and monthly expenditure.</p>
+      <h4>Payroll tracking (optional per sheet)</h4>
+      <p>Turn on tracking to capture, per employee, <strong>present days</strong>, <strong>unpaid-leave days</strong> and <strong>overtime</strong> (hours × rate). Unpaid leave is pro-rated on base salary using the sheet's working days; overtime adds to pay. Extra columns appear only when the sheet actually uses them, so older sheets stay clean.</p>
+      <h4>Loan installments on the sheet</h4>
+      <p>One click — <span class="ui">Auto-fill loan installments</span> — pulls each employee's due installment (capped at their outstanding balance) onto the sheet. On approval, those installments are recorded against the loans and balances drop. Repayments are stamped with the sheet they came from, so re-approving a sheet never double-counts.</p>
+      <h3>Payslips &amp; more</h3>
+      <ul>
+        <li><strong>Payslips</strong> ("Payroll Receipt Copy") — one per employee from an approved sheet, itemising overtime, unpaid leave and loan repayment, with a <strong>Year-to-Date</strong> block. Printable to PDF, one A4 page each.</li>
+        <li><strong>Bulk payslips</strong> — every payslip for a sheet, one per page, in a single print run.</li>
+        <li><strong>Salary disbursement voucher</strong> — auto-generated per approved sheet (one payee line per employee); derived from the sheet, so it never re-posts.</li>
+        <li><strong>Salary certificate</strong> — a per-employee employment/salary certificate with designation, tenure, current breakdown and YTD paid.</li>
+      </ul>
+      <div class="callout important"><span class="tag">Order of operations</span><p>Payslips are generated only <strong>after</strong> a salary sheet is approved by higher management. Prepare and get the sheet signed first; the payslips and disbursement voucher follow from it.</p></div>
+    </section>
+
+    <!-- 10 -->
+    <section id="loans" class="major">
+      <div class="sec-head"><span class="sec-num">10</span><h2 class="sec-title">Loans &amp; advances</h2></div>
+      <p>A register of money advanced to staff, each with a principal and a monthly installment. Installments are usually recovered automatically through salary sheets (<a class="xref" href="#payroll">§9</a>), but you can also record a manual settlement.</p>
+      <h3>Recording a settlement / recovery</h3>
+      <p>Besides salary deductions, record a repayment by <strong>cash, bank transfer, cheque, adjustment, write-off</strong> and more — with a reference, remarks and supporting attachments (JPG, PNG or PDF). New settlements are capped at the outstanding balance.</p>
+      <div class="callout important"><span class="tag">Every money change is traceable</span>
+        <p>Any action that moves money keeps a permanent record. A <strong>reason is required</strong> when you change the original principal, change an existing settlement amount, or reverse a settlement; adjustments and write-offs always require a note.</p>
+        <p>Each loan carries an <strong>Activity &amp; audit history</strong> that stores the previous and new amounts, who made the change, and when. The original values are never silently overwritten.</p>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section id="reports" class="major">
+      <div class="sec-head"><span class="sec-num">11</span><h2 class="sec-title">Reports &amp; insight</h2></div>
+      <p>Because approved paperwork posts to a real ledger, the reports write themselves. All are grouped by currency and export to Excel and PDF.</p>
+      <h3>Monthly Expenditure report</h3>
+      <p>Approved expenses for the month, with billing income shown alongside. Pending items are listed separately and never inflate the figures.</p>
+      <h3>Financial Reports pack</h3>
+      <p>A print-ready pack for <em>This Month / This Year / All Time</em>:</p>
+      <ul>
+        <li><strong>Cash Flow Statement</strong> — inflows (billing income, recorded income, investment) vs outflows (approved expenses), with net cash flow.</li>
+        <li><strong>Profit &amp; Loss</strong> — revenue − expenses = net profit/loss (investment is treated as financing and excluded).</li>
+        <li><strong>Actual Expense Summary</strong> — expense-by-head, straight from the ledger.</li>
+        <li><strong>Receivables Aging</strong> — unpaid invoices bucketed 0–30 / 31–60 / 61–90 / 90+ days.</li>
+      </ul>
+      <h3>General Ledger</h3>
+      <ul>
+        <li><strong>Trial Balance</strong> — a balancing debit/credit sheet as of any date, with a <em>Balanced / Out-of-balance</em> badge.</li>
+        <li><strong>Ledger by Head</strong> — every posting against a chosen head over a date range, with a running net.</li>
+        <li><strong>Account Statement</strong> — a bank-statement-style run for any account: opening balance, each movement with a running balance, and a closing balance.</li>
+      </ul>
+      <h3>Insights &amp; Forecast</h3>
+      <ul>
+        <li><strong>Income vs Expense trend</strong> — a 6- or 12-month chart with a net line.</li>
+        <li><strong>Where the money goes</strong> — expense-by-head as proportional bars.</li>
+        <li><strong>Cash-flow forecast</strong> — projects your running cash balance forward (recurring templates repeat, open bills land in their due month, unpaid invoices are expected in theirs). A planning view only — nothing here posts to the ledger.</li>
+      </ul>
+    </section>
+
+    <!-- 12 -->
+    <section id="settings" class="major">
+      <div class="sec-head"><span class="sec-num">12</span><h2 class="sec-title">Settings</h2></div>
+      <p>Settings gather everything you configure. Availability depends on your role.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Setting</th><th>What it does</th><th>Who</th></tr></thead>
+          <tbody>
+            <tr><td>My Account</td><td>Your password and your stored signature.</td><td class="cap">Everyone</td></tr>
+            <tr><td>Company Profile</td><td>Company details, logo, brand colour, bank — supports several companies.</td><td class="cap">SA / Admin</td></tr>
+            <tr><td>Client List / Vendor List</td><td>Parties with contact persons, reused across documents.</td><td class="cap">Document creators</td></tr>
+            <tr><td>Document Style</td><td>PDF template, brand colour and font, live-previewed.</td><td class="cap">SA / Admin</td></tr>
+            <tr><td>Finance Accounts</td><td>Cash/bank/MFS accounts and the chart of heads, with opening balances.</td><td class="cap">Super Admin</td></tr>
+            <tr><td>Approval Rules</td><td>The optional amount threshold for approval routing.</td><td class="cap">Super Admin</td></tr>
+            <tr><td>Users</td><td>Create/approve users, assign roles, reset passwords.</td><td class="cap">SA (all) / Admin (Acc + Biz)</td></tr>
+            <tr><td>Security</td><td>Security configuration and lockout policy.</td><td class="cap">Super Admin</td></tr>
+            <tr><td>Data Backup</td><td>Export and import the full JSON backup.</td><td class="cap">SA / Admin</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 13 -->
+    <section id="data" class="major">
+      <div class="sec-head"><span class="sec-num">13</span><h2 class="sec-title">Data, backup &amp; safety</h2></div>
+      <p>Paynox keeps your data in the browser on the machine you use it on. There's no cloud copy, so backups are how you stay safe and how you move between computers.</p>
+      <h3>Backups</h3>
+      <ol class="steps">
+        <li>Go to <span class="path">Settings → Data Backup</span>.</li>
+        <li>Choose <span class="ui">Export</span> to download a file named <code>DCS_Billing_Backup_YYYY-MM-DD.json</code>.</li>
+        <li>To restore or move machines, choose <span class="ui">Import</span> and select a backup file.</li>
+      </ol>
+      <div class="callout warn"><span class="tag">Import replaces everything</span><p>Importing a backup <strong>overwrites all current data</strong> in that browser. Only import into an empty or intentionally-replaced installation, and export the current state first if you're unsure.</p></div>
+      <div class="callout tip"><span class="tag">Make it a habit</span><p>Export a backup on a regular schedule — end of week is a good rhythm — and keep the file somewhere safe. Clearing browser data, switching browsers, or a new computer all start Paynox fresh.</p></div>
+      <h3>Attachments</h3>
+      <p>Bills, receipts and scanned copies are stored in the browser's IndexedDB (separate from the main data), capped at <strong>2&nbsp;MB per file</strong> with automatic image compression, multiple files per document, and a storage-usage meter — sized for roughly 50–60 scans a month. Attachments are included conceptually with the document but are held in that separate store.</p>
+      <h3>Audit Log &amp; Recycle Bin</h3>
+      <ul>
+        <li><strong>Audit Log</strong> <span class="pill sa">SA</span> <span class="pill admin">Admin</span> — a running record of significant actions.</li>
+        <li><strong>Recycle Bin</strong> <span class="pill sa">SA</span> <span class="pill admin">Admin</span> — soft-deleted documents (billing and finance) kept 30 days, with Restore and permanent delete.</li>
+      </ul>
+    </section>
+
+    <!-- 14 -->
+    <section id="reference" class="major">
+      <div class="sec-head"><span class="sec-num">14</span><h2 class="sec-title">Quick reference</h2></div>
+      <h3>Document numbering</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Document</th><th class="mono">Format</th><th>Resets</th></tr></thead>
+          <tbody>
+            <tr><td>Billing documents</td><td class="mono">PREFIX-YYYYMMDD-SERIAL</td><td>Never</td></tr>
+            <tr><td>Payment voucher</td><td class="mono">PV-YYYYMMDD-001</td><td>Yearly</td></tr>
+            <tr><td>Cash voucher</td><td class="mono">CV-YYYYMMDD-001</td><td>Yearly</td></tr>
+            <tr><td>Debit voucher</td><td class="mono">DV-YYYYMMDD-001</td><td>Yearly</td></tr>
+            <tr><td>Transaction ID</td><td class="mono">TXN-YYYYMMDD-001</td><td>Yearly</td></tr>
+            <tr><td>Payment receipt</td><td class="mono">RCPT-…</td><td>—</td></tr>
+            <tr><td>Employee ID</td><td class="mono">EMP-001</td><td>Never</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>Glossary</h3>
+      <ul>
+        <li><strong>Posts to the ledger</strong> — the entry now counts in dashboards, reports and statements. Only approved, money-moving items do this.</li>
+        <li><strong>Primary vs Linked voucher</strong> — the primary carries the real financial impact; a linked record is documentation sharing the same Transaction ID, with no extra impact.</li>
+        <li><strong>Segregation of duties</strong> — the maker can't also approve; deciding signatures come from someone else.</li>
+        <li><strong>Contra / account transfer</strong> — money moved between your own accounts; excluded from income and expense.</li>
+        <li><strong>Reversed</strong> — an approved item undone; its ledger effect is voided but the record is kept for audit.</li>
+        <li><strong>Head</strong> — an income or expense category in your chart of accounts.</li>
+        <li><strong>MFS</strong> — mobile financial services (bKash, Nagad).</li>
+      </ul>
+      <h3>Getting the most from Paynox</h3>
+      <ul>
+        <li>Set real <strong>opening balances</strong> on your accounts before you trust the statements.</li>
+        <li>Enter the <strong>BDT rate</strong> on every foreign-currency document so consolidated totals stay accurate.</li>
+        <li>Prefer <strong>Send back for correction</strong> over deleting — it preserves the audit trail.</li>
+        <li>Export a <strong>backup</strong> regularly, and always before importing one.</li>
+      </ul>
+    </section>
+
+    <hr class="soft" />
+  </article>
+</div>
+
+<footer class="foot">
+  Paynox — Billing &amp; Finance · by Safkat Turza for DreamCore Studio · User Manual v1.0 · 22 July 2026.
+  This guide describes the shipped system; screens may vary with your role and settings. For setup and configuration, see <a class="xref" href="#settings">Settings</a> and <a class="xref" href="#data">Data, backup &amp; safety</a>.
+</footer>
+
+<script>
+  // Scrollspy: highlight the current section in the contents rail.
+  (function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+    if (!links.length || !('IntersectionObserver' in window)) return;
+    var map = {};
+    links.forEach(function (a) { map[a.getAttribute('href').slice(1)] = a; });
+    var visible = new Set();
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) visible.add(e.target.id); else visible.delete(e.target.id);
+      });
+      // pick the topmost visible section
+      var order = Object.keys(map);
+      var current = order.filter(function (id) { return visible.has(id); })[0];
+      if (!current) return;
+      links.forEach(function (a) { a.classList.remove('active'); });
+      if (map[current]) map[current].classList.add('active');
+    }, { rootMargin: '-10% 0px -70% 0px', threshold: 0 });
+    document.querySelectorAll('article section[id]').forEach(function (s) { obs.observe(s); });
+  })();
+</script>
