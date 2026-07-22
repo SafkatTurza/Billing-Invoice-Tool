@@ -249,3 +249,19 @@
   .fin-sign-row { grid-template-columns: 1fr !important; }
   .fin-letterhead { flex-direction: column; align-items: center; gap: 8px; text-align: center; }
 }
+
+/* ── Loan audit / activity history ───────────────────────────────────── */
+.loan-audit { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.loan-audit-item {
+  border: 1px solid var(--border-primary);
+  border-left: 3px solid var(--brand-primary);
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: var(--background-secondary);
+}
+.loan-audit-meta { margin-top: 2px; }
+.loan-audit-reason {
+  margin-top: 4px;
+  font-style: italic;
+  color: var(--text-secondary);
+}

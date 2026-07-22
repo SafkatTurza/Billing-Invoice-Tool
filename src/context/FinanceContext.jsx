@@ -17,7 +17,7 @@ import {
   pushTimeline,
   DEFAULT_FIN_SETTINGS,
 } from '../lib/finance.js'
-import { loanOutstanding } from '../lib/loans.js'
+import { loanOutstanding, loanHistoryEntry } from '../lib/loans.js'
 
 const FinanceContext = createContext(null)
 export function useFinance() {
@@ -630,42 +630,238 @@ export function FinanceProvider({ children }) {
   const deleteTemplate = useCallback((id) => setTemplates((prev) => prev.filter((t) => t.id !== id)), [])
 
   // ── Employee loans & advances (Phase H) ──
+  // Only these fields are edited from the loan form. We never let the form's
+  // in-memory clone overwrite the canonical repayments / history / status,
+  // which are mutated exclusively through the settlement methods below.
+  const LOAN_FORM_FIELDS = ['employeeId', 'empId', 'employeeName', 'type', 'principal', 'installment', 'currency', 'startDate', 'note']
+
   const saveLoan = useCallback(
-    (loan) => {
+    (loan, meta = {}) => {
       setLoans((prev) => {
         const i = prev.findIndex((l) => l.id === loan.id)
         if (i >= 0) {
+          const prevLoan = prev[i]
+          const patch = {}
+          for (const k of LOAN_FORM_FIELDS) patch[k] = loan[k]
+          const prevPrincipal = Number(prevLoan.principal) || 0
+          const newPrincipal = Number(loan.principal) || 0
+          const history = [...(prevLoan.history || [])]
+          // Changing the original principal is a tracked financial change — the
+          // previous and new values are preserved with the mandatory reason.
+          if (Math.abs(newPrincipal - prevPrincipal) > 0.005) {
+            history.push(
+              loanHistoryEntry('Principal amount updated', currentUser, {
+                prevAmount: prevPrincipal,
+                newAmount: newPrincipal,
+                diff: Math.round((newPrincipal - prevPrincipal) * 100) / 100,
+                reason: meta.reason || '',
+                outstandingAfter: loanOutstanding({ ...prevLoan, principal: newPrincipal }),
+              }),
+            )
+          }
           const c = [...prev]
-          c[i] = loan
+          c[i] = { ...prevLoan, ...patch, history }
           return c
         }
-        return [...prev, loan]
+        const created = {
+          ...loan,
+          createdAt: loan.createdAt || new Date().toISOString(),
+          createdBy: currentUser?.id || null,
+          createdByName: currentUser?.fullName || 'Unknown',
+          history: [
+            ...(loan.history || []),
+            loanHistoryEntry('Loan / advance created', currentUser, {
+              newAmount: Number(loan.principal) || 0,
+              reason: loan.note || '',
+            }),
+          ],
+        }
+        return [...prev, created]
       })
       addAudit('Loan saved', loan.empId || loan.employeeName, `${loan.type} ${loan.principal} ${loan.currency}`)
     },
-    [addAudit],
+    [addAudit, currentUser],
   )
   const deleteLoan = useCallback((id) => setLoans((prev) => prev.filter((l) => l.id !== id)), [])
 
   // Record a repayment against a loan. When it comes from a salary sheet the
   // sheetId guards against double-applying if the sheet is re-approved; the
-  // amount is capped at the outstanding balance and the loan auto-closes.
+  // amount is capped at the outstanding balance and the loan auto-closes. Every
+  // repayment lands in the loan's audit history.
   const recordLoanRepayment = useCallback(
-    (loanId, { sheetId, date, amount, note }) => {
+    (loanId, { sheetId, date, amount, note, method, reference }) => {
       setLoans((prev) =>
         prev.map((l) => {
           if (l.id !== loanId) return l
           if (sheetId && (l.repayments || []).some((r) => r.sheetId === sheetId)) return l
           const amt = Math.min(Number(amount) || 0, loanOutstanding(l))
           if (amt <= 0) return l
-          const repayments = [...(l.repayments || []), { id: uid(), sheetId: sheetId || null, date, amount: amt, note: note || '' }]
+          const rep = {
+            id: uid(),
+            sheetId: sheetId || null,
+            date,
+            amount: amt,
+            method: method || (sheetId ? 'Salary Deduction' : 'Cash'),
+            reference: reference || '',
+            note: note || '',
+            attachments: [],
+            recordedById: currentUser?.id || null,
+            recordedByName: currentUser?.fullName || 'System',
+            recordedAt: new Date().toISOString(),
+          }
+          const repayments = [...(l.repayments || []), rep]
           const repaid = repayments.reduce((s, r) => s + (Number(r.amount) || 0), 0)
-          const status = repaid >= (Number(l.principal) || 0) - 0.005 ? 'closed' : 'active'
-          return { ...l, repayments, status }
+          const closed = repaid >= (Number(l.principal) || 0) - 0.005
+          const outstandingAfter = Math.max(0, Math.round(((Number(l.principal) || 0) - repaid) * 100) / 100)
+          const history = [
+            ...(l.history || []),
+            loanHistoryEntry(closed ? 'Final settlement recorded' : 'Settlement recorded', currentUser, {
+              newAmount: amt,
+              method: rep.method,
+              reference: rep.reference,
+              reason: rep.note,
+              settlementId: rep.id,
+              outstandingAfter,
+            }),
+          ]
+          return { ...l, repayments, status: closed ? 'closed' : 'active', history }
         }),
       )
     },
-    [],
+    [currentUser],
+  )
+
+  // Record a manual settlement / recovery (cash, bank, adjustment, write-off…)
+  // against a loan. Stamped with who recorded it and when; the note is carried
+  // permanently on the entry and mirrored into the audit history.
+  const recordLoanSettlement = useCallback(
+    (loanId, s) => {
+      let saved = null
+      setLoans((prev) =>
+        prev.map((l) => {
+          if (l.id !== loanId) return l
+          const amt = Math.min(Number(s.amount) || 0, loanOutstanding(l))
+          if (amt <= 0) return l
+          const rep = {
+            id: uid(),
+            sheetId: null,
+            date: s.date,
+            amount: amt,
+            method: s.method || 'Cash',
+            reference: s.reference || '',
+            note: s.note || '',
+            attachments: s.attachments || [],
+            recordedById: currentUser?.id || null,
+            recordedByName: currentUser?.fullName || 'Unknown',
+            recordedAt: new Date().toISOString(),
+          }
+          const repayments = [...(l.repayments || []), rep]
+          const repaid = repayments.reduce((sum, r) => sum + (Number(r.amount) || 0), 0)
+          const closed = repaid >= (Number(l.principal) || 0) - 0.005
+          const outstandingAfter = Math.max(0, Math.round(((Number(l.principal) || 0) - repaid) * 100) / 100)
+          const history = [
+            ...(l.history || []),
+            loanHistoryEntry(closed ? 'Final settlement recorded' : 'Settlement recorded', currentUser, {
+              newAmount: amt,
+              method: rep.method,
+              reference: rep.reference,
+              reason: rep.note,
+              attachments: rep.attachments,
+              settlementId: rep.id,
+              outstandingAfter,
+            }),
+          ]
+          saved = rep
+          return { ...l, repayments, status: closed ? 'closed' : 'active', history }
+        }),
+      )
+      addAudit('Loan settlement recorded', loanId, `${s.amount} via ${s.method || 'Cash'}`)
+      return saved
+    },
+    [currentUser, addAudit],
+  )
+
+  // Change an existing settlement amount / details. A reason is mandatory; the
+  // previous amount is preserved in history and totals/status recalculated.
+  const updateLoanSettlement = useCallback(
+    (loanId, repaymentId, patch, reason) => {
+      setLoans((prev) =>
+        prev.map((l) => {
+          if (l.id !== loanId) return l
+          const idx = (l.repayments || []).findIndex((r) => r.id === repaymentId)
+          if (idx < 0) return l
+          const old = l.repayments[idx]
+          const prevAmount = Number(old.amount) || 0
+          const otherRepaid = l.repayments.reduce((s, r, i) => (i === idx ? s : s + (Number(r.amount) || 0)), 0)
+          const maxAllowed = Math.max(0, (Number(l.principal) || 0) - otherRepaid)
+          const newAmount = Math.min(patch.amount != null ? Number(patch.amount) || 0 : prevAmount, maxAllowed)
+          const updated = {
+            ...old,
+            ...patch,
+            amount: newAmount,
+            updatedById: currentUser?.id || null,
+            updatedByName: currentUser?.fullName || 'Unknown',
+            updatedAt: new Date().toISOString(),
+          }
+          const repayments = [...l.repayments]
+          repayments[idx] = updated
+          const repaid = repayments.reduce((s, r) => s + (Number(r.amount) || 0), 0)
+          const closed = repaid >= (Number(l.principal) || 0) - 0.005
+          const outstandingAfter = Math.max(0, Math.round(((Number(l.principal) || 0) - repaid) * 100) / 100)
+          const history = [
+            ...(l.history || []),
+            loanHistoryEntry('Settlement amount updated', currentUser, {
+              prevAmount,
+              newAmount,
+              diff: Math.round((newAmount - prevAmount) * 100) / 100,
+              reason: reason || '',
+              method: updated.method,
+              reference: updated.reference,
+              settlementId: repaymentId,
+              outstandingAfter,
+            }),
+          ]
+          return { ...l, repayments, status: closed ? 'closed' : 'active', history }
+        }),
+      )
+      addAudit('Loan settlement updated', loanId, reason || '')
+    },
+    [currentUser, addAudit],
+  )
+
+  // Reverse / cancel a settlement. A reason is mandatory. The entry is removed
+  // from the running balance (which may reopen a settled loan) but the original
+  // record and this reversal both remain in the audit history.
+  const reverseLoanSettlement = useCallback(
+    (loanId, repaymentId, reason) => {
+      setLoans((prev) =>
+        prev.map((l) => {
+          if (l.id !== loanId) return l
+          const target = (l.repayments || []).find((r) => r.id === repaymentId)
+          if (!target) return l
+          const repayments = (l.repayments || []).filter((r) => r.id !== repaymentId)
+          const repaid = repayments.reduce((s, r) => s + (Number(r.amount) || 0), 0)
+          const closed = repaid >= (Number(l.principal) || 0) - 0.005
+          const outstandingAfter = Math.max(0, Math.round(((Number(l.principal) || 0) - repaid) * 100) / 100)
+          const history = [
+            ...(l.history || []),
+            loanHistoryEntry('Settlement reversed', currentUser, {
+              prevAmount: Number(target.amount) || 0,
+              newAmount: 0,
+              diff: -(Number(target.amount) || 0),
+              reason: reason || '',
+              method: target.method,
+              reference: target.reference,
+              settlementId: repaymentId,
+              outstandingAfter,
+            }),
+          ]
+          return { ...l, repayments, status: closed ? 'closed' : 'active', history }
+        }),
+      )
+      addAudit('Loan settlement reversed', loanId, reason || '')
+    },
+    [currentUser, addAudit],
   )
 
   // Apply every loan installment carried on an approved salary sheet's lines.
@@ -713,6 +909,9 @@ export function FinanceProvider({ children }) {
     saveLoan,
     deleteLoan,
     recordLoanRepayment,
+    recordLoanSettlement,
+    updateLoanSettlement,
+    reverseLoanSettlement,
     applySalaryLoanRepayments,
     notifyNextApprovers,
     rejectFinDoc,

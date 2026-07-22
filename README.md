@@ -203,6 +203,13 @@ A centralized company-finance module alongside billing:
   installment (capped at the outstanding balance) onto the sheet; on approval the installments
   are recorded against the loans and the balances drop. Repayments are stamped with the sheet
   they came from, so re-approving a sheet never double-counts.
+  - **Settlements & audit trail** — besides salary deductions, a settlement/recovery can be
+    recorded manually (cash, bank transfer, cheque, adjustment, write-off, …) with a reference,
+    remarks and supporting attachments. Any action that moves money is traceable: changing the
+    original principal or an existing settlement amount, or reversing a settlement, **requires a
+    reason**, and adjustments / write-offs always require a note. Every change keeps the previous
+    and new amounts, who did it and when, in a permanent per-loan **Activity & audit history** —
+    the original values are never silently overwritten.
 - **Salary disbursement voucher** — every approved sheet has an auto-generated, printable
   disbursement voucher (one payee line per employee with net payable and total), derived from
   the sheet so it never re-posts to the ledger.

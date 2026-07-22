@@ -7,8 +7,43 @@ import { todayISO } from './format.js'
 
 export const LOAN_TYPES = ['Loan', 'Advance']
 
+// Ways an outstanding balance can be settled / recovered. The last three are
+// "non-standard" adjustments — a Note/Reason is mandatory for those so every
+// balance change is explained (see methodRequiresNote).
+export const SETTLEMENT_METHODS = [
+  'Salary Deduction',
+  'Cash',
+  'Bank Transfer',
+  'Mobile Banking',
+  'Cheque',
+  'Adjustment',
+  'Write-off / Waiver',
+  'Other',
+]
+const NOTE_REQUIRED_METHODS = ['Adjustment', 'Write-off / Waiver', 'Other']
+
+// A note is always required for adjustments, write-offs/waivers and "Other".
+export function methodRequiresNote(method) {
+  return NOTE_REQUIRED_METHODS.includes(method)
+}
+
 function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
+}
+
+// A single audit-trail event on a loan. Every action that changes a financial
+// amount or the outstanding balance appends one of these — it records who,
+// what, the previous & new amounts, when and why, and is never rewritten.
+export function loanHistoryEntry(action, user, extra = {}) {
+  return {
+    id: uid(),
+    at: new Date().toISOString(),
+    byId: user?.id || null,
+    byName: user?.fullName || 'System',
+    action,
+    reason: '',
+    ...extra,
+  }
 }
 
 export function newLoan(emp) {
@@ -24,7 +59,10 @@ export function newLoan(emp) {
     startDate: todayISO(),
     note: '',
     status: 'active', // active | closed
-    repayments: [], // { id, sheetId, date, amount }
+    // { id, sheetId, date, amount, method, reference, note, attachments,
+    //   recordedById, recordedByName, recordedAt, updatedAt? }
+    repayments: [],
+    history: [], // immutable audit trail of financial changes (loanHistoryEntry)
   }
 }
 
