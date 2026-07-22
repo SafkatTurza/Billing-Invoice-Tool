@@ -1,22 +1,73 @@
 :root {
-  --navy: #1e2d5a;
-  --navy-dark: #151e2d;
-  --teal: #0d9488;
-  --teal-light: #2dd4bf;
-  --bg: #f3f4f8;
-  --surface: #ffffff;
-  --border: #e2e5ec;
-  --text: #1f2733;
-  --text-muted: #6b7385;
+  /* ── Paynox brand ramp (raw) ─────────────────────────────────
+     Charcoal = structural dark, Slate = interactive, Gold = premium
+     accent (10%). Ivory/light-gold = selective highlight surfaces.
+     Components reference the *role* tokens below, not these raw hex. */
+  --brand-charcoal: #4a4a4a;
+  --brand-charcoal-700: #3a3a3a;
+  --brand-charcoal-800: #2f2f2f;
+  --brand-slate: #6d8196;       /* active states, large/bold interactive */
+  --brand-slate-600: #5b6e82;   /* button fills + normal-size link text (a11y) */
+  --brand-slate-700: #4e5f71;   /* hover/active */
+  --brand-slate-100: #eef1f4;   /* soft slate tint (selected rows, icon chips) */
+  --brand-gray: #cbcbcb;
+  --brand-ivory: #ffffe3;
+  --brand-gold: #c6a15b;
+  --brand-gold-dark: #9b7b3d;
+  --brand-gold-text: #7a612e;   /* gold at normal text size passes AA */
+  --brand-gold-light: #f5ecd8;
+
+  /* ── Semantic role tokens (what components use) ──────────────── */
+  --background-primary: #ffffff;
+  --background-secondary: #f6f6f4; /* warm-neutral workspace */
+  --surface-primary: #ffffff;
+  --surface-highlight: var(--brand-ivory);
+  --surface-premium: var(--brand-gold-light);
+
+  --text-primary: #3d3d3d;
+  --text-secondary: #5b6e82;
+  --text-muted: #7b8494;
   --text-faint: #9aa1b1;
+
+  --border-primary: #e4e4e1;
+  --border-secondary: var(--brand-gray);
+
+  --brand-dark: var(--brand-charcoal);           /* sidebar, strong headings */
+  --brand-primary: var(--brand-slate);           /* active nav/tabs, large links */
+  --brand-primary-strong: var(--brand-slate-600); /* button fills, small link text */
+  --brand-primary-hover: var(--brand-slate-700);
+  --accent-gold: var(--brand-gold);
+
+  /* ── Semantic status (kept separate from brand) ──────────────── */
   --green: #16a34a;
   --amber: #d97706;
   --red: #dc2626;
   --blue: #2563eb;
+  --success: var(--green);
+  --warning: var(--amber);
+  --error: var(--red);
+  --info: var(--blue);
+
+  /* ── Legacy aliases — mapped to Paynox roles so existing rules
+     keep working during the rebrand; retired in the cleanup phase. */
+  --navy: var(--brand-charcoal);
+  --navy-dark: var(--brand-charcoal);
+  --teal: var(--brand-slate);
+  --teal-light: #8a9bad;
+  --bg: var(--background-secondary);
+  --surface: var(--surface-primary);
+  --border: var(--border-primary);
+  --text: var(--text-primary);
+
   --radius: 10px;
-  --shadow: 0 1px 3px rgba(20, 30, 45, 0.08), 0 1px 2px rgba(20, 30, 45, 0.04);
-  --shadow-lg: 0 10px 30px rgba(20, 30, 45, 0.12);
+  --shadow: 0 1px 3px rgba(40, 40, 40, 0.08), 0 1px 2px rgba(40, 40, 40, 0.05);
+  --shadow-lg: 0 10px 30px rgba(40, 40, 40, 0.14);
   --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+
+  /* Responsive breakpoints (documented; used in @media below) */
+  --bp-desktop: 1024px;
+  --bp-tablet: 768px;
+  --bp-mobile: 600px;
 }
 
 * {
@@ -77,26 +128,44 @@ textarea {
   cursor: not-allowed;
 }
 .btn-primary {
-  background: var(--navy);
+  background: var(--brand-primary-strong);
   color: #fff;
 }
 .btn-primary:hover:not(:disabled) {
-  background: #17244a;
+  background: var(--brand-primary-hover);
 }
+/* .btn-teal folds into the single slate primary (spec: one interactive color) */
 .btn-teal {
-  background: var(--teal);
+  background: var(--brand-primary-strong);
   color: #fff;
 }
 .btn-teal:hover:not(:disabled) {
-  background: #0b7d73;
+  background: var(--brand-primary-hover);
+}
+/* Secondary/outline button: slate text + border on white */
+.btn-secondary {
+  background: #fff;
+  border-color: var(--brand-slate);
+  color: var(--brand-primary-strong);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: var(--brand-slate-100);
 }
 .btn-ghost {
   background: transparent;
-  border-color: var(--border);
-  color: var(--text);
+  border-color: var(--border-primary);
+  color: var(--text-primary);
 }
 .btn-ghost:hover:not(:disabled) {
-  background: #f7f8fb;
+  background: var(--brand-slate-100);
+}
+/* Premium gold action — reserved for high-value/premium CTAs only */
+.btn-gold {
+  background: var(--brand-gold);
+  color: #fff;
+}
+.btn-gold:hover:not(:disabled) {
+  background: var(--brand-gold-dark);
 }
 .btn-danger {
   background: #fff;
@@ -140,8 +209,8 @@ textarea {
 .input:focus,
 .select:focus,
 .textarea:focus {
-  border-color: var(--navy);
-  box-shadow: 0 0 0 3px rgba(30, 45, 90, 0.1);
+  border-color: var(--brand-slate);
+  box-shadow: 0 0 0 3px rgba(109, 129, 150, 0.22);
 }
 .input:disabled {
   background: #f4f5f8;
@@ -207,7 +276,9 @@ textarea {
 .badge-green { background: #e3f6ec; color: var(--green); }
 .badge-amber { background: #fdf0dd; color: var(--amber); }
 .badge-red { background: #fce8e8; color: var(--red); }
-.badge-teal { background: #d8f4f0; color: #0b7d73; }
+.badge-teal { background: var(--brand-slate-100); color: var(--brand-primary-strong); }
+.badge-slate { background: var(--brand-slate-100); color: var(--brand-primary-strong); }
+.badge-gold { background: var(--brand-gold-light); color: var(--brand-gold-text); }
 .badge-purple { background: #efe7fd; color: #7c3aed; }
 
 /* Budget utilisation bar (Phase E) */

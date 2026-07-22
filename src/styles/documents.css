@@ -96,7 +96,7 @@
   outline: none;
 }
 .items-table input:focus,
-.items-table textarea:focus { border-color: var(--navy); }
+.items-table textarea:focus { border-color: var(--brand-slate); }
 .items-table input:disabled { background: #f4f5f8; color: var(--text-muted); }
 .items-table .col-amount input { text-align: right; font-weight: 600; }
 .lock-hint { font-size: 10px; color: var(--text-faint); margin-top: 2px; }

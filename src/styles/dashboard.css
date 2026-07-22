@@ -63,13 +63,13 @@
   color: var(--text);
   transition: border-color 0.12s, background 0.12s;
 }
-.qc-btn:hover { border-color: var(--navy); background: #fafbff; }
+.qc-btn:hover { border-color: var(--brand-slate); background: var(--brand-slate-100); }
 .qc-btn .qc-icon {
   width: 34px;
   height: 34px;
   border-radius: 9px;
-  background: #eef1f8;
-  color: var(--navy);
+  background: var(--brand-slate-100);
+  color: var(--brand-primary-strong);
   display: flex;
   align-items: center;
   justify-content: center;

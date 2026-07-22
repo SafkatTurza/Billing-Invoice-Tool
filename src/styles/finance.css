@@ -12,7 +12,7 @@
   font-size: 13px;
   transition: border-color 0.12s, background 0.12s;
 }
-.attach-drop:hover { border-color: var(--navy); background: #f5f7fc; }
+.attach-drop:hover { border-color: var(--brand-slate); background: var(--brand-slate-100); }
 .attach-list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
 .attach-item {
   display: flex;
@@ -47,7 +47,7 @@
   background: #fff;
 }
 .appr-slot.signed { border-color: #b7ebd8; background: #f4fdf9; }
-.appr-slot.next { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(30, 45, 90, 0.08); }
+.appr-slot.next { border-color: var(--brand-slate); box-shadow: 0 0 0 3px rgba(109, 129, 150, 0.2); }
 .appr-slot .appr-role { font-weight: 700; font-size: 13px; color: var(--navy); min-width: 190px; }
 .appr-slot .appr-role .mgmt { color: var(--amber); font-size: 11px; font-weight: 700; display: block; }
 .appr-sig-img { height: 40px; max-width: 150px; object-fit: contain; }
@@ -180,7 +180,7 @@
 .seg { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 .seg-btn { background: #fff; border: none; padding: 7px 14px; font-size: 13px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-left: 1px solid var(--border); }
 .seg-btn:first-child { border-left: none; }
-.seg-btn.active { background: var(--navy); color: #fff; }
+.seg-btn.active { background: var(--brand-primary-strong); color: #fff; }
 .report-card .report-table td { padding: 7px 16px; }
 .report-table .rt-cur td { background: #f6f8fb; font-weight: 800; color: var(--navy); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
 .report-table .rt-strong td { font-weight: 700; }
