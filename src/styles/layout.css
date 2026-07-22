@@ -139,7 +139,7 @@
   margin-bottom: 2px;
 }
 .nav-item:hover { background: rgba(255, 255, 255, 0.06); color: #fff; }
-.nav-item.active { background: var(--brand-primary); color: #fff; font-weight: 600; }
+.nav-item.active { background: var(--brand-yellow); color: var(--brand-ink); font-weight: 700; }
 .nav-item .count {
   margin-left: auto;
   font-size: 11px;
@@ -147,7 +147,7 @@
   padding: 1px 7px;
   border-radius: 999px;
 }
-.nav-item.active .count { background: rgba(255, 255, 255, 0.22); }
+.nav-item.active .count { background: rgba(22, 22, 46, 0.16); color: var(--brand-ink); }
 
 .sidebar-foot {
   margin-top: auto;
