@@ -7,7 +7,10 @@
 .sidebar {
   width: 240px;
   flex-shrink: 0;
-  background: var(--brand-dark);
+  /* Deep Navy (Paynox Premium Fintech) — a muted, professional navy that
+     sits far calmer against the light content area than the old vivid
+     indigo. Scoped here so headings/toasts keep the brand token. */
+  background: #1e3a5f;
   color: #c7cddd;
   display: flex;
   flex-direction: column;
@@ -109,7 +112,7 @@
   gap: 11px;
   padding: 11px 11px;
   border: none;
-  background: rgba(255, 255, 255, 0.035);
+  background: rgba(255, 255, 255, 0.05);
   width: 100%;
   border-radius: 8px;
   font-size: 14.5px;
@@ -119,7 +122,9 @@
   letter-spacing: 0.005em;
   margin-top: 14px;
 }
-.nav-group-toggle:hover { background: rgba(255, 255, 255, 0.07); color: #fff; }
+/* Slightly stronger plate + hover — the lighter navy needs a touch more
+   overlay for the module header to still read as a raised section. */
+.nav-group-toggle:hover { background: rgba(255, 255, 255, 0.09); color: #fff; }
 /* Prominent module icon (overrides the SVG's own width/height attrs). */
 .nav-group-toggle > svg { width: 19px; height: 19px; }
 .nav-group-toggle .arr {
@@ -135,16 +140,20 @@
    A quiet uppercase caption between the module row and its items — no
    plate, subordinate contrast, clearly below Level 1. */
 .nav-group-toggle.sub {
-  padding: 6px 11px 6px 24px;
-  margin-top: 10px;
+  padding: 8px 11px 8px 24px;
+  margin-top: 16px;
   font-size: 10.5px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: #828ca6;
+  color: #8b95ac;
   background: transparent;
 }
+/* Softer, recessed collapse chevron so a stack of collapsed subcategories
+   reads as quiet captions with breathing room, not a dense block of controls. */
+.nav-group-toggle.sub .arr { opacity: 0.5; }
 .nav-group-toggle.sub:hover { background: transparent; color: #c7cddd; }
+.nav-group-toggle.sub:hover .arr { opacity: 0.85; }
 .nav-item.sub2 { padding-left: 40px; }
 .nav-divider {
   height: 1px;
