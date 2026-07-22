@@ -11,6 +11,7 @@ import SecuritySettings from './settings/SecuritySettings.jsx'
 import FinanceAccounts from './settings/FinanceAccounts.jsx'
 import FinanceHeads from './settings/FinanceHeads.jsx'
 import FinanceApproval from './settings/FinanceApproval.jsx'
+import AssetCategories from './settings/AssetCategories.jsx'
 import Modal from '../components/Modal.jsx'
 import SignaturePad from '../components/SignaturePad.jsx'
 import StorageMeter from '../components/StorageMeter.jsx'
@@ -32,6 +33,7 @@ export default function Settings() {
     { id: 'accounts', label: 'Cash / Bank Accounts', show: can(role, 'manageFinanceMasters') },
     { id: 'heads', label: 'Account Heads', show: can(role, 'manageFinanceMasters') },
     { id: 'approval', label: 'Approval Rules', show: can(role, 'manageFinanceMasters') },
+    { id: 'assetcats', label: 'Asset Categories', show: can(role, 'assetView') },
     { id: 'backup', label: 'Data Backup', show: can(role, 'dataBackup') },
     { id: 'users', label: 'Users', show: !!can(role, 'manageUsers') },
     { id: 'security', label: 'Security', show: can(role, 'configureSecurity') },
@@ -66,6 +68,7 @@ export default function Settings() {
           {active === 'accounts' && <FinanceAccounts />}
           {active === 'heads' && <FinanceHeads />}
           {active === 'approval' && <FinanceApproval />}
+          {active === 'assetcats' && <AssetCategories />}
           {active === 'backup' && <DataBackup />}
           {active === 'users' && <UsersManager />}
           {active === 'security' && <SecuritySettings />}

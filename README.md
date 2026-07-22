@@ -313,6 +313,47 @@ select the employee it relates to.
 - **Print / PDF** — A4 portrait document layout that honours the configured
   brand color and font, with print rules from SRS section 14.
 
+### Asset Management
+
+A full company **Asset Management** module for tracking IT and office equipment
+across its whole life. The governing principle is **one asset = one permanent
+record + current state + a complete, append-only lifecycle history** — nothing is
+ever overwritten or deleted.
+
+- **Asset Register** — the hub. Every asset has a permanent, never-reused **Asset
+  ID** (`DCS-LAP-0001` = company + subcategory code + per-code sequence).
+  Advanced filters (category, status, condition, usage, ownership, location,
+  employee, vendor, warranty, assignment), one-click **quick views** (Available,
+  Assigned, Remote, Office, Common, Under Repair, Damaged, Missing, Lost,
+  Disposed, Warranty expiring/expired…), **saved views**, and **Excel export**.
+- **Asset Dashboard** — clickable KPI cards (totals, placement, attention,
+  warranty, and — for permitted roles — financial value) that each open the
+  matching filtered register.
+- **Asset Profile** — tabbed record (Overview, Assignment, Purchase, Warranty,
+  Repair & Maintenance, Damage, Documents, History) with flexible per-category
+  specifications, photos and documents. **Ownership, Usage, Custody, Location,
+  Status and Condition are all tracked separately.**
+- **Lifecycle workflows** — Assign / Transfer / Return (previous assignments are
+  preserved in history), Damage, Repair & Maintenance (with lifetime repair
+  cost), Warranty extension, Missing / Lost / Recovered, and Disposal / Write-Off
+  (terminal but permanently searchable). Every action appends a dated **history**
+  event and a system **Audit Log** entry — the two are kept distinct.
+- **Bulk creation** — register N identical assets from one purchase; each gets its
+  own Asset ID and serial while sharing the purchase & warranty references.
+- **Finance & masters reuse** — purchase info **references** existing vendors,
+  POs, bills, vouchers and transactions; the Asset module **never posts to the
+  ledger**, so a purchase is never booked twice. Assignments reuse the existing
+  **Employee Master** (the Employees page links straight to an employee's assigned
+  assets for offboarding/clearance).
+- **Categories** are configurable in **Settings → Asset Categories** (add/edit
+  categories & subcategories, set the ID code, and the warranty “expiring soon”
+  window) with no code change.
+- **Permissions** — `assetView` / `assetManage` / `assetFinancials` /
+  `assetDispose`. Super Admin & Admin have full control; Accounts manages
+  operations and financial data (but not terminal disposal); Business Team has no
+  access and the module is hidden. Purchase/repair **values** are gated by
+  `assetFinancials`.
+
 ## Project structure
 
 ```
@@ -330,8 +371,20 @@ src/
 
 All state is kept in `localStorage` under the SRS-defined keys (`dcs_co`,
 `dcs_docs`, `dcs_clients`, `dcs_vendors`, `dcs_style`) plus the user/security
-keys from the Addendum. **Settings → Data Backup** exports everything to
+keys from the Addendum and the Asset module keys (`dcs_assets`,
+`dcs_asset_categories`, `dcs_asset_settings`). **Settings → Data Backup** exports
+everything — billing, finance, **and assets** — to
 `DCS_Billing_Backup_YYYY-MM-DD.json`; importing replaces all current data.
+
+> **Centralization note (Asset Management §36).** Assets are stored client-side in
+> `localStorage`, consistent with the rest of Paynox — no destructive migration
+> was performed. For centralized, multi-user company use (concurrent access,
+> remote access, central file storage, server-side audit), the data layer would
+> move behind an API/database. The Asset module is written to make that migration
+> clean: all asset state flows through a single `AssetContext` with `save*`
+> callbacks (no direct component writes), and finance stays the source of truth
+> for money, so the asset store can be swapped for a backend without touching the
+> UI or double-posting any transaction.
 
 ## Notes on scope
 

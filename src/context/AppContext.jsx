@@ -657,6 +657,12 @@ export function AppProvider({ children }) {
         finTemplates: ls.get(KEYS.finTemplates, []),
         employees: ls.get(KEYS.employees, []),
       },
+      // Asset module (owned by AssetContext — read straight from storage).
+      assets: {
+        assets: ls.get(KEYS.assets, []),
+        categories: ls.get(KEYS.assetCategories, []),
+        settings: ls.get(KEYS.assetSettings, {}),
+      },
     }
   }, [companies, docs, clients, vendors, style, users, security])
 
@@ -681,6 +687,14 @@ export function AppProvider({ children }) {
         if (f.finTxns) ls.set(KEYS.finTxns, f.finTxns)
         if (f.finTemplates) ls.set(KEYS.finTemplates, f.finTemplates)
         if (f.employees) ls.set(KEYS.employees, f.employees)
+      }
+      // Asset module stores are owned by AssetContext; write to storage and let
+      // a reload pick them up (import already replaces the whole dataset).
+      if (data.assets) {
+        const as = data.assets
+        if (as.assets) ls.set(KEYS.assets, as.assets)
+        if (as.categories) ls.set(KEYS.assetCategories, as.categories)
+        if (as.settings) ls.set(KEYS.assetSettings, as.settings)
       }
       addAudit('Data import', '', 'All data replaced from backup file')
     },

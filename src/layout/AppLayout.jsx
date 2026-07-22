@@ -2,6 +2,8 @@ import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext.jsx'
 import { useFinance } from '../context/FinanceContext.jsx'
+import { useAssets } from '../context/AssetContext.jsx'
+import { custodianLabel } from '../lib/assets.js'
 import { can, canAccessDocType, canSeeDocument } from '../lib/roles.js'
 import { FIN_TYPES, isVoucherType, voucherLabel, voucherTotal } from '../lib/finance.js'
 import { Icon } from '../components/Icons.jsx'
@@ -47,6 +49,14 @@ const FIN_REPORTS = [
   { to: '/finance/reports', label: 'Monthly Report', icon: Icon.estimate },
   { to: '/finance/statements', label: 'Financial Reports', icon: Icon.estimate },
   { to: '/finance/insights', label: 'Insights & Forecast', icon: Icon.monitor },
+]
+
+// Asset Management module — kept lean (Register does the heavy lifting via
+// filters & quick-views, so we avoid a page per asset state).
+const ASSETS = [
+  { to: '/assets', label: 'Dashboard', icon: Icon.dashboard, end: true },
+  { to: '/assets/register', label: 'Asset Register', icon: Icon.invoice },
+  { to: '/assets/reports', label: 'Reports', icon: Icon.estimate },
 ]
 
 // Each Finance sub-group paired with its collapse-state key — used to
@@ -109,6 +119,7 @@ export default function AppLayout() {
     finPayroll: true,
     finLedgers: true,
     finReports: true,
+    assets: true,
   })
   const toggle = useCallback((id) => setGroups((g) => ({ ...g, [id]: !g[id] })), [])
 
@@ -247,6 +258,24 @@ export default function AppLayout() {
             </>
           )}
 
+          {can(role, 'assetView') && (
+            <>
+              <button className="nav-group-toggle" onClick={() => toggle('assets')}>
+                <Icon.monitor width={16} height={16} />
+                Asset Management
+                <span className={`arr${groups.assets ? ' open' : ''}`}>
+                  <Icon.chevron width={13} height={13} />
+                </span>
+              </button>
+              {groups.assets &&
+                ASSETS.map((it) => (
+                  <NavLink key={it.to} to={it.to} end={it.end} className="nav-item sub">
+                    <it.icon width={16} height={16} /> {it.label}
+                  </NavLink>
+                ))}
+            </>
+          )}
+
           {can(role, 'recycleBin') && (
             <NavLink to="/recycle-bin" className="nav-item">
               <Icon.trash width={17} height={17} />
@@ -329,7 +358,9 @@ function initials(name = '') {
 function Topbar({ onMenu }) {
   const { docs, currentUser, inAppNotifs, logout, markNotifRead, clearNotifs } = useApp()
   const { finDocs } = useFinance()
+  const { assets } = useAssets()
   const canFinance = can(currentUser.role, 'financeView')
+  const canAsset = can(currentUser.role, 'assetView')
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [showResults, setShowResults] = useState(false)
@@ -396,6 +427,20 @@ function Topbar({ onMenu }) {
     return g
   }, [finResults])
 
+  // Assets — searchable by ID, name, serial, brand/model or current holder.
+  const assetResults = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q || !canAsset) return []
+    return assets
+      .filter((a) =>
+        [a.assetId, a.name, a.serial, a.brand, a.model, custodianLabel(a)]
+          .map((x) => (x || '').toString().toLowerCase())
+          .join(' ')
+          .includes(q),
+      )
+      .slice(0, 15)
+  }, [query, assets, canAsset])
+
   // Notifications visible to this user: addressed to them or (admin-only) broadcasts.
   const myNotifs = useMemo(() => {
     const isAdmin = ['Super Admin', 'Admin'].includes(currentUser.role)
@@ -435,9 +480,9 @@ function Topbar({ onMenu }) {
         />
         {showResults && query.trim() && (
           <div className="search-results">
-            {results.length === 0 && finResults.length === 0 ? (
+            {results.length === 0 && finResults.length === 0 && assetResults.length === 0 ? (
               <div className="empty" style={{ padding: 24 }}>
-                No documents match “{query}”.
+                No matches for “{query}”.
               </div>
             ) : (
               <>
@@ -467,6 +512,19 @@ function Topbar({ onMenu }) {
                     ))}
                   </div>
                 ))}
+                {assetResults.length > 0 && (
+                  <div>
+                    <div className="search-group-label">Assets</div>
+                    {assetResults.map((a) => (
+                      <div key={a.id} className="search-result" onClick={() => { setQuery(''); setShowResults(false); navigate(`/assets/${a.id}`) }}>
+                        <span className="sr-num mono">{a.assetId}</span>
+                        <span className="muted">{a.name}</span>
+                        <span className="grow" />
+                        <span className="small">{custodianLabel(a)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </>
             )}
           </div>

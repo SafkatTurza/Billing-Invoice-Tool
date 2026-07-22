@@ -87,6 +87,11 @@ export default function Employees() {
                   </td>
                   <td className="text-right nowrap">
                     <div className="row gap-8" style={{ justifyContent: 'flex-end' }}>
+                      {can(currentUser.role, 'assetView') && (
+                        <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/assets/register?employeeId=${e.id}`)} title="Assigned assets / clearance">
+                          <Icon.monitor width={14} height={14} /> Assets
+                        </button>
+                      )}
                       <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/finance/employees/${e.id}/certificate`)} title="Salary Certificate">
                         <Icon.receipt width={14} height={14} /> Certificate
                       </button>

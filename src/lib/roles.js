@@ -39,6 +39,12 @@ const MATRIX = {
     financeFinalApprove: true, // management (CEO/MD) final signature
     manageFinanceMasters: true, // accounts, heads, templates
     financeReports: true,
+    // Asset Management
+    assetView: true,
+    assetManage: true, // register/assign/transfer/return/repair/damage
+    assetFinancials: true, // see & edit purchase / repair money fields
+    assetDispose: true, // disposal / write-off (terminal)
+    manageAssetCategories: true,
   },
   [ROLES.ADMIN]: {
     createInvoice: true,
@@ -70,6 +76,12 @@ const MATRIX = {
     financeFinalApprove: true, // management sign-off stays with Admin
     manageFinanceMasters: false, // masters are Super Admin only
     financeReports: true,
+    // Asset Management — Admin is management: full operational control + reports
+    assetView: true,
+    assetManage: true,
+    assetFinancials: true,
+    assetDispose: true,
+    manageAssetCategories: true,
   },
   [ROLES.ACCOUNTS]: {
     createInvoice: true,
@@ -98,6 +110,13 @@ const MATRIX = {
     financeFinalApprove: false, // cannot give management sign-off
     manageFinanceMasters: false,
     financeReports: true,
+    // Asset Management — Accounts owns purchase/financial data + operations,
+    // but not the terminal disposal/write-off sign-off.
+    assetView: true,
+    assetManage: true,
+    assetFinancials: true,
+    assetDispose: false,
+    manageAssetCategories: false,
   },
   [ROLES.BUSINESS]: {
     createInvoice: true,
@@ -126,6 +145,12 @@ const MATRIX = {
     financeFinalApprove: false,
     manageFinanceMasters: false,
     financeReports: false,
+    // Asset Management — hidden for Business Team by default
+    assetView: false,
+    assetManage: false,
+    assetFinancials: false,
+    assetDispose: false,
+    manageAssetCategories: false,
   },
 }
 

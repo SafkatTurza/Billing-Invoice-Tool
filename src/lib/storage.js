@@ -31,6 +31,10 @@ export const KEYS = {
   finRecurring: 'dcs_fin_recurring', // recurring expense/bill templates (Phase E)
   finSettings: 'dcs_fin_settings', // approval-workflow rules, e.g. routing threshold (Phase F)
   finLoans: 'dcs_fin_loans', // employee loans & advances (Phase H)
+  // ── Asset Management module ──
+  assets: 'dcs_assets', // one record per tracked asset (state + embedded lifecycle history)
+  assetCategories: 'dcs_asset_categories', // configurable category / subcategory tree
+  assetSettings: 'dcs_asset_settings', // ID counters, warranty warning window, saved views, seed flag
 }
 
 export const ls = {

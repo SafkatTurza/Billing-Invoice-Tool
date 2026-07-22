@@ -41,6 +41,10 @@ import Insights from './pages/finance/Insights.jsx'
 import Bills from './pages/finance/Bills.jsx'
 import Budgets from './pages/finance/Budgets.jsx'
 import Recurring from './pages/finance/Recurring.jsx'
+import AssetDashboard from './pages/assets/AssetDashboard.jsx'
+import AssetRegister from './pages/assets/AssetRegister.jsx'
+import AssetProfile from './pages/assets/AssetProfile.jsx'
+import AssetReports from './pages/assets/AssetReports.jsx'
 import { canAccessDocType, can } from './lib/roles.js'
 
 export default function App() {
@@ -149,6 +153,14 @@ function AppRoutes({ isSetupComplete, currentUser }) {
             <Route key={t + '-new'} path={`finance/${t}/new`} element={<FinanceDocEditor type={t} />} />,
             <Route key={t + '-edit'} path={`finance/${t}/:id/edit`} element={<FinanceDocEditor type={t} />} />,
           ]),
+        ]}
+
+        {/* Asset Management module — gated by assetView (SA / Admin / Accounts) */}
+        {can(role, 'assetView') && [
+          <Route key="asset-dash" path="assets" element={<AssetDashboard />} />,
+          <Route key="asset-reg" path="assets/register" element={<AssetRegister />} />,
+          <Route key="asset-reports" path="assets/reports" element={<AssetReports />} />,
+          <Route key="asset-profile" path="assets/:id" element={<AssetProfile />} />,
         ]}
 
         {can(role, 'auditLog') && <Route path="audit" element={<AuditLog />} />}
