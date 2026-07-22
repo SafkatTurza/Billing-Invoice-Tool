@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext.jsx'
 import { useFinance } from '../context/FinanceContext.jsx'
@@ -36,19 +36,70 @@ const FIN_PAYROLL = [
   { to: '/finance/salary-sheet', label: 'Salary Sheets', icon: Icon.wo },
   { to: '/finance/loans', label: 'Loans & Advances', icon: Icon.money },
 ]
-const FIN_REPORTS = [
-  { to: '/finance/budgets', label: 'Budgets', icon: Icon.estimate },
+// "Ledgers" (the books) split out from analytical reports so neither bucket
+// gets too long — one nesting level, no items moved out of Finance.
+const FIN_LEDGERS = [
   { to: '/finance/ledger', label: 'Ledger', icon: Icon.audit },
   { to: '/finance/gl', label: 'General Ledger', icon: Icon.audit },
+]
+const FIN_REPORTS = [
+  { to: '/finance/budgets', label: 'Budgets', icon: Icon.estimate },
   { to: '/finance/reports', label: 'Monthly Report', icon: Icon.estimate },
   { to: '/finance/statements', label: 'Financial Reports', icon: Icon.estimate },
   { to: '/finance/insights', label: 'Insights & Forecast', icon: Icon.monitor },
 ]
 
+// Each Finance sub-group paired with its collapse-state key — used to
+// force-expand the group that contains the active route.
+const FIN_GROUPS = [
+  ['finTxn', FIN_TRANSACTIONS],
+  ['finPayroll', FIN_PAYROLL],
+  ['finLedgers', FIN_LEDGERS],
+  ['finReports', FIN_REPORTS],
+]
+const pathInItems = (pathname, items) =>
+  items.some((it) => pathname === it.to || pathname.startsWith(it.to + '/'))
+
+// Hoisted to module scope on purpose. Defining these inside AppLayout made them
+// a new component type on every render, so React unmounted & remounted the nav
+// subtree on each navigation — which collapsed the scroll container and reset
+// the sidebar's scroll position. As stable types, navigation only patches the
+// active class in place and the scroll position is preserved for free.
+function NavDoc({ d, sub, role, counts }) {
+  if (!canAccessDocType(role, d.type)) return null
+  return (
+    <NavLink to={`/${d.type}`} className={`nav-item${sub ? ' sub' : ''}`}>
+      <d.icon width={17} height={17} />
+      {d.label}
+      {counts[d.type] ? <span className="count">{counts[d.type]}</span> : null}
+    </NavLink>
+  )
+}
+
+function FinSub({ id, label, items, open, onToggle }) {
+  return (
+    <>
+      <button className="nav-group-toggle sub" onClick={() => onToggle(id)}>
+        {label}
+        <span className={`arr${open ? ' open' : ''}`}>
+          <Icon.chevron width={12} height={12} />
+        </span>
+      </button>
+      {open &&
+        items.map((it) => (
+          <NavLink key={it.to} to={it.to} className="nav-item sub2">
+            <it.icon width={16} height={16} /> {it.label}
+          </NavLink>
+        ))}
+    </>
+  )
+}
+
 export default function AppLayout() {
   const { currentUser, docs } = useApp()
   const role = currentUser.role
   const location = useLocation()
+  const navScrollRef = useRef(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [groups, setGroups] = useState({
     sales: true,
@@ -56,14 +107,44 @@ export default function AppLayout() {
     finance: true,
     finTxn: true,
     finPayroll: true,
+    finLedgers: true,
     finReports: true,
   })
-  const toggle = (id) => setGroups((g) => ({ ...g, [id]: !g[id] }))
+  const toggle = useCallback((id) => setGroups((g) => ({ ...g, [id]: !g[id] })), [])
 
   // Close the mobile drawer whenever the route changes (a nav item was picked).
   useEffect(() => {
     setDrawerOpen(false)
   }, [location.pathname])
+
+  // Keep the Finance sub-group that owns the active route expanded (so it's
+  // visible on deep-link / refresh, and re-opens when navigating into it). Runs
+  // only on route change, so a user's manual collapse otherwise sticks.
+  useEffect(() => {
+    const hit = FIN_GROUPS.find(([, items]) => pathInItems(location.pathname, items))
+    if (hit) setGroups((g) => (g[hit[0]] && g.finance ? g : { ...g, finance: true, [hit[0]]: true }))
+  }, [location.pathname])
+
+  // Bring the active item into view *only if it isn't already visible*, and
+  // only within the sidebar's own scroll container — never the page. Used on
+  // first mount (deep-link / refresh) and when the mobile drawer opens, not on
+  // ordinary navigation, so an existing scroll position is preserved.
+  const ensureActiveVisible = useCallback(() => {
+    const c = navScrollRef.current
+    if (!c) return
+    const active = c.querySelector('.nav-item.active')
+    if (!active) return
+    const cRect = c.getBoundingClientRect()
+    const aRect = active.getBoundingClientRect()
+    if (aRect.top < cRect.top) c.scrollTop -= cRect.top - aRect.top + 8
+    else if (aRect.bottom > cRect.bottom) c.scrollTop += aRect.bottom - cRect.bottom + 8
+  }, [])
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { requestAnimationFrame(ensureActiveVisible) }, []) // once, on load
+  useEffect(() => {
+    if (drawerOpen) requestAnimationFrame(ensureActiveVisible)
+  }, [drawerOpen, ensureActiveVisible])
 
   // While the drawer is open: lock background scroll and close on Escape.
   useEffect(() => {
@@ -80,24 +161,6 @@ export default function AppLayout() {
     }
   }, [drawerOpen])
 
-  // A collapsible sub-group inside the Finance section.
-  const FinSub = ({ id, label, items }) => (
-    <>
-      <button className="nav-group-toggle sub" onClick={() => toggle(id)}>
-        {label}
-        <span className={`arr${groups[id] ? ' open' : ''}`}>
-          <Icon.chevron width={12} height={12} />
-        </span>
-      </button>
-      {groups[id] &&
-        items.map((it) => (
-          <NavLink key={it.to} to={it.to} className="nav-item sub2">
-            <it.icon width={16} height={16} /> {it.label}
-          </NavLink>
-        ))}
-    </>
-  )
-
   const liveDocs = docs.filter((d) => !d.deleted)
   const counts = useMemo(() => {
     const c = {}
@@ -106,15 +169,6 @@ export default function AppLayout() {
     }
     return c
   }, [liveDocs, currentUser])
-
-  const NavDoc = ({ d, sub }) =>
-    canAccessDocType(role, d.type) ? (
-      <NavLink to={`/${d.type}`} className={`nav-item${sub ? ' sub' : ''}`}>
-        <d.icon width={17} height={17} />
-        {d.label}
-        {counts[d.type] ? <span className="count">{counts[d.type]}</span> : null}
-      </NavLink>
-    ) : null
 
   const isBT = role === 'Business Team'
 
@@ -141,7 +195,7 @@ export default function AppLayout() {
           </button>
         </div>
 
-        <nav className="nav-scroll" onClick={(e) => { if (e.target.closest('a')) setDrawerOpen(false) }}>
+        <nav className="nav-scroll" ref={navScrollRef} onClick={(e) => { if (e.target.closest('a')) setDrawerOpen(false) }}>
           <NavLink to="/dashboard" className="nav-item">
             <Icon.dashboard width={17} height={17} />
             Dashboard
@@ -154,7 +208,7 @@ export default function AppLayout() {
               <Icon.chevron width={13} height={13} />
             </span>
           </button>
-          {groups.sales && SALES.map((d) => <NavDoc key={d.type} d={d} sub />)}
+          {groups.sales && SALES.map((d) => <NavDoc key={d.type} d={d} sub role={role} counts={counts} />)}
 
           {!isBT && (
             <>
@@ -165,8 +219,8 @@ export default function AppLayout() {
                   <Icon.chevron width={13} height={13} />
                 </span>
               </button>
-              {groups.purchases && PURCHASES.map((d) => <NavDoc key={d.type} d={d} sub />)}
-              <NavDoc d={{ type: 'money-receipt', label: 'Money Receipt', icon: Icon.receipt }} />
+              {groups.purchases && PURCHASES.map((d) => <NavDoc key={d.type} d={d} sub role={role} counts={counts} />)}
+              <NavDoc d={{ type: 'money-receipt', label: 'Money Receipt', icon: Icon.receipt }} role={role} counts={counts} />
             </>
           )}
 
@@ -184,9 +238,10 @@ export default function AppLayout() {
                   <NavLink to="/finance" end className="nav-item sub">
                     <Icon.dashboard width={16} height={16} /> Overview
                   </NavLink>
-                  <FinSub id="finTxn" label="Transactions" items={FIN_TRANSACTIONS} />
-                  <FinSub id="finPayroll" label="Payroll &amp; People" items={FIN_PAYROLL} />
-                  <FinSub id="finReports" label="Reports &amp; Analysis" items={FIN_REPORTS} />
+                  <FinSub id="finTxn" label="Transactions" items={FIN_TRANSACTIONS} open={groups.finTxn} onToggle={toggle} />
+                  <FinSub id="finPayroll" label="Payroll &amp; People" items={FIN_PAYROLL} open={groups.finPayroll} onToggle={toggle} />
+                  <FinSub id="finLedgers" label="Ledgers" items={FIN_LEDGERS} open={groups.finLedgers} onToggle={toggle} />
+                  <FinSub id="finReports" label="Reports &amp; Analysis" items={FIN_REPORTS} open={groups.finReports} onToggle={toggle} />
                 </>
               )}
             </>

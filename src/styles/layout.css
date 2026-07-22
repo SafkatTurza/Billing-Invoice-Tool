@@ -46,6 +46,30 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  /* A scrollbar that clearly belongs to the sidebar — a slate thumb on a dark
+     track, distinct from the light OS scrollbar of the main content, warming
+     to gold on hover (Paynox Premium Fintech). Firefox: */
+  scrollbar-width: thin;
+  scrollbar-color: #4f6d7a rgba(0, 0, 0, 0.22);
+}
+/* Chromium / Edge / Safari — the 8px thumb sits inside the 12px right padding,
+   so it never overlaps menu text or icons. */
+.nav-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.nav-scroll::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.22);
+  border-radius: 8px;
+}
+.nav-scroll::-webkit-scrollbar-thumb {
+  background: #4f6d7a;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.nav-scroll::-webkit-scrollbar-thumb:hover {
+  background: #d4a72c;
+  background-clip: padding-box;
 }
 
 /* Drawer controls — hidden on desktop, revealed at the mobile breakpoint. */
