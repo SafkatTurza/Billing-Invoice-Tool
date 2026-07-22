@@ -7,13 +7,13 @@ import { Icon } from '../components/Icons.jsx'
 import StatusBadge from '../components/StatusBadge.jsx'
 import '../styles/dashboard.css'
 
-// Count-card icon chips use one consistent brand slate rather than four
+// Count-card icon chips use one consistent brand blue rather than four
 // competing colors — the number and label carry the meaning, not a rainbow.
 const CARD_META = [
-  { type: 'invoices', label: 'Invoices', icon: Icon.invoice, color: 'var(--brand-slate)' },
-  { type: 'estimates', label: 'Estimates', icon: Icon.estimate, color: 'var(--brand-slate)' },
-  { type: 'purchase-orders', label: 'Purchase Orders', icon: Icon.po, color: 'var(--brand-slate)' },
-  { type: 'money-receipt', label: 'Money Receipts', icon: Icon.receipt, color: 'var(--brand-slate)' },
+  { type: 'invoices', label: 'Invoices', icon: Icon.invoice, color: 'var(--brand-blue)' },
+  { type: 'estimates', label: 'Estimates', icon: Icon.estimate, color: 'var(--brand-blue)' },
+  { type: 'purchase-orders', label: 'Purchase Orders', icon: Icon.po, color: 'var(--brand-blue)' },
+  { type: 'money-receipt', label: 'Money Receipts', icon: Icon.receipt, color: 'var(--brand-blue)' },
 ]
 
 const QUICK = [

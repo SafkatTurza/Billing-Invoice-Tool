@@ -21,7 +21,7 @@ import '../../styles/finance.css'
 
 const GREEN = '#059669'
 const RED = '#dc2626'
-const NAVY = '#4A4A4A' // Paynox charcoal — strong, on-brand data line
+const NAVY = '#2323FF' // Paynox brand blue — strong, on-brand data line
 const BLUE = '#2563eb'
 
 export default function Insights() {

@@ -12,7 +12,7 @@
   font-size: 13px;
   transition: border-color 0.12s, background 0.12s;
 }
-.attach-drop:hover { border-color: var(--brand-slate); background: var(--brand-slate-100); }
+.attach-drop:hover { border-color: var(--brand-blue); background: var(--brand-blue-100); }
 .attach-list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
 .attach-item {
   display: flex;
@@ -47,7 +47,7 @@
   background: #fff;
 }
 .appr-slot.signed { border-color: #b7ebd8; background: #f4fdf9; }
-.appr-slot.next { border-color: var(--brand-slate); box-shadow: 0 0 0 3px rgba(109, 129, 150, 0.2); }
+.appr-slot.next { border-color: var(--brand-blue); box-shadow: 0 0 0 3px rgba(35, 35, 255, 0.2); }
 .appr-slot .appr-role { font-weight: 700; font-size: 13px; color: var(--brand-dark); min-width: 190px; }
 .appr-slot .appr-role .mgmt { color: var(--amber); font-size: 11px; font-weight: 700; display: block; }
 .appr-sig-img { height: 40px; max-width: 150px; object-fit: contain; }
@@ -216,7 +216,7 @@
 .head-bar-row { display: grid; grid-template-columns: 150px 1fr auto; align-items: center; gap: 12px; }
 .hb-label { font-size: 13px; color: var(--text-primary); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hb-track { background: #eef1f6; border-radius: 6px; height: 14px; overflow: hidden; }
-.hb-fill { height: 100%; background: linear-gradient(90deg, var(--brand-primary), var(--brand-slate-300)); border-radius: 6px; }
+.hb-fill { height: 100%; background: linear-gradient(90deg, var(--brand-primary), var(--brand-blue-300)); border-radius: 6px; }
 .hb-val { font-size: 12px; font-weight: 700; color: var(--text-muted); white-space: nowrap; }
 
 /* Forecast summary */

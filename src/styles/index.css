@@ -1,43 +1,53 @@
 :root {
   /* ── Paynox brand ramp (raw) ─────────────────────────────────
-     Charcoal = structural dark, Slate = interactive, Gold = premium
-     accent (10%). Ivory/light-gold = selective highlight surfaces.
-     Components reference the *role* tokens below, not these raw hex. */
-  --brand-charcoal: #4a4a4a;
-  --brand-charcoal-700: #3a3a3a;
-  --brand-charcoal-800: #2f2f2f;
-  --brand-slate: #6d8196;       /* active states, large/bold interactive */
-  --brand-slate-600: #5b6e82;   /* button fills + normal-size link text (a11y) */
-  --brand-slate-700: #4e5f71;   /* hover/active */
-  --brand-slate-300: #8a9bad;   /* light slate tint (gradient ends, accents) */
-  --brand-slate-100: #eef1f4;   /* soft slate tint (selected rows, icon chips) */
+     High-energy palette: electric Blue = primary + structural,
+     Olive = secondary/neutral accent, Amber + Yellow = premium
+     highlights (~10%). Components reference the *role* tokens below,
+     not these raw hex. Deepened blue shades keep large fills readable. */
+  --brand-blue: #2323ff;        /* active states, links, large interactive */
+  --brand-blue-600: #1d1de0;    /* button fills (white text ≥8:1) */
+  --brand-blue-700: #1717b8;    /* hover / pressed */
+  --brand-blue-900: #17177a;    /* structural: sidebar, strong headings */
+  --brand-blue-300: #9a9aff;    /* light tint (gradient ends, accents) */
+  --brand-blue-100: #ececff;    /* soft tint (selected rows, icon chips) */
+
+  --brand-olive: #807d52;       /* secondary / neutral accent */
+  --brand-olive-dark: #5f5d3c;
+  --brand-olive-text: #5c5a38;  /* olive at text size passes AA on white */
+  --brand-olive-light: #edecdf;
+
+  --brand-amber: #ffbd24;       /* premium accent */
+  --brand-amber-dark: #c88f12;
+  --brand-amber-text: #8a6410;  /* amber at text size passes AA on white */
+  --brand-amber-light: #fff1cf;
+
+  --brand-yellow: #fff224;      /* selective highlight chips (dark text only) */
+  --brand-yellow-light: #fff8bf;
+
+  --brand-ink: #16162e;         /* deepest ink — logo letter on light mark */
   --brand-gray: #cbcbcb;
-  --brand-ivory: #ffffe3;
-  --brand-gold: #c6a15b;
-  --brand-gold-dark: #9b7b3d;
-  --brand-gold-text: #7a612e;   /* gold at normal text size passes AA */
-  --brand-gold-light: #f5ecd8;
 
   /* ── Semantic role tokens (what components use) ──────────────── */
   --background-primary: #ffffff;
-  --background-secondary: #f6f6f4; /* warm-neutral workspace */
+  --background-secondary: #f4f5f8; /* cool-neutral workspace to complement blue */
   --surface-primary: #ffffff;
-  --surface-highlight: var(--brand-ivory);
-  --surface-premium: var(--brand-gold-light);
+  --surface-highlight: var(--brand-yellow-light);
+  --surface-premium: var(--brand-amber-light);
 
-  --text-primary: #3d3d3d;
-  --text-secondary: #5b6e82;
-  --text-muted: #7b8494;
-  --text-faint: #9aa1b1;
+  --text-primary: #33333a;
+  --text-secondary: #4c4c5a;
+  --text-muted: #767683;
+  --text-faint: #9a9aa6;
 
-  --border-primary: #e4e4e1;
+  --border-primary: #e5e5ea;
   --border-secondary: var(--brand-gray);
 
-  --brand-dark: var(--brand-charcoal);           /* sidebar, strong headings */
-  --brand-primary: var(--brand-slate);           /* active nav/tabs, large links */
-  --brand-primary-strong: var(--brand-slate-600); /* button fills, small link text */
-  --brand-primary-hover: var(--brand-slate-700);
-  --accent-gold: var(--brand-gold);
+  --brand-dark: var(--brand-blue-900);            /* sidebar, strong headings */
+  --brand-primary: var(--brand-blue);             /* active nav/tabs, large links */
+  --brand-primary-strong: var(--brand-blue-600);  /* button fills, small link text */
+  --brand-primary-hover: var(--brand-blue-700);
+  --brand-secondary: var(--brand-olive);          /* secondary accent */
+  --accent-gold: var(--brand-amber);
 
   /* ── Semantic status (kept separate from brand) ──────────────── */
   --green: #16a34a;
@@ -135,11 +145,11 @@ textarea {
 /* Secondary/outline button: slate text + border on white */
 .btn-secondary {
   background: #fff;
-  border-color: var(--brand-slate);
+  border-color: var(--brand-blue);
   color: var(--brand-primary-strong);
 }
 .btn-secondary:hover:not(:disabled) {
-  background: var(--brand-slate-100);
+  background: var(--brand-blue-100);
 }
 .btn-ghost {
   background: transparent;
@@ -147,15 +157,23 @@ textarea {
   color: var(--text-primary);
 }
 .btn-ghost:hover:not(:disabled) {
-  background: var(--brand-slate-100);
+  background: var(--brand-blue-100);
 }
-/* Premium gold action — reserved for high-value/premium CTAs only */
-.btn-gold {
-  background: var(--brand-gold);
+/* Olive secondary accent action */
+.btn-olive {
+  background: var(--brand-olive);
   color: #fff;
 }
+.btn-olive:hover:not(:disabled) {
+  background: var(--brand-olive-dark);
+}
+/* Premium amber action — reserved for high-value/premium CTAs only */
+.btn-gold {
+  background: var(--brand-amber);
+  color: var(--brand-ink);
+}
 .btn-gold:hover:not(:disabled) {
-  background: var(--brand-gold-dark);
+  background: var(--brand-amber-dark);
 }
 .btn-danger {
   background: #fff;
@@ -199,8 +217,8 @@ textarea {
 .input:focus,
 .select:focus,
 .textarea:focus {
-  border-color: var(--brand-slate);
-  box-shadow: 0 0 0 3px rgba(109, 129, 150, 0.22);
+  border-color: var(--brand-blue);
+  box-shadow: 0 0 0 3px rgba(35, 35, 255, 0.2);
 }
 .input:disabled {
   background: #f4f5f8;
@@ -266,9 +284,10 @@ textarea {
 .badge-green { background: #e3f6ec; color: var(--green); }
 .badge-amber { background: #fdf0dd; color: var(--amber); }
 .badge-red { background: #fce8e8; color: var(--red); }
-.badge-teal { background: var(--brand-slate-100); color: var(--brand-primary-strong); }
-.badge-slate { background: var(--brand-slate-100); color: var(--brand-primary-strong); }
-.badge-gold { background: var(--brand-gold-light); color: var(--brand-gold-text); }
+.badge-teal { background: var(--brand-blue-100); color: var(--brand-primary-strong); }
+.badge-slate { background: var(--brand-blue-100); color: var(--brand-primary-strong); }
+.badge-olive { background: var(--brand-olive-light); color: var(--brand-olive-text); }
+.badge-gold { background: var(--brand-amber-light); color: var(--brand-amber-text); }
 .badge-purple { background: #efe7fd; color: #7c3aed; }
 
 /* Budget utilisation bar (Phase E) */

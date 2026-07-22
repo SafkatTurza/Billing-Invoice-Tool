@@ -25,11 +25,11 @@
   width: 38px;
   height: 38px;
   border-radius: 9px;
-  background: var(--brand-gold);
+  background: var(--brand-amber);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--brand-charcoal-800);
+  color: var(--brand-ink);
   font-weight: 800;
   font-size: 17px;
   flex-shrink: 0;
@@ -66,7 +66,7 @@
   color: var(--text-primary);
   flex-shrink: 0;
 }
-.nav-menu-btn:hover { background: var(--brand-slate-100); }
+.nav-menu-btn:hover { background: var(--brand-blue-100); }
 .drawer-close {
   width: 32px;
   height: 32px;
@@ -216,7 +216,7 @@
   outline: none;
 }
 .global-search input:focus {
-  border-color: var(--brand-slate);
+  border-color: var(--brand-blue);
   background: #fff;
 }
 

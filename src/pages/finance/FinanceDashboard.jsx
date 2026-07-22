@@ -134,7 +134,7 @@ export default function FinanceDashboard() {
         </div>
         <div className="fin-kpi">
           <div className="k-label">Cash & Bank</div>
-          <div className="k-val" style={{ color: 'var(--brand-slate-600)', fontSize: 18 }}>
+          <div className="k-val" style={{ color: 'var(--brand-blue-600)', fontSize: 18 }}>
             {balances.length === 0 ? (
               <span className="muted">—</span>
             ) : (
