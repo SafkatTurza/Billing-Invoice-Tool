@@ -232,3 +232,20 @@
   .chart-wrap { overflow: visible; }
   .head-bar-row { grid-template-columns: 150px 1fr auto; }
 }
+
+/* ── Responsive: finance screens ─────────────────────────────
+   Voucher signatory row reflows without dropping any signatory. The
+   desktop layout keeps its inline repeat(N,1fr); these overrides only
+   apply on small screens (A4 print at ~794px never triggers them). */
+@media (max-width: 768px) {
+  .fin-sign-row { grid-template-columns: repeat(2, 1fr) !important; gap: 18px; }
+  .fin-paper { padding: 22px 18px; }
+  .appr-slot { flex-wrap: wrap; }
+  .appr-slot .appr-role { min-width: 130px; }
+  .head-bar-row { grid-template-columns: 100px 1fr auto; gap: 8px; }
+  .voucher-accounts-line { flex-direction: column; gap: 4px; }
+}
+@media (max-width: 480px) {
+  .fin-sign-row { grid-template-columns: 1fr !important; }
+  .fin-letterhead { flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+}

@@ -173,7 +173,7 @@ export default function SalarySheetPreview() {
           {MONTHS[(doc.month || 1) - 1]} {doc.year}
         </div>
 
-        <table className="fin-table">
+        <div className="table-scroll"><table className="fin-table">
           <thead>
             <tr>
               <th style={{ width: 30 }}>SL</th>
@@ -229,7 +229,7 @@ export default function SalarySheetPreview() {
               <td></td>
             </tr>
           </tfoot>
-        </table>
+        </table></div>
 
         <div className="fin-sign-row" style={{ gridTemplateColumns: `repeat(${doc.signSlots.length}, 1fr)` }}>
           {doc.signSlots.map((s, i) => (

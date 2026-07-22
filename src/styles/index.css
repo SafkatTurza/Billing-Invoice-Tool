@@ -349,8 +349,7 @@ textarea {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
-.table-scroll > .table,
-.table-scroll > table { min-width: 640px; }
+.table-scroll > .table { min-width: 640px; }
 
 /* Grid reflow across breakpoints */
 @media (max-width: 1024px) {

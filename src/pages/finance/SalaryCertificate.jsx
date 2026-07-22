@@ -107,7 +107,7 @@ export default function SalaryCertificate() {
           {' '}The employee currently draws a monthly net remuneration of <b>{formatMoney(grossMonthly, cur)}</b>, detailed below.
         </p>
 
-        <table className="fin-table" style={{ maxWidth: 420 }}>
+        <div className="table-scroll"><table className="fin-table" style={{ maxWidth: 420 }}>
           <thead>
             <tr>
               <th>Component</th>
@@ -128,7 +128,7 @@ export default function SalaryCertificate() {
               <td className="num">{formatMoney(grossMonthly, cur)}</td>
             </tr>
           </tfoot>
-        </table>
+        </table></div>
 
         {ytd.totals.months > 0 && (
           <p style={{ marginTop: 14 }}>

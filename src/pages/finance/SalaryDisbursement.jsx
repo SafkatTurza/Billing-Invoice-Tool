@@ -69,7 +69,7 @@ export default function SalaryDisbursement() {
         <div className="voucher-row"><span className="vr-label">Against sheet:</span><span className="vr-fill mono">{doc.docNumber}</span></div>
         <div className="voucher-row"><span className="vr-label">Payment method:</span><span className="vr-fill">Bank Transfer</span></div>
 
-        <table className="fin-table">
+        <div className="table-scroll"><table className="fin-table">
           <thead>
             <tr>
               <th style={{ width: 30 }}>SL</th>
@@ -99,7 +99,7 @@ export default function SalaryDisbursement() {
               <td className="num">{formatMoney(totals.net, doc.currency)}</td>
             </tr>
           </tfoot>
-        </table>
+        </table></div>
 
         <div className="fin-sign-row" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
           <div className="fin-sign"><div style={{ height: 44 }} /><div className="fs-line">Prepared By</div></div>

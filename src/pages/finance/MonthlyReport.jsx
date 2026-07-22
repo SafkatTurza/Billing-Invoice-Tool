@@ -92,7 +92,7 @@ export default function MonthlyReport() {
         {approved.length === 0 ? (
           <div className="empty">No approved expenses for this month.</div>
         ) : (
-          <table className="fin-table">
+          <div className="table-scroll"><table className="fin-table">
             <thead>
               <tr>
                 <th style={{ width: 34 }}>SL</th>
@@ -123,7 +123,7 @@ export default function MonthlyReport() {
                 </tr>
               ))}
             </tfoot>
-          </table>
+          </table></div>
         )}
       </div>
 

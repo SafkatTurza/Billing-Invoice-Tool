@@ -143,10 +143,10 @@
 .milestone-status.exact { background: #e6f6ec; color: var(--green); }
 
 .words-box {
-  border: 1px solid var(--border);
+  border: 1px solid var(--brand-gold-light);
   border-radius: 8px;
   padding: 11px 14px;
-  background: #fafbfc;
+  background: var(--surface-highlight);
   font-style: italic;
 }
 

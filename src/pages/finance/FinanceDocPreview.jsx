@@ -270,7 +270,7 @@ function RequisitionPaper({ doc, company }) {
   return (
     <div>
       <Letterhead company={company} title="Office Requisition" refId={doc.docNumber} date={doc.date} />
-      <table className="fin-table">
+      <div className="table-scroll"><table className="fin-table">
         <thead>
           <tr>
             <th style={{ width: 34 }}>No.</th>
@@ -302,7 +302,7 @@ function RequisitionPaper({ doc, company }) {
             <td></td>
           </tr>
         </tfoot>
-      </table>
+      </table></div>
       <SignRow slots={doc.signSlots} />
       {company.address && <div style={{ textAlign: 'center', fontSize: 11, color: '#64748b', marginTop: 22 }}>{company.address}</div>}
     </div>
@@ -418,7 +418,7 @@ function VoucherPaper({ doc, company }) {
 
       {/* Optional per-head breakdown */}
       {lines.length > 0 && (
-        <table className="fin-table" style={{ marginTop: 12 }}>
+        <div className="table-scroll"><table className="fin-table" style={{ marginTop: 12 }}>
           <thead>
             <tr>
               <th style={{ width: 34 }}>No.</th>
@@ -437,7 +437,7 @@ function VoucherPaper({ doc, company }) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       )}
 
       <div className="voucher-row" style={{ marginTop: 12 }}>
