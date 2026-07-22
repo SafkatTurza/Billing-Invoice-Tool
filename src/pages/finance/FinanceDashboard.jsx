@@ -180,7 +180,7 @@ export default function FinanceDashboard() {
           {byHead.length === 0 ? (
             <div className="empty">No approved expenses this month.</div>
           ) : (
-            <table className="table">
+            <div className="table-scroll"><table className="table">
               <tbody>
                 {byHead.map(([name, amt]) => (
                   <tr key={name}>
@@ -189,7 +189,7 @@ export default function FinanceDashboard() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           )}
         </div>
 
@@ -200,7 +200,7 @@ export default function FinanceDashboard() {
           {recent.length === 0 ? (
             <div className="empty">No transactions yet.</div>
           ) : (
-            <table className="table">
+            <div className="table-scroll"><table className="table">
               <tbody>
                 {recent.map((t) => (
                   <tr key={t.id}>
@@ -212,7 +212,7 @@ export default function FinanceDashboard() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           )}
         </div>
       </div>

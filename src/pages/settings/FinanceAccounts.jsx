@@ -49,7 +49,7 @@ export default function FinanceAccounts() {
       {accounts.length === 0 ? (
         <div className="empty">No accounts yet.</div>
       ) : (
-        <table className="table">
+        <div className="table-scroll"><table className="table">
           <thead>
             <tr>
               <th>Account</th>
@@ -86,7 +86,7 @@ export default function FinanceAccounts() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       )}
 
       {editing && (

@@ -69,7 +69,7 @@ export default function DailyExpenses() {
         {rows.length === 0 ? (
           <div className="empty">No daily expenses recorded yet.</div>
         ) : (
-          <table className="table">
+          <div className="table-scroll"><table className="table">
             <thead>
               <tr>
                 <th>Number</th>
@@ -106,7 +106,7 @@ export default function DailyExpenses() {
                 )
               })}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
 

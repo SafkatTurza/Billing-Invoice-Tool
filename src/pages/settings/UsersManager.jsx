@@ -87,7 +87,7 @@ export default function UsersManager() {
 
       <div className="divider" />
 
-      <table className="table">
+      <div className="table-scroll"><table className="table">
         <thead>
           <tr>
             <th>Name</th>
@@ -149,7 +149,7 @@ export default function UsersManager() {
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
 
       {showAdd && (
         <Modal

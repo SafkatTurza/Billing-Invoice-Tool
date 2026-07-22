@@ -220,3 +220,16 @@
   padding: 14px;
   background: #fafbfc;
 }
+
+/* ── Responsive: editors ─────────────────────────────────────── */
+@media (max-width: 768px) {
+  .editor-head { flex-direction: column; align-items: stretch; gap: 12px; }
+  .totals-box { max-width: none; margin-left: 0; }
+}
+/* Line-item tables keep column alignment and scroll inside their wrapper. */
+.items-table-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.items-table-scroll .items-table { min-width: 560px; }
+@media (max-width: 600px) {
+  .form-section { padding: 16px; }
+  .lock-actions .btn { flex: 1 1 auto; }
+}

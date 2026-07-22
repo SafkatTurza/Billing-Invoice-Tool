@@ -58,7 +58,7 @@ export default function Loans() {
         {rows.length === 0 ? (
           <div className="empty">No {showSettled ? '' : 'active '}loans or advances.</div>
         ) : (
-          <table className="table">
+          <div className="table-scroll"><table className="table">
             <thead>
               <tr>
                 <th>Employee</th>
@@ -96,7 +96,7 @@ export default function Loans() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
 

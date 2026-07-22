@@ -117,7 +117,7 @@ export default function FinanceDocList({ type }) {
             )}
           </div>
         ) : (
-          <table className="table">
+          <div className="table-scroll"><table className="table">
             <thead>
               <tr>
                 <th>Number</th>
@@ -179,7 +179,7 @@ export default function FinanceDocList({ type }) {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
     </div>

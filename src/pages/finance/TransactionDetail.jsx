@@ -74,7 +74,7 @@ export default function TransactionDetail() {
                 <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Primary Transaction</h3>
                 <p className="small muted" style={{ margin: '4px 0 0' }}>This document records the financial transaction to the ledger.</p>
               </div>
-              <table className="table">
+              <div className="table-scroll"><table className="table">
                 <thead>
                   <tr>
                     <th>Number</th>
@@ -89,7 +89,7 @@ export default function TransactionDetail() {
                 <tbody>
                   <DocRow d={primary} onView={goDoc} />
                 </tbody>
-              </table>
+              </table></div>
             </div>
           )}
 
@@ -100,7 +100,7 @@ export default function TransactionDetail() {
                 <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Linked / Internal Records</h3>
                 <p className="small muted" style={{ margin: '4px 0 0' }}>Documentation only — these add no further ledger impact.</p>
               </div>
-              <table className="table">
+              <div className="table-scroll"><table className="table">
                 <thead>
                   <tr>
                     <th>Number</th>
@@ -117,7 +117,7 @@ export default function TransactionDetail() {
                     <DocRow key={d.id} d={d} onView={goDoc} linked />
                   ))}
                 </tbody>
-              </table>
+              </table></div>
             </div>
           )}
 
@@ -129,7 +129,7 @@ export default function TransactionDetail() {
             {txns.length === 0 ? (
               <div className="empty">No posted ledger entries for this transaction yet.</div>
             ) : (
-              <table className="table">
+              <div className="table-scroll"><table className="table">
                 <thead>
                   <tr>
                     <th>Date</th>
@@ -150,7 +150,7 @@ export default function TransactionDetail() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
             )}
           </div>
         </>

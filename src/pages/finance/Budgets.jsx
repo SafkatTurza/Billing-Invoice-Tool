@@ -81,7 +81,7 @@ export default function Budgets() {
       </p>
 
       <div className="card mt-24">
-        <table className="table">
+        <div className="table-scroll"><table className="table">
           <thead>
             <tr>
               <th>Expense Head</th>
@@ -162,7 +162,7 @@ export default function Budgets() {
               </tr>
             </tfoot>
           )}
-        </table>
+        </table></div>
       </div>
 
       <p className="small muted mt-16">

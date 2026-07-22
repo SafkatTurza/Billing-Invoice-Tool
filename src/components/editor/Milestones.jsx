@@ -28,6 +28,7 @@ export default function Milestones({ doc, patch }) {
         </button>
       </h3>
 
+      <div style={{ overflowX: 'auto' }}>
       <table className="items-table">
         <thead>
           <tr>
@@ -71,6 +72,7 @@ export default function Milestones({ doc, patch }) {
           ))}
         </tbody>
       </table>
+      </div>
 
       <div className="mt-16">
         <span className={`milestone-status ${state}`}>

@@ -34,7 +34,7 @@ export default function RecycleBin() {
         {deleted.length === 0 ? (
           <div className="empty">Recycle Bin is empty.</div>
         ) : (
-          <table className="table">
+          <div className="table-scroll"><table className="table">
             <thead>
               <tr>
                 <th>Number</th>
@@ -89,7 +89,7 @@ export default function RecycleBin() {
                 )
               })}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
 
@@ -98,7 +98,7 @@ export default function RecycleBin() {
         <>
           <h3 className="section-title mt-24" style={{ fontSize: 15, color: 'var(--navy)' }}>Finance Documents</h3>
           <div className="card mt-16">
-            <table className="table">
+            <div className="table-scroll"><table className="table">
               <thead>
                 <tr>
                   <th>Number</th>
@@ -153,7 +153,7 @@ export default function RecycleBin() {
                   )
                 })}
               </tbody>
-            </table>
+            </table></div>
           </div>
         </>
       )}

@@ -93,7 +93,7 @@ export default function Recurring() {
         {rows.length === 0 ? (
           <div className="empty">No recurring entries yet.</div>
         ) : (
-          <table className="table">
+          <div className="table-scroll"><table className="table">
             <thead>
               <tr>
                 <th>Name</th>
@@ -161,7 +161,7 @@ export default function Recurring() {
                 )
               })}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
 

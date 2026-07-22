@@ -151,7 +151,7 @@ export default function Ledger() {
         {rows.length === 0 ? (
           <div className="empty">No transactions{filtersOn ? ' match these filters' : ' yet. Approved vouchers and recorded expenses appear here'}.</div>
         ) : (
-          <table className="table">
+          <div className="table-scroll"><table className="table">
             <thead>
               <tr>
                 <th>Date</th>
@@ -188,7 +188,7 @@ export default function Ledger() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
 

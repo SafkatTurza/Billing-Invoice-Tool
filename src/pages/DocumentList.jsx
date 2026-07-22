@@ -110,7 +110,7 @@ export default function DocumentList({ type }) {
             </a>
           </div>
         ) : (
-          <table className="table">
+          <div className="table-scroll"><table className="table">
             <thead>
               <tr>
                 <th>Number</th>
@@ -159,7 +159,7 @@ export default function DocumentList({ type }) {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
     </div>

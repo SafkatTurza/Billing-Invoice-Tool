@@ -36,7 +36,7 @@ export default function AuditLog() {
         {filtered.length === 0 ? (
           <div className="empty">No audit entries.</div>
         ) : (
-          <table className="table">
+          <div className="table-scroll"><table className="table">
             <thead>
               <tr>
                 <th>Timestamp</th>
@@ -57,7 +57,7 @@ export default function AuditLog() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
     </div>

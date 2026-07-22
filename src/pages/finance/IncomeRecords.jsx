@@ -83,7 +83,7 @@ export default function IncomeRecords() {
         {rows.length === 0 ? (
           <div className="empty">No income or investment recorded yet.</div>
         ) : (
-          <table className="table">
+          <div className="table-scroll"><table className="table">
             <thead>
               <tr>
                 <th>Number</th>
@@ -131,7 +131,7 @@ export default function IncomeRecords() {
                 )
               })}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
 

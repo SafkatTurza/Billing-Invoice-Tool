@@ -126,7 +126,7 @@ export default function SalarySheetPreview() {
               </button>
             </div>
           </div>
-          <table className="table">
+          <div className="table-scroll"><table className="table">
             <thead>
               <tr>
                 <th>Employee</th>
@@ -147,7 +147,7 @@ export default function SalarySheetPreview() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </div>
       )}
 

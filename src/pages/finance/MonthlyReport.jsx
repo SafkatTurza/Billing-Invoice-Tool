@@ -137,7 +137,7 @@ export default function MonthlyReport() {
         {pending.length === 0 ? (
           <div className="empty">Nothing awaiting approval this month.</div>
         ) : (
-          <table className="table">
+          <div className="table-scroll"><table className="table">
             <thead>
               <tr>
                 <th>Number</th>
@@ -158,7 +158,7 @@ export default function MonthlyReport() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
     </div>

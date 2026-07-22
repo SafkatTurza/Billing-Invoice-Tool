@@ -62,7 +62,7 @@ export default function Employees() {
         {employees.length === 0 ? (
           <div className="empty">No employees yet.</div>
         ) : (
-          <table className="table">
+          <div className="table-scroll"><table className="table">
             <thead>
               <tr>
                 <th>ID</th>
@@ -103,7 +103,7 @@ export default function Employees() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
 

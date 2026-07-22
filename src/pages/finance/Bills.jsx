@@ -160,7 +160,7 @@ export default function Bills() {
         {rows.length === 0 ? (
           <div className="empty">No bills{statusFilter !== 'all' ? ' match this filter' : ' recorded yet'}.</div>
         ) : (
-          <table className="table">
+          <div className="table-scroll"><table className="table">
             <thead>
               <tr>
                 <th>Number</th>
@@ -215,7 +215,7 @@ export default function Bills() {
                 )
               })}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
 

@@ -188,7 +188,7 @@ export default function Dashboard() {
         {recent.length === 0 ? (
           <div className="empty">No documents yet. Use Quick Create to get started.</div>
         ) : (
-          <table className="table">
+          <div className="table-scroll"><table className="table">
             <thead>
               <tr>
                 <th>Number</th>
@@ -211,7 +211,7 @@ export default function Dashboard() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
     </div>
