@@ -26,9 +26,16 @@ export function useFinance() {
   return ctx
 }
 
-// Default chart of heads + one cash account, seeded on first run.
+// Default chart of heads + cash/bank/MFS accounts, seeded on first run.
+// All fully editable under Settings → Finance Accounts.
 const DEFAULT_HEADS = [
-  { id: 'h-income', name: 'Sales / Service Income', kind: 'income' },
+  { id: 'h-income', name: 'Sales Income', kind: 'income' },
+  { id: 'h-service', name: 'Service Income', kind: 'income' },
+  { id: 'h-consulting', name: 'Consulting / Professional Fees', kind: 'income' },
+  { id: 'h-rental', name: 'Rental Income', kind: 'income' },
+  { id: 'h-interest', name: 'Interest Income', kind: 'income' },
+  { id: 'h-commission', name: 'Commission Income', kind: 'income' },
+  { id: 'h-other-income', name: 'Other Income', kind: 'income' },
   { id: 'h-invest', name: 'Investment / Capital', kind: 'investment' },
   { id: 'h-operational', name: 'Operational Expense', kind: 'expense' },
   { id: 'h-admin', name: 'Administrative Expense', kind: 'expense' },
@@ -40,6 +47,9 @@ const DEFAULT_HEADS = [
 ]
 const DEFAULT_ACCOUNTS = [
   { id: 'a-cash', name: 'Cash in Hand', type: 'Cash', currency: 'BDT', openingBalance: 0 },
+  { id: 'a-bank', name: 'Bank Account — Current', type: 'Bank', currency: 'BDT', openingBalance: 0 },
+  { id: 'a-bkash', name: 'bKash', type: 'MFS (bKash/Nagad)', currency: 'BDT', openingBalance: 0 },
+  { id: 'a-nagad', name: 'Nagad', type: 'MFS (bKash/Nagad)', currency: 'BDT', openingBalance: 0 },
 ]
 
 export function FinanceProvider({ children }) {
@@ -88,6 +98,31 @@ export function FinanceProvider({ children }) {
   }, [finSettings])
 
   const saveFinSettings = useCallback((patch) => setFinSettings((prev) => ({ ...prev, ...patch })), [])
+
+  // One-time backfill: widen the seeded chart of accounts & income heads for
+  // installs created before these defaults existed. Adds only entries that are
+  // missing (matched by id), so anything the user created or deleted is left
+  // untouched; and renames a still-default "Sales / Service Income" head to the
+  // split "Sales Income" only when it was never customised. Guarded by a flag
+  // so it runs exactly once and is safe to re-invoke.
+  useEffect(() => {
+    if (finSettings.masterSeedV2) return
+    setAccounts((prev) => {
+      const have = new Set(prev.map((a) => a.id))
+      const add = DEFAULT_ACCOUNTS.filter((a) => !have.has(a.id))
+      return add.length ? [...prev, ...add] : prev
+    })
+    setHeads((prev) => {
+      const have = new Set(prev.map((h) => h.id))
+      const add = DEFAULT_HEADS.filter((h) => !have.has(h.id))
+      const next = add.length ? [...prev, ...add] : prev
+      return next.map((h) =>
+        h.id === 'h-income' && h.name === 'Sales / Service Income' ? { ...h, name: 'Sales Income' } : h,
+      )
+    })
+    saveFinSettings({ masterSeedV2: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // ── Masters ──
   const saveAccount = useCallback((acc) => {
