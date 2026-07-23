@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext.jsx'
 import { useFinance } from '../context/FinanceContext.jsx'
 import { useAssets } from '../context/AssetContext.jsx'
 import { custodianLabel } from '../lib/assets.js'
-import { can, canAccessDocType, canSeeDocument } from '../lib/roles.js'
+import { can, canAccessDocType, canSeeDocument, ROLES } from '../lib/roles.js'
 import { FIN_TYPES, isVoucherType, voucherLabel, voucherTotal } from '../lib/finance.js'
 import { Icon } from '../components/Icons.jsx'
 import { SessionExpiryBanner } from '../components/Banners.jsx'
@@ -288,6 +288,20 @@ export default function AppLayout() {
             <Icon.settings width={18} height={18} />
             <span className="ni-label">Settings</span>
           </NavLink>
+
+          {/* Manual is a static, self-contained page in /public — opened in a
+              new tab. Restricted to management (Super Admin + Admin). */}
+          {(role === ROLES.SUPER_ADMIN || role === ROLES.ADMIN) && (
+            <a
+              className="nav-item standalone"
+              href={`${import.meta.env.BASE_URL}paynox-user-manual.html`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Icon.book width={18} height={18} />
+              <span className="ni-label">User Manual</span>
+            </a>
+          )}
         </nav>
 
         <div className="sidebar-foot">
