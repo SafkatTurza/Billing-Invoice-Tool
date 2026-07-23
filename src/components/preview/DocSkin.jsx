@@ -411,7 +411,7 @@ const HeaderSimple = ({ m }) => (
 
 // Flexible — bold two-tone diagonal (brand → teal) banner.
 const HeaderFlexible = ({ m }) => (
-  <div style={{ background: `linear-gradient(105deg, ${m.BC} 0%, ${m.BC} 60%, ${ACC} 60%, ${ACC} 100%)`, padding: '18px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+  <div style={{ background: `linear-gradient(105deg, ${m.BC} 0%, ${m.BC} 50%, ${ACC} 50%, ${ACC} 100%)`, padding: '18px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
       {m.f.logo && (
         <span style={{ background: '#fff', borderRadius: 5, padding: '5px 9px', display: 'inline-flex', alignItems: 'center' }}>
