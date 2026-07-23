@@ -8,6 +8,7 @@ import { calcTotals, lineAmount } from './pricing.js'
 import { amountInWords } from './amountInWords.js'
 import { formatMoney, formatDate } from './format.js'
 import { metaFor } from './docmeta.js'
+import { colVisible, colLabel } from './columns.js'
 
 function num(v) {
   return Number(v) || 0
@@ -66,13 +67,34 @@ export async function exportExcel(doc) {
   ws1['!cols'] = [{ wch: 24 }, { wch: 42 }]
   XLSX.utils.book_append_sheet(wb, ws1, 'Summary')
 
-  // Sheet 2 — Line Items
-  const itemRows = [['#', 'Item', 'Description', 'Qty', 'Unit', 'Rate', 'Amount']]
+  // Sheet 2 — Line Items (respects the document's column visibility + custom
+  // header labels so the export matches the on-screen / printed document).
+  const showDesc = colVisible(doc, 'description')
+  const showSpec = colVisible(doc, 'spec')
+  const showQty = colVisible(doc, 'qty')
+  const showUnit = colVisible(doc, 'unit')
+  const showRate = colVisible(doc, 'rate')
+  const itemHead = ['#', colLabel(doc, 'name')]
+  const itemWidths = [{ wch: 5 }, { wch: 28 }]
+  if (showDesc) { itemHead.push(colLabel(doc, 'description')); itemWidths.push({ wch: 34 }) }
+  if (showSpec) { itemHead.push(colLabel(doc, 'spec')); itemWidths.push({ wch: 24 }) }
+  if (showQty) { itemHead.push(colLabel(doc, 'qty')); itemWidths.push({ wch: 8 }) }
+  if (showUnit) { itemHead.push(colLabel(doc, 'unit')); itemWidths.push({ wch: 8 }) }
+  if (showRate) { itemHead.push(colLabel(doc, 'rate')); itemWidths.push({ wch: 12 }) }
+  itemHead.push(colLabel(doc, 'amount')); itemWidths.push({ wch: 14 })
+  const itemRows = [itemHead]
   ;(doc.items || []).forEach((it, i) => {
-    itemRows.push([i + 1, it.name, it.description, num(it.qty), it.unit, num(it.rate), lineAmount(it)])
+    const row = [i + 1, it.name]
+    if (showDesc) row.push(it.description)
+    if (showSpec) row.push(it.spec)
+    if (showQty) row.push(num(it.qty))
+    if (showUnit) row.push(it.unit)
+    if (showRate) row.push(num(it.rate))
+    row.push(lineAmount(it))
+    itemRows.push(row)
   })
   const ws2 = XLSX.utils.aoa_to_sheet(itemRows)
-  ws2['!cols'] = [{ wch: 5 }, { wch: 28 }, { wch: 34 }, { wch: 8 }, { wch: 8 }, { wch: 12 }, { wch: 14 }]
+  ws2['!cols'] = itemWidths
   XLSX.utils.book_append_sheet(wb, ws2, 'Line Items')
 
   // Sheet 3 — Signatures
@@ -150,28 +172,28 @@ export async function exportDocx(doc, brand = '#1E2D5A') {
     if (doc.paymentPurpose) children.push(new Paragraph({ children: [new TextRun({ text: 'Purpose: ' + doc.paymentPurpose, size: 20 })] }))
   } else {
     const t = calcTotals(doc)
-    // Items table
-    const headRow = new TableRow({
-      children: [
-        cell('#', { shading: hex, color: 'FFFFFF', bold: true }),
-        cell('Item', { shading: hex, color: 'FFFFFF', bold: true }),
-        cell('Qty', { shading: hex, color: 'FFFFFF', bold: true, align: AlignmentType.RIGHT }),
-        cell('Rate', { shading: hex, color: 'FFFFFF', bold: true, align: AlignmentType.RIGHT }),
-        cell('Amount', { shading: hex, color: 'FFFFFF', bold: true, align: AlignmentType.RIGHT }),
-      ],
+    // Items table — respects the document's column visibility + custom headers.
+    const showDesc = colVisible(doc, 'description')
+    const showQty = colVisible(doc, 'qty')
+    const showRate = colVisible(doc, 'rate')
+    const headCells = [
+      cell('#', { shading: hex, color: 'FFFFFF', bold: true }),
+      cell(colLabel(doc, 'name'), { shading: hex, color: 'FFFFFF', bold: true }),
+    ]
+    if (showQty) headCells.push(cell(colLabel(doc, 'qty'), { shading: hex, color: 'FFFFFF', bold: true, align: AlignmentType.RIGHT }))
+    if (showRate) headCells.push(cell(colLabel(doc, 'rate'), { shading: hex, color: 'FFFFFF', bold: true, align: AlignmentType.RIGHT }))
+    headCells.push(cell(colLabel(doc, 'amount'), { shading: hex, color: 'FFFFFF', bold: true, align: AlignmentType.RIGHT }))
+    const headRow = new TableRow({ children: headCells })
+    const itemRows = (doc.items || []).map((it, i) => {
+      const cells = [
+        cell(i + 1),
+        cell(it.name + (showDesc && it.description ? '\n' + it.description : '')),
+      ]
+      if (showQty) cells.push(cell(it.qty || '', { align: AlignmentType.RIGHT }))
+      if (showRate) cells.push(cell(Number(it.rate) > 0 ? formatMoney(it.rate, cur) : '—', { align: AlignmentType.RIGHT }))
+      cells.push(cell(formatMoney(lineAmount(it), cur), { align: AlignmentType.RIGHT, bold: true }))
+      return new TableRow({ children: cells })
     })
-    const itemRows = (doc.items || []).map(
-      (it, i) =>
-        new TableRow({
-          children: [
-            cell(i + 1),
-            cell(it.name + (it.description ? '\n' + it.description : '')),
-            cell(it.qty || '', { align: AlignmentType.RIGHT }),
-            cell(Number(it.rate) > 0 ? formatMoney(it.rate, cur) : '—', { align: AlignmentType.RIGHT }),
-            cell(formatMoney(lineAmount(it), cur), { align: AlignmentType.RIGHT, bold: true }),
-          ],
-        }),
-    )
     children.push(
       new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: [headRow, ...itemRows] }),
     )

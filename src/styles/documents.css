@@ -215,6 +215,58 @@
 }
 .customize-menu .cm-item:hover { background: var(--surface-muted); }
 .customize-menu .cm-item input { accent-color: var(--brand-primary); width: 15px; height: 15px; }
+.customize-cols .btn.is-active { background: var(--brand-blue-50); color: var(--brand-primary-strong); }
+
+/* ── Column Visibility & Headers panel ───────────────────────── */
+.cvh-panel {
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  background: var(--surface-muted);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.cvh-title {
+  font-size: var(--fs-secondary);
+  font-weight: var(--fw-semibold);
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.cvh-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.cvh-card {
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius);
+  background: #fff;
+  padding: 11px 12px;
+}
+.cvh-card.off { opacity: 0.62; }
+.cvh-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.cvh-key { font-size: var(--fs-secondary); font-weight: var(--fw-semibold); color: var(--text-primary); }
+.cvh-always { font-size: var(--fs-caption); color: var(--text-faint); font-weight: var(--fw-medium); }
+.cvh-card .toggle { width: 34px; height: 19px; }
+.cvh-card .toggle::after { width: 15px; height: 15px; }
+.cvh-card .toggle.on::after { transform: translateX(15px); }
+.cvh-card .input { height: 34px; font-size: var(--fs-secondary); }
+.cvh-hint {
+  display: flex; align-items: flex-start; gap: 7px;
+  margin-top: 14px;
+  padding: 9px 12px;
+  border-radius: var(--radius);
+  background: #fef9e7;
+  border: 1px solid #f5e6a8;
+  color: #8a6d1a;
+  font-size: var(--fs-caption);
+  line-height: 1.5;
+}
+@media (max-width: 720px) {
+  .cvh-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 480px) {
+  .cvh-grid { grid-template-columns: 1fr; }
+}
 
 .items-table { width: 100%; border-collapse: collapse; }
 .items-table thead th {
@@ -439,6 +491,42 @@
   font-size: var(--fs-secondary);
 }
 .add-sig-btn:hover { border-color: var(--brand-blue); background: var(--brand-blue-50); }
+
+/* ── Signature image upload ──────────────────────────────────── */
+.sig-upload { margin: 2px 0 14px; }
+.sig-upload-label {
+  display: block;
+  font-size: var(--fs-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+  font-weight: var(--fw-semibold);
+  margin-bottom: 7px;
+}
+.sig-img-preview { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.sig-img-preview img {
+  max-height: 54px;
+  max-width: 200px;
+  object-fit: contain;
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius);
+  background: #fff;
+  padding: 4px 8px;
+}
+
+/* ── Footer company-logo upload (also used in settings) ──────── */
+.doc-editor .logo-upload { display: flex; align-items: center; gap: 16px; }
+.doc-editor .logo-preview {
+  width: 80px; height: 80px;
+  border-radius: 12px;
+  border: 1px dashed var(--border-primary);
+  background: #fafbfc;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  color: var(--text-faint);
+  flex-shrink: 0;
+}
+.doc-editor .logo-preview img { width: 100%; height: 100%; object-fit: contain; }
 
 /* ── Collapsible footer (company info) ───────────────────────── */
 .doc-collapse-head {

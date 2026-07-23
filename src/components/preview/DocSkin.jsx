@@ -6,6 +6,7 @@ import { calcTotals, lineAmount } from '../../lib/pricing.js'
 import { amountInWords } from '../../lib/amountInWords.js'
 import { formatMoney, formatDate } from '../../lib/format.js'
 import { metaFor } from '../../lib/docmeta.js'
+import { colVisible, colLabel } from '../../lib/columns.js'
 
 const ACC = '#0d9488'
 
@@ -175,6 +176,9 @@ const Sigs = ({ m }) => {
     <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 20, marginTop: 34 }}>
       {sigs.map((s) => (
         <div key={s.id}>
+          {s.image && (
+            <img src={s.image} alt="" style={{ maxHeight: 40, maxWidth: '80%', objectFit: 'contain', display: 'block', marginBottom: 4 }} />
+          )}
           <div style={{ borderTop: '1.5px solid #333', paddingTop: 6 }}>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: m.BC }}>{s.label}</div>
             {s.name && <div style={{ fontWeight: 600, fontSize: 12, marginTop: 2 }}>{s.name}</div>}
@@ -183,6 +187,38 @@ const Sigs = ({ m }) => {
           </div>
         </div>
       ))}
+    </div>
+  )
+}
+
+// Boxed "Authorized Signatures" block used by the Modern skin — a bordered
+// panel with a sign-&-stamp line per signatory (matches the reference format).
+const SigsBoxed = ({ m }) => {
+  const sigs = m.doc.signatures || []
+  if (!sigs.length) return null
+  const cols = Math.min(sigs.length, 3)
+  return (
+    <div style={{ marginTop: 30 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: ACC, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 8 }}>
+        Authorized Signatures
+      </div>
+      <div style={{ border: '1px solid #e2e8f0', borderRadius: 6, padding: '16px 18px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 24 }}>
+          {sigs.map((s) => (
+            <div key={s.id}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#1e293b' }}>{s.label}</div>
+              <div style={{ height: 46, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+                {s.image && <img src={s.image} alt="" style={{ maxHeight: 44, maxWidth: '100%', objectFit: 'contain' }} />}
+              </div>
+              <div style={{ borderTop: '1px solid #94a3b8' }} />
+              <div style={{ textAlign: 'center', fontSize: 10, color: '#94a3b8', marginTop: 3 }}>(Sign &amp; Stamp)</div>
+              {s.name && <div style={{ fontSize: 11, fontWeight: 600, marginTop: 4 }}>{s.name}</div>}
+              {s.designation && <div style={{ fontSize: 10, color: '#666' }}>{s.designation}</div>}
+              <div style={{ fontSize: 10, color: '#666', marginTop: 2 }}>Date: {s.date ? formatDate(s.date) : '—'}</div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
@@ -204,7 +240,7 @@ const Footer = ({ f, bc }) => (
   </div>
 )
 
-const SkinBlocks = ({ m, noWords, noNotes, accent }) => {
+const SkinBlocks = ({ m, noWords, noNotes, accent, boxedSigs }) => {
   const showNotes = m.doc.notes && !noNotes
   return (
     <div>
@@ -218,7 +254,7 @@ const SkinBlocks = ({ m, noWords, noNotes, accent }) => {
       {m.doc.milestones && m.doc.milestones.some((ms) => ms.description || ms.percentage) && (
         <MilestonesBlock m={m} accent={accent} />
       )}
-      <Sigs m={m} />
+      {boxedSigs ? <SigsBoxed m={m} /> : <Sigs m={m} />}
     </div>
   )
 }
@@ -226,18 +262,23 @@ const SkinBlocks = ({ m, noWords, noNotes, accent }) => {
 const Items = ({ m, headBg, headColor, headBorder, zebra }) => {
   const { doc, cur } = m
   if (!(doc.items && doc.items.length)) return null
-  const showSpec = m.isPO && doc.showSpec
+  // Respect the same column visibility + custom header labels as the editor.
+  const showSpec = colVisible(doc, 'spec')
+  const showQty = colVisible(doc, 'qty')
+  const showUnit = colVisible(doc, 'unit')
+  const showRate = colVisible(doc, 'rate')
+  const showDesc = colVisible(doc, 'description')
   return (
     <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 14 }}>
       <thead>
         <tr style={{ background: headBg, color: headColor, borderBottom: headBorder || 'none' }}>
           <th style={{ padding: '8px', textAlign: 'left', fontSize: 11, width: 26 }}>#</th>
-          <th style={{ padding: '8px', textAlign: 'left', fontSize: 11 }}>Services / Items</th>
-          {showSpec && <th style={{ padding: '8px', textAlign: 'left', fontSize: 11, width: 90 }}>Spec</th>}
-          <th style={{ padding: '8px', textAlign: 'center', fontSize: 11, width: 50 }}>Qty</th>
-          <th style={{ padding: '8px', textAlign: 'left', fontSize: 11, width: 50 }}>Unit</th>
-          <th style={{ padding: '8px', textAlign: 'right', fontSize: 11, width: 90 }}>Rate</th>
-          <th style={{ padding: '8px', textAlign: 'right', fontSize: 11, width: 100 }}>Amount</th>
+          <th style={{ padding: '8px', textAlign: 'left', fontSize: 11 }}>{colLabel(doc, 'name')}</th>
+          {showSpec && <th style={{ padding: '8px', textAlign: 'left', fontSize: 11, width: 90 }}>{colLabel(doc, 'spec')}</th>}
+          {showQty && <th style={{ padding: '8px', textAlign: 'center', fontSize: 11, width: 50 }}>{colLabel(doc, 'qty')}</th>}
+          {showUnit && <th style={{ padding: '8px', textAlign: 'left', fontSize: 11, width: 50 }}>{colLabel(doc, 'unit')}</th>}
+          {showRate && <th style={{ padding: '8px', textAlign: 'right', fontSize: 11, width: 90 }}>{colLabel(doc, 'rate')}</th>}
+          <th style={{ padding: '8px', textAlign: 'right', fontSize: 11, width: 100 }}>{colLabel(doc, 'amount')}</th>
         </tr>
       </thead>
       <tbody>
@@ -246,14 +287,14 @@ const Items = ({ m, headBg, headColor, headBorder, zebra }) => {
             <td style={{ padding: '7px 8px', color: '#94a3b8', textAlign: 'center' }}>{i + 1}</td>
             <td style={{ padding: '7px 8px' }}>
               <div style={{ fontWeight: 500 }}>{item.name}</div>
-              {item.description && (
+              {showDesc && item.description && (
                 <div style={{ fontSize: 10, color: '#64748b', marginTop: 2, whiteSpace: 'pre-wrap' }}>{item.description}</div>
               )}
             </td>
             {showSpec && <td style={{ padding: '7px 8px', fontSize: 11 }}>{item.spec}</td>}
-            <td style={{ padding: '7px 8px', textAlign: 'center' }}>{item.qty}</td>
-            <td style={{ padding: '7px 8px' }}>{item.unit}</td>
-            <td style={{ padding: '7px 8px', textAlign: 'right' }}>{Number(item.rate) > 0 ? money(item.rate, cur) : '—'}</td>
+            {showQty && <td style={{ padding: '7px 8px', textAlign: 'center' }}>{item.qty}</td>}
+            {showUnit && <td style={{ padding: '7px 8px' }}>{item.unit}</td>}
+            {showRate && <td style={{ padding: '7px 8px', textAlign: 'right' }}>{Number(item.rate) > 0 ? money(item.rate, cur) : '—'}</td>}
             <td style={{ padding: '7px 8px', textAlign: 'right', fontWeight: 600 }}>{money(lineAmount(item), cur)}</td>
           </tr>
         ))}
@@ -327,36 +368,46 @@ function SkinSimple({ m }) {
   )
 }
 
-// ── SKIN 2 · MODERN ──
+// ── SKIN 2 · MODERN ── (reference format: navy header with a teal wedge that
+// carries the document label, teal section labels, a boxed Total Payable, and a
+// boxed Authorized-Signatures panel.)
 function SkinModern({ m }) {
-  const { label, BC, DF, f, grand, partyLabel, partyName, partyLines, metaRows, headerTotalLabel, cur } = m
+  const { label, BC, DF, f, partyLabel, partyName, partyLines, metaRows } = m
   return (
     <div style={{ fontFamily: `"${DF}", sans-serif`, fontSize: 12, color: '#1e293b', background: '#fff' }}>
-      <div style={{ background: BC, padding: '18px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {f.logo && <img src={f.logo} style={{ height: 34, objectFit: 'contain' }} alt="" />}
-          <div style={{ color: '#fff', fontSize: 20, fontWeight: 700, letterSpacing: 1 }}>{label.toUpperCase()}</div>
-        </div>
-        <div style={{ textAlign: 'right', color: '#fff' }}>
-          <div style={{ fontSize: 10, opacity: 0.8 }}>{headerTotalLabel}</div>
-          <div style={{ fontSize: 24, fontWeight: 700 }}>{money(grand, cur)}</div>
-        </div>
-      </div>
-      <div style={{ padding: '20px 24px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 16 }}>
+      <div style={{ position: 'relative', background: BC, padding: '22px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', overflow: 'hidden' }}>
+        {/* teal wedge on the right holding the document label */}
+        <div
+          style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: '46%', background: ACC, clipPath: 'polygon(22% 0, 100% 0, 100% 100%, 0 100%)' }}
+        />
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12 }}>
+          {f.logo && (
+            <span style={{ background: '#fff', borderRadius: 6, padding: 5, display: 'inline-flex' }}>
+              <img src={f.logo} style={{ height: 30, objectFit: 'contain' }} alt="" />
+            </span>
+          )}
           <div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: BC, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6, borderBottom: `2px solid ${BC}`, paddingBottom: 3 }}>{partyLabel}</div>
+            {f.name && <div style={{ color: '#fff', fontSize: 18, fontWeight: 700, letterSpacing: 0.4 }}>{f.name}</div>}
+            {f.website && <div style={{ color: 'rgba(255,255,255,.7)', fontSize: 9.5, letterSpacing: 1.5, textTransform: 'uppercase' }}>{f.website}</div>}
+          </div>
+        </div>
+        <div style={{ position: 'relative', color: '#fff', fontSize: 30, fontWeight: 800, letterSpacing: 2 }}>{label.toUpperCase()}</div>
+      </div>
+      <div style={{ padding: '22px 28px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 18 }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: ACC, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 6 }}>{partyLabel}</div>
             {partyName && <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>{partyName}</div>}
             <PartyLines lines={partyLines} />
           </div>
           <div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: BC, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6, borderBottom: `2px solid ${BC}`, paddingBottom: 3 }}>Document Details</div>
-            <table style={{ borderCollapse: 'collapse' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: ACC, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 6 }}>Document Details</div>
+            <table style={{ borderCollapse: 'collapse', width: '100%' }}>
               <tbody>
                 {metaRows.map(([k, v]) => (
                   <tr key={k}>
-                    <td style={{ color: '#64748b', paddingRight: 8, paddingBottom: 2, fontSize: 11 }}>{k}</td>
-                    <td style={{ fontWeight: 500, fontSize: 11, paddingBottom: 2 }}>: {v}</td>
+                    <td style={{ color: '#64748b', paddingRight: 8, paddingBottom: 3, fontSize: 11 }}>{k}</td>
+                    <td style={{ fontWeight: 600, fontSize: 11, paddingBottom: 3, textAlign: 'right' }}>{v}</td>
                   </tr>
                 ))}
               </tbody>
@@ -365,9 +416,9 @@ function SkinModern({ m }) {
         </div>
         <Items m={m} headBg={BC} headColor="#fff" zebra="#fafafa" />
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-          <Totals m={m} />
+          <Totals m={m} boxed />
         </div>
-        <SkinBlocks m={m} />
+        <SkinBlocks m={m} boxedSigs />
         <div style={{ marginTop: 26 }}>
           <Footer f={f} bc={BC} />
         </div>

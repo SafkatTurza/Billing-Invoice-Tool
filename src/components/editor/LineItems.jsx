@@ -1,30 +1,33 @@
 import { useState, useRef, useEffect } from 'react'
 import { isAmountLocked, lineAmount } from '../../lib/pricing.js'
 import { newLineItem } from '../../lib/newDocument.js'
+import {
+  OPTIONAL_COLUMN_KEYS,
+  DEFAULT_COL_LABELS,
+  ALWAYS_ON_COLUMNS,
+  colVisible,
+  colLabel,
+} from '../../lib/columns.js'
 import AutoTextarea from '../AutoTextarea.jsx'
 import { Icon } from '../Icons.jsx'
 
-// Optional columns the user can show/hide (Amount is always shown). Calculation
-// logic is untouched — hiding a column only hides its input; stored values and
-// pricing (qty × rate lock rules) are preserved.
-const OPTIONAL_COLS = [
-  ['description', 'Description'],
-  ['qty', 'Qty'],
-  ['unit', 'Unit'],
-  ['rate', 'Rate'],
-]
-const colOn = (doc, key) => doc.cols?.[key] !== false // default visible
+// Columns shown in the "Column Visibility & Headers" panel, in display order.
+// name + amount are always on; the rest can be toggled. Every column's header
+// text is editable and flows through to the print/preview and exports.
+const PANEL_COLS = ['name', 'description', 'spec', 'qty', 'unit', 'rate', 'amount']
 
 // Line items editor — reference layout (# · Services/Items · Qty · Unit · Rate ·
-// Amount) with Customize Columns, an empty state and a full-width Add Item.
-export default function LineItems({ doc, patch, showSpec }) {
+// Amount) with an expandable Column Visibility & Headers panel, an empty state
+// and a full-width Add Item. Calculation logic (qty × rate lock rules) is
+// untouched; hiding a column only hides its input, stored values are preserved.
+export default function LineItems({ doc, patch }) {
   const items = doc.items || []
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [panelOpen, setPanelOpen] = useState(false)
   const menuRef = useRef(null)
 
   useEffect(() => {
     const onClick = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
+      if (menuRef.current && !menuRef.current.contains(e.target)) setPanelOpen(false)
     }
     document.addEventListener('mousedown', onClick)
     return () => document.removeEventListener('mousedown', onClick)
@@ -48,12 +51,14 @@ export default function LineItems({ doc, patch, showSpec }) {
 
   const addItem = () => patch({ items: [...items, newLineItem()] })
   const removeItem = (id) => patch({ items: items.filter((it) => it.id !== id) })
-  const toggleCol = (key) => patch({ cols: { ...(doc.cols || {}), [key]: !colOn(doc, key) } })
+  const toggleCol = (key) => patch({ cols: { ...(doc.cols || {}), [key]: !colVisible(doc, key) } })
+  const setColLabel = (key, val) => patch({ colLabels: { ...(doc.colLabels || {}), [key]: val } })
 
-  const showDesc = colOn(doc, 'description')
-  const showQty = colOn(doc, 'qty')
-  const showUnit = colOn(doc, 'unit')
-  const showRate = colOn(doc, 'rate')
+  const showDesc = colVisible(doc, 'description')
+  const showSpec = colVisible(doc, 'spec')
+  const showQty = colVisible(doc, 'qty')
+  const showUnit = colVisible(doc, 'unit')
+  const showRate = colVisible(doc, 'rate')
 
   return (
     <div className="doc-section">
@@ -62,21 +67,55 @@ export default function LineItems({ doc, patch, showSpec }) {
           <Icon.invoice width={16} height={16} /> Line Items
         </h3>
         <div className="customize-cols" ref={menuRef}>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={() => setMenuOpen((v) => !v)}>
-            <Icon.settings width={14} height={14} /> Customize Columns ▾
+          <button
+            type="button"
+            className={`btn btn-ghost btn-sm ${panelOpen ? 'is-active' : ''}`}
+            onClick={() => setPanelOpen((v) => !v)}
+            aria-expanded={panelOpen}
+          >
+            <Icon.settings width={14} height={14} /> Customize Columns {panelOpen ? '▲' : '▾'}
           </button>
-          {menuOpen && (
-            <div className="customize-menu">
-              {OPTIONAL_COLS.map(([key, label]) => (
-                <label key={key} className="cm-item">
-                  <input type="checkbox" checked={colOn(doc, key)} onChange={() => toggleCol(key)} />
-                  {label}
-                </label>
-              ))}
-            </div>
-          )}
         </div>
       </div>
+
+      {panelOpen && (
+        <div className="cvh-panel">
+          <div className="cvh-title">Column Visibility &amp; Headers</div>
+          <div className="cvh-grid">
+            {PANEL_COLS.map((key) => {
+              const always = ALWAYS_ON_COLUMNS.includes(key)
+              const on = colVisible(doc, key)
+              return (
+                <div key={key} className={`cvh-card ${!always && !on ? 'off' : ''}`}>
+                  <div className="cvh-card-head">
+                    <span className="cvh-key">{DEFAULT_COL_LABELS[key]}</span>
+                    {always ? (
+                      <span className="cvh-always">always on</span>
+                    ) : (
+                      <button
+                        type="button"
+                        className={`toggle ${on ? 'on' : ''}`}
+                        onClick={() => toggleCol(key)}
+                        aria-label={`Toggle ${DEFAULT_COL_LABELS[key]} column`}
+                      />
+                    )}
+                  </div>
+                  <input
+                    className="input"
+                    value={doc.colLabels?.[key] ?? DEFAULT_COL_LABELS[key]}
+                    placeholder={DEFAULT_COL_LABELS[key]}
+                    onChange={(e) => setColLabel(key, e.target.value)}
+                  />
+                </div>
+              )
+            })}
+          </div>
+          <div className="cvh-hint">
+            <span aria-hidden="true">💡</span> Rate &gt; 0 → Amount auto-calculates (locked). Rate = 0 →
+            Amount is manually editable. Blank Qty = lump-sum (Rate × 1).
+          </div>
+        </div>
+      )}
 
       {items.length === 0 ? (
         <div className="li-empty">No items yet</div>
@@ -86,12 +125,12 @@ export default function LineItems({ doc, patch, showSpec }) {
             <thead>
               <tr>
                 <th style={{ width: 34 }}>#</th>
-                <th>Services / Items</th>
-                {showSpec && <th style={{ width: '16%' }}>Specification</th>}
-                {showQty && <th className="num" style={{ width: 74 }}>Qty</th>}
-                {showUnit && <th style={{ width: 84 }}>Unit</th>}
-                {showRate && <th className="num" style={{ width: 104 }}>Rate</th>}
-                <th className="num" style={{ width: 134 }}>Amount</th>
+                <th>{colLabel(doc, 'name')}</th>
+                {showSpec && <th style={{ width: '16%' }}>{colLabel(doc, 'spec')}</th>}
+                {showQty && <th className="num" style={{ width: 74 }}>{colLabel(doc, 'qty')}</th>}
+                {showUnit && <th style={{ width: 84 }}>{colLabel(doc, 'unit')}</th>}
+                {showRate && <th className="num" style={{ width: 104 }}>{colLabel(doc, 'rate')}</th>}
+                <th className="num" style={{ width: 134 }}>{colLabel(doc, 'amount')}</th>
                 <th style={{ width: 40 }}></th>
               </tr>
             </thead>
@@ -111,7 +150,7 @@ export default function LineItems({ doc, patch, showSpec }) {
                       />
                       {showDesc && (
                         <AutoTextarea
-                          placeholder="Description (optional)"
+                          placeholder={`${colLabel(doc, 'description')} (optional)`}
                           className=""
                           style={{ marginTop: 6 }}
                           minHeight={34}

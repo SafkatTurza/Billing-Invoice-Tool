@@ -28,6 +28,17 @@ export default function Signatures({ doc, patch }) {
     })
   const remove = (id) => patch({ signatures: sigs.filter((s) => s.id !== id) })
 
+  // Optional signature image — read the chosen file as a data URL and store it
+  // on the block. Rendered on the document above the name/label.
+  const onUploadImage = (id, e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => update(id, { image: reader.result })
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
   return (
     <div className="doc-section">
       <div className="doc-section-head">
@@ -94,6 +105,29 @@ export default function Signatures({ doc, patch }) {
                 <label>Date</label>
                 <input type="date" className="input" value={s.date} onChange={(e) => update(s.id, { date: e.target.value })} />
               </div>
+            </div>
+
+            <div className="sig-upload">
+              <span className="sig-upload-label">Signature Image (optional)</span>
+              {s.image ? (
+                <div className="sig-img-preview">
+                  <img src={s.image} alt="signature" />
+                  <div className="row gap-8">
+                    <label className="btn btn-ghost btn-sm" style={{ cursor: 'pointer' }}>
+                      Change
+                      <input type="file" accept="image/*" hidden onChange={(e) => onUploadImage(s.id, e)} />
+                    </label>
+                    <button type="button" className="btn btn-ghost btn-sm" onClick={() => update(s.id, { image: '' })}>
+                      <Icon.x width={13} height={13} /> Remove
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <label className="btn btn-ghost btn-sm" style={{ cursor: 'pointer' }}>
+                  <Icon.download width={14} height={14} /> Upload Signature
+                  <input type="file" accept="image/*" hidden onChange={(e) => onUploadImage(s.id, e)} />
+                </label>
+              )}
             </div>
 
             <div className="sig-toggles">

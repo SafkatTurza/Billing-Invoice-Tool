@@ -305,7 +305,7 @@ export default function DocumentEditor({ type }) {
         {/* Body per family */}
         {meta.kind === 'invoice' && (
           <>
-            <LineItems doc={doc} patch={patch} showSpec={false} />
+            <LineItems doc={doc} patch={patch} />
             <Totals doc={doc} patch={patch} />
             <BankSection doc={doc} patch={patch} />
           </>
@@ -313,17 +313,8 @@ export default function DocumentEditor({ type }) {
 
         {meta.kind === 'po' && (
           <>
-            <div className="form-section" style={{ paddingBottom: 8 }}>
-              <div className="toggle-row">
-                <button
-                  type="button"
-                  className={`toggle ${doc.showSpec ? 'on' : ''}`}
-                  onClick={() => patch({ showSpec: !doc.showSpec })}
-                />
-                Show Specification column
-              </div>
-            </div>
-            <LineItems doc={doc} patch={patch} showSpec={doc.showSpec} />
+            {/* Specification is now a column in Line Items → Customize Columns. */}
+            <LineItems doc={doc} patch={patch} />
             <Totals doc={doc} patch={patch} />
             <Milestones doc={doc} patch={patch} />
           </>
@@ -429,12 +420,20 @@ function FooterSection({ doc, patch, companies, company }) {
     e.stopPropagation()
     patch({ footer: companyFooter(issuing) })
   }
+  const onLogo = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => updFooter('logo', reader.result)
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
   const FIELDS = [
     ['name', 'Company Name'],
-    ['phone', 'Phone'],
-    ['address', 'Address'],
     ['email', 'Email'],
+    ['phone', 'Phone'],
     ['website', 'Website'],
+    ['address', 'Address'],
   ]
   return (
     <div className="doc-section">
@@ -452,13 +451,34 @@ function FooterSection({ doc, patch, companies, company }) {
         </span>
       </div>
       {open && (
-        <div className="bank-grid" style={{ marginTop: 16 }}>
-          {FIELDS.map(([k, label]) => (
-            <div className="field" key={k} style={{ marginBottom: 0, gridColumn: k === 'address' ? '1 / -1' : 'auto' }}>
-              <label>{label}</label>
-              <input className="input" value={f[k] || ''} onChange={(e) => updFooter(k, e.target.value)} />
+        <div style={{ marginTop: 16 }}>
+          <div className="field" style={{ marginBottom: 16 }}>
+            <label>Company Logo</label>
+            <div className="logo-upload">
+              <div className="logo-preview">
+                {f.logo ? <img src={f.logo} alt="" /> : <Icon.building width={26} height={26} />}
+              </div>
+              <div>
+                <label className="btn btn-ghost btn-sm" style={{ cursor: 'pointer' }}>
+                  <Icon.download width={14} height={14} /> {f.logo ? 'Change' : 'Upload'}
+                  <input type="file" accept="image/*" hidden onChange={onLogo} />
+                </label>
+                {f.logo && (
+                  <button type="button" className="btn btn-ghost btn-sm" style={{ marginLeft: 8 }} onClick={() => updFooter('logo', '')}>
+                    <Icon.x width={13} height={13} /> Remove
+                  </button>
+                )}
+              </div>
             </div>
-          ))}
+          </div>
+          <div className="bank-grid">
+            {FIELDS.map(([k, label]) => (
+              <div className="field" key={k} style={{ marginBottom: 0, gridColumn: k === 'address' ? '1 / -1' : 'auto' }}>
+                <label>{label}</label>
+                <input className="input" value={f[k] || ''} onChange={(e) => updFooter(k, e.target.value)} />
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
