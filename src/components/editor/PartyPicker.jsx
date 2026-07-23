@@ -8,7 +8,9 @@ import { useToast } from '../Toast.jsx'
 import { Icon } from '../Icons.jsx'
 
 // Client/Vendor selector that auto-fills party fields (SRS 3.2 dropdown flow).
-export default function PartyPicker({ type, doc, patch }) {
+// `slim` renders only the selector + party name (used by the Money Receipt
+// editor, which doesn't need contact/address/tax fields).
+export default function PartyPicker({ type, doc, patch, slim = false }) {
   const app = useApp()
   const toast = useToast()
   const meta = metaFor(type)
@@ -95,6 +97,17 @@ export default function PartyPicker({ type, doc, patch }) {
         </div>
       </div>
 
+      {slim ? (
+        <div className="field" style={{ marginTop: 12, marginBottom: 0 }}>
+          <input
+            className="input"
+            placeholder={`${partyWord} name`}
+            value={doc.partyName}
+            onChange={(e) => patch({ partyName: e.target.value })}
+          />
+        </div>
+      ) : (
+        <>
       {selected?.contacts?.length > 0 && (
         <div className="field">
           <label>Saved Contact</label>
@@ -149,6 +162,8 @@ export default function PartyPicker({ type, doc, patch }) {
           <input className="input" value={doc.tradeLicense} onChange={(e) => patch({ tradeLicense: e.target.value })} />
         </div>
       </div>
+        </>
+      )}
 
       {quickOpen && (
         <QuickPartyModal

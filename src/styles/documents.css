@@ -539,6 +539,17 @@
 }
 .add-sig-btn:hover { border-color: var(--brand-blue); background: var(--brand-blue-50); }
 
+/* ── Money Receipt editor ────────────────────────────────────── */
+.receipt-editor { max-width: 640px; }
+.receipt-divider { height: 1px; background: var(--border-primary); margin: 18px 0; }
+.radio-row { display: flex; flex-wrap: wrap; gap: 18px 22px; padding-top: 4px; }
+.radio-opt {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: var(--fs-secondary); font-weight: var(--fw-medium); color: var(--text-secondary);
+  cursor: pointer;
+}
+.radio-opt input { accent-color: var(--brand-primary); width: 15px; height: 15px; }
+
 /* ── Signature image upload ──────────────────────────────────── */
 .sig-upload { margin: 2px 0 14px; }
 .sig-upload-label {

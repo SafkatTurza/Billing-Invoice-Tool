@@ -196,7 +196,10 @@ export default function DocumentEditor({ type }) {
       )}
 
       <div className="doc-editor">
-        {/* Bill To (left) + document details (right) */}
+        {/* Bill To (left) + document details (right) — receipts use a dedicated layout */}
+        {meta.kind === 'receipt' ? (
+          <ReceiptEditor doc={doc} patch={patch} type={type} companies={companies} company={company} />
+        ) : (
         <div className="doc-section">
           <div className="editor-two-col">
             <PartyPicker type={type} doc={doc} patch={patch} />
@@ -300,6 +303,7 @@ export default function DocumentEditor({ type }) {
             </div>
           </div>
         </div>
+        )}
 
         {/* Body per family */}
         {meta.kind === 'invoice' && (
@@ -319,7 +323,6 @@ export default function DocumentEditor({ type }) {
           </>
         )}
 
-        {meta.kind === 'receipt' && <ReceiptFields doc={doc} patch={patch} />}
 
         {/* Notes / Terms */}
         <div className="doc-section">
@@ -484,57 +487,123 @@ function FooterSection({ doc, patch, companies, company }) {
   )
 }
 
-function ReceiptFields({ doc, patch }) {
+// Money Receipt editor — single-column layout (reference format): receipt
+// number / date / currency on top, a slim "Cash Received From" selector, the
+// received amount + purpose, then payment method (radios) and bank / txn fields.
+const PAY_METHODS = ['Cash', 'Cheque', 'Other', 'BEFTN Payment']
+
+function ReceiptEditor({ doc, patch, type, companies, company }) {
   return (
     <>
-      <div className="form-section">
-        <h3>Payment Details</h3>
-        <div className="grid grid-3">
+      <div className="doc-section receipt-editor">
+        {companies.length > 1 && (
           <div className="field">
-            <label>Received Amount</label>
-            <input
-              type="number"
-              className="input"
-              value={doc.receivedAmount}
-              onChange={(e) => patch({ receivedAmount: e.target.value })}
-            />
-          </div>
-          <div className="field">
-            <label>Payment Method</label>
-            <select className="select" value={doc.paymentMethod} onChange={(e) => patch({ paymentMethod: e.target.value })}>
-              {['Cash', 'Cheque', 'BEFTN Payment', 'Other'].map((m) => (
-                <option key={m} value={m}>
-                  {m}
+            <label>Company (issuing)</label>
+            <select
+              className="select"
+              value={doc.companyId || company.id}
+              onChange={(e) => {
+                const co = companies.find((c) => c.id === e.target.value)
+                patch({ companyId: e.target.value, footer: companyFooter(co) })
+              }}
+            >
+              {companies.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name || 'Untitled Company'}
                 </option>
               ))}
             </select>
           </div>
+        )}
+
+        <div className="grid grid-2" style={{ gap: 14 }}>
           <div className="field">
-            <label>Transaction Date</label>
-            <input type="date" className="input" value={doc.transactionDate} onChange={(e) => patch({ transactionDate: e.target.value })} />
+            <label>Receipt Number</label>
+            <input
+              className="input mono"
+              value={doc.docNumber}
+              onChange={(e) => patch({ docNumber: e.target.value, autoNumber: false })}
+            />
+          </div>
+          <div className="field">
+            <label>Date</label>
+            <input type="date" className="input" value={doc.date} onChange={(e) => patch({ date: e.target.value })} />
           </div>
         </div>
-        <div className="field">
+        <div className="field" style={{ maxWidth: 260 }}>
+          <label>Currency</label>
+          <select className="select" value={doc.currency} onChange={(e) => patch({ currency: e.target.value })}>
+            {CURRENCIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="receipt-divider" />
+
+        <PartyPicker type={type} doc={doc} patch={patch} slim />
+
+        <div className="field" style={{ marginTop: 16 }}>
+          <label>
+            Received Amount <span className="req">*</span>
+          </label>
+          <input
+            type="number"
+            min="0"
+            className="input"
+            placeholder="0.00"
+            value={doc.receivedAmount}
+            onChange={(e) => patch({ receivedAmount: e.target.value })}
+          />
+        </div>
+        <div className="field" style={{ marginBottom: 0 }}>
           <label>Payment Purpose</label>
-          <textarea className="textarea" value={doc.paymentPurpose} onChange={(e) => patch({ paymentPurpose: e.target.value })} />
+          <textarea
+            className="textarea"
+            placeholder="Describe the purpose of this payment…"
+            value={doc.paymentPurpose}
+            onChange={(e) => patch({ paymentPurpose: e.target.value })}
+          />
         </div>
       </div>
 
-      <div className="form-section">
-        <h3>Bank / Transaction Details</h3>
-        <div className="grid grid-3">
+      <div className="doc-section">
+        <div className="field">
+          <label>Payment Method</label>
+          <div className="radio-row">
+            {PAY_METHODS.map((m) => (
+              <label key={m} className="radio-opt">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  checked={doc.paymentMethod === m}
+                  onChange={() => patch({ paymentMethod: m })}
+                />
+                {m}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="bank-grid" style={{ marginTop: 14 }}>
           {[
             ['bankName', 'Bank Name'],
-            ['branch', 'Branch'],
-            ['transactionType', 'Type'],
+            ['branch', 'Branch Name'],
+            ['transactionType', 'Transaction Type'],
             ['chequeNo', 'Cheque No.'],
-            ['refNo', 'Ref No.'],
+            ['refNo', 'Transaction Ref. No.'],
           ].map(([k, label]) => (
-            <div className="field" key={k}>
+            <div className="field" key={k} style={{ marginBottom: 0 }}>
               <label>{label}</label>
-              <input className="input" value={doc[k] || ''} onChange={(e) => patch({ [k]: e.target.value })} />
+              <input className="input" placeholder={label} value={doc[k] || ''} onChange={(e) => patch({ [k]: e.target.value })} />
             </div>
           ))}
+          <div className="field" style={{ marginBottom: 0 }}>
+            <label>Transaction Date</label>
+            <input type="date" className="input" value={doc.transactionDate} onChange={(e) => patch({ transactionDate: e.target.value })} />
+          </div>
         </div>
       </div>
     </>
