@@ -168,7 +168,6 @@ export default function DocumentEditor({ type }) {
         </button>
         <span className="deh-title">
           {existing ? 'Edit' : 'New'} {meta.singular}
-          {existing && <span className="deh-num"> #{doc.docNumber}</span>}
         </span>
         <SaveIndicator state={saveState} />
         <div className="deh-actions">

@@ -36,7 +36,6 @@ const NAV_GROUPS = [
     items: [
       { to: '/purchase-orders', label: 'Purchase Orders', docType: 'purchase-orders' },
       { to: '/work-orders', label: 'Work Orders', docType: 'work-orders' },
-      { to: '/money-receipt', label: 'Money Receipt', docType: 'money-receipt' },
     ],
   },
   {
@@ -267,6 +266,14 @@ export default function AppLayout() {
               onToggle={toggle}
             />
           ))}
+
+          {canAccessDocType(role, 'money-receipt') && (
+            <NavLink to="/money-receipt" className="nav-item standalone">
+              <Icon.receipt width={18} height={18} />
+              <span className="ni-label">Money Receipt</span>
+              {counts['money-receipt'] ? <span className="count">{counts['money-receipt']}</span> : null}
+            </NavLink>
+          )}
 
           {can(role, 'recycleBin') && (
             <NavLink to="/recycle-bin" className="nav-item standalone">
