@@ -207,8 +207,8 @@ export default function DocumentPreview({ type }) {
         ) : (
           <DocSkin doc={doc} brand={brand} font={font} template={template} />
         )}
-        <div className="doc-page-num" style={{ padding: '0 28px 16px' }}>
-          Page 1 of 1
+        <div className="doc-page-num no-print" style={{ padding: '0 28px 16px' }}>
+          Preview — printed / exported PDF paginates automatically
         </div>
       </div>
 

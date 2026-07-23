@@ -67,7 +67,9 @@ export function buildDocModel(doc, brand, font, template) {
       : []),
     ...(doc.aitOn ? [[`AIT/TAX (${doc.aitRate || 0}%)`, '+ ' + money(t.aitAmount, cur), '#64748b', '#059669', false]] : []),
     ...(doc.aitOn ? [[`VAT (${doc.vatRate || 0}%)`, '+ ' + money(t.vatAmount, cur), '#64748b', '#059669', false]] : []),
-    [isPO ? 'Total Payable' : 'Grand Total', money(t.grandTotal, cur), '#1e293b', brand, true],
+    // Summary bottom line is always "Total Payable" (matches the reference
+    // layout); the header top-right keeps the "Grand Total" / "Total" label.
+    ['Total Payable', money(t.grandTotal, cur), '#1e293b', brand, true],
   ]
 
   const hasBank = doc.bankOn && doc.bank && Object.values(doc.bank).some((v) => v)
@@ -191,33 +193,48 @@ const Sigs = ({ m }) => {
   )
 }
 
-// Boxed "Authorized Signatures" block used by the Modern skin — a bordered
-// panel with a sign-&-stamp line per signatory (matches the reference format).
+// Boxed "Authorized Signatures" block used by the Modern skin. Each signatory
+// gets its OWN bordered box (matches the reference format):
+//   • TOP    — label, name, designation + any optional configured info
+//   • MIDDLE — blank vertical space for a handwritten signature + company seal
+//   • BOTTOM — signature line, "(Sign & Stamp)", and the date
+// Layout follows a two-column pattern: 1 signature → one box; 2 → side by side;
+// 3 → two on the first row and one on the next; 4 → 2×2; and so on. Each box
+// carries `.doc-sig-box` so print rules keep an individual box from splitting
+// across a page break.
 const SigsBoxed = ({ m }) => {
   const sigs = m.doc.signatures || []
   if (!sigs.length) return null
-  const cols = Math.min(sigs.length, 3)
+  const cols = sigs.length === 1 ? 1 : 2
   return (
-    <div style={{ marginTop: 30 }}>
-      <div style={{ fontSize: 10, fontWeight: 700, color: ACC, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 8 }}>
+    <div className="doc-sig-section" style={{ marginTop: 24 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: ACC, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10 }}>
         Authorized Signatures
       </div>
-      <div style={{ border: '1px solid #e2e8f0', borderRadius: 6, padding: '16px 18px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 24 }}>
-          {sigs.map((s) => (
-            <div key={s.id}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#1e293b' }}>{s.label}</div>
-              <div style={{ height: 46, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-                {s.image && <img src={s.image} alt="" style={{ maxHeight: 44, maxWidth: '100%', objectFit: 'contain' }} />}
-              </div>
-              <div style={{ borderTop: '1px solid #94a3b8' }} />
-              <div style={{ textAlign: 'center', fontSize: 10, color: '#94a3b8', marginTop: 3 }}>(Sign &amp; Stamp)</div>
-              {s.name && <div style={{ fontSize: 11, fontWeight: 600, marginTop: 4 }}>{s.name}</div>}
-              {s.designation && <div style={{ fontSize: 10, color: '#666' }}>{s.designation}</div>}
-              <div style={{ fontSize: 10, color: '#666', marginTop: 2 }}>Date: {s.date ? formatDate(s.date) : '—'}</div>
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 16 }}>
+        {sigs.map((s) => (
+          <div
+            key={s.id}
+            className="doc-sig-box"
+            style={{ border: '1px solid #cbd5e1', borderRadius: 6, padding: '12px 14px', display: 'flex', flexDirection: 'column' }}
+          >
+            {/* TOP — who is signing */}
+            <div style={{ fontSize: 10, fontWeight: 700, color: ACC, textTransform: 'uppercase', letterSpacing: 0.6 }}>{s.label}</div>
+            {s.name && <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1e293b', marginTop: 3 }}>{s.name}</div>}
+            {s.designation && <div style={{ fontSize: 10.5, color: '#64748b' }}>{s.designation}</div>}
+            {s.showCompany && s.company && <div style={{ fontSize: 10, color: '#64748b' }}>{s.company}</div>}
+            {s.showPhone && s.phone && <div style={{ fontSize: 10, color: '#64748b' }}>{s.phone}</div>}
+            {s.showEmail && s.email && <div style={{ fontSize: 10, color: '#64748b' }}>{s.email}</div>}
+            {/* MIDDLE — room for a physical signature and company stamp */}
+            <div style={{ height: 66, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+              {s.image && <img src={s.image} alt="" style={{ maxHeight: 60, maxWidth: '90%', objectFit: 'contain' }} />}
             </div>
-          ))}
-        </div>
+            {/* BOTTOM — signature line, seal caption, date */}
+            <div style={{ borderTop: '1px solid #94a3b8', marginTop: 2 }} />
+            <div style={{ textAlign: 'center', fontSize: 9.5, color: '#94a3b8', marginTop: 3 }}>(Sign &amp; Stamp)</div>
+            <div style={{ fontSize: 10, color: '#64748b', marginTop: 5 }}>Date: {s.date ? formatDate(s.date) : '—'}</div>
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -376,62 +393,122 @@ function SkinSimple({ m }) {
   )
 }
 
-// ── SKIN 2 · MODERN ── (reference format: navy header with a teal wedge that
-// carries the document label, teal section labels, a boxed Total Payable, and a
-// boxed Authorized-Signatures panel.)
-function SkinModern({ m }) {
-  const { label, BC, DF, f, partyLabel, partyName, partyLines, metaRows } = m
+// ── SKIN 2 · MODERN ── (reference format) ────────────────────────────────────
+// Branded navy header carrying the logo, the document label and the grand total;
+// teal section labels; a right-aligned financial summary; a full-width amount-in
+// -words box; dynamic terms; and per-signatory Authorized-Signature boxes.
+//
+// The whole document is wrapped in one table whose <thead> is the branded header
+// and whose <tfoot> is the company footer. Browsers repeat a table's header and
+// footer groups on every printed page and reserve their height on each page, so
+// the header and footer appear on EVERY page and page content can never overlap
+// the footer — giving correct multi-page PDF output without any fixed
+// positioning. The Bill-To / Document-Details block lives in the body, so it
+// only appears once (on the first page), exactly as required.
+
+// Branded running header — logo · document label · grand total (top-right).
+const ModernHeader = ({ m }) => (
+  <div style={{ background: m.BC, padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+      {m.f.logo && (
+        <span style={{ background: '#fff', borderRadius: 5, padding: '5px 9px', display: 'inline-flex', alignItems: 'center' }}>
+          <img src={m.f.logo} style={{ height: 26, objectFit: 'contain' }} alt="" />
+        </span>
+      )}
+      <span style={{ color: '#fff', fontSize: 25, fontWeight: 800, letterSpacing: 2 }}>{m.label.toUpperCase()}</span>
+    </div>
+    <div style={{ textAlign: 'right', color: '#fff' }}>
+      <div style={{ fontSize: 9.5, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,.75)' }}>{m.headerTotalLabel}</div>
+      <div style={{ fontSize: 23, fontWeight: 800, marginTop: 2 }}>{money(m.grand, m.cur)}</div>
+    </div>
+  </div>
+)
+
+// Company running footer — logo · name · address (left), contact details (right).
+const ModernFooter = ({ m }) => {
+  const f = m.f
   return (
-    <div style={{ fontFamily: `"${DF}", sans-serif`, fontSize: 12, color: '#1e293b', background: '#fff' }}>
-      <div style={{ position: 'relative', background: BC, padding: '22px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', overflow: 'hidden' }}>
-        {/* teal wedge on the right holding the document label */}
-        <div
-          style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: '46%', background: ACC, clipPath: 'polygon(22% 0, 100% 0, 100% 100%, 0 100%)' }}
-        />
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12 }}>
-          {f.logo && (
-            <span style={{ background: '#fff', borderRadius: 6, padding: 5, display: 'inline-flex' }}>
-              <img src={f.logo} style={{ height: 30, objectFit: 'contain' }} alt="" />
-            </span>
-          )}
-          <div>
-            {f.name && <div style={{ color: '#fff', fontSize: 18, fontWeight: 700, letterSpacing: 0.4 }}>{f.name}</div>}
-            {f.website && <div style={{ color: 'rgba(255,255,255,.7)', fontSize: 9.5, letterSpacing: 1.5, textTransform: 'uppercase' }}>{f.website}</div>}
-          </div>
+    <div style={{ borderTop: `2px solid ${m.BC}`, margin: '0 24px', padding: '10px 0 4px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {f.logo && <img src={f.logo} style={{ height: 24, objectFit: 'contain' }} alt="" />}
+        <div>
+          {f.name && <div style={{ fontWeight: 700, fontSize: 11, color: '#1e293b' }}>{f.name}</div>}
+          {f.address && <div style={{ fontSize: 9.5, color: '#64748b', whiteSpace: 'pre-wrap' }}>{f.address}</div>}
         </div>
-        <div style={{ position: 'relative', color: '#fff', fontSize: 30, fontWeight: 800, letterSpacing: 2 }}>{label.toUpperCase()}</div>
       </div>
-      <div style={{ padding: '22px 28px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 18 }}>
-          <div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: ACC, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 6 }}>{partyLabel}</div>
-            {partyName && <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>{partyName}</div>}
-            <PartyLines lines={partyLines} />
-          </div>
-          <div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: ACC, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 6 }}>Document Details</div>
-            <table style={{ borderCollapse: 'collapse', width: '100%' }}>
-              <tbody>
-                {metaRows.map(([k, v]) => (
-                  <tr key={k}>
-                    <td style={{ color: '#64748b', paddingRight: 8, paddingBottom: 3, fontSize: 11 }}>{k}</td>
-                    <td style={{ fontWeight: 600, fontSize: 11, paddingBottom: 3, textAlign: 'right' }}>{v}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <Items m={m} headBg={BC} headColor="#fff" zebra="#fafafa" />
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-          <Totals m={m} boxed />
-        </div>
-        <SkinBlocks m={m} boxedSigs />
-        <div style={{ marginTop: 26 }}>
-          <Footer f={f} bc={BC} />
-        </div>
+      <div style={{ textAlign: 'right', fontSize: 9.5, color: '#64748b' }}>
+        {f.email && <div>{f.email}</div>}
+        {f.phone && <div>{f.phone}</div>}
+        {f.website && <div>{f.website}</div>}
       </div>
     </div>
+  )
+}
+
+// Bill-To + Document-Details two-column block (first page only — it lives in the
+// table body, so it is not repeated on continuation pages).
+const ModernParties = ({ m }) => {
+  const { partyLabel, partyName, partyLines, metaRows } = m
+  const secLabel = { fontSize: 10, fontWeight: 700, color: ACC, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 8, paddingBottom: 4, borderBottom: `1.5px solid ${ACC}` }
+  return (
+    <div className="doc-keep" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 18 }}>
+      <div>
+        <div style={secLabel}>{partyLabel}</div>
+        {partyName && <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 3, color: '#1e293b' }}>{partyName}</div>}
+        <PartyLines lines={partyLines} />
+      </div>
+      <div>
+        <div style={secLabel}>Document Details</div>
+        <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+          <tbody>
+            {metaRows.map(([k, v]) => (
+              <tr key={k}>
+                <td style={{ color: '#64748b', paddingRight: 6, paddingBottom: 3, fontSize: 11, whiteSpace: 'nowrap', verticalAlign: 'top' }}>{k}</td>
+                <td style={{ fontWeight: 600, fontSize: 11, paddingBottom: 3, color: '#1e293b' }}>: {v}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+function SkinModern({ m }) {
+  const { BC, DF } = m
+  return (
+    <table className="doc-running" style={{ width: '100%', borderCollapse: 'collapse', fontFamily: `"${DF}", sans-serif`, fontSize: 12, color: '#1e293b', background: '#fff' }}>
+      {/* repeats at the top of every printed page */}
+      <thead className="doc-running-head">
+        <tr>
+          <td style={{ padding: 0 }}>
+            <ModernHeader m={m} />
+          </td>
+        </tr>
+      </thead>
+      {/* repeats at the bottom of every printed page */}
+      <tfoot className="doc-running-foot">
+        <tr>
+          <td style={{ padding: 0 }}>
+            <ModernFooter m={m} />
+          </td>
+        </tr>
+      </tfoot>
+      <tbody>
+        <tr>
+          <td style={{ padding: 0, verticalAlign: 'top' }}>
+            <div style={{ padding: '20px 24px 8px' }}>
+              <ModernParties m={m} />
+              <Items m={m} headBg={BC} headColor="#fff" zebra="#fafafa" />
+              <div className="doc-keep" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+                <Totals m={m} />
+              </div>
+              <SkinBlocks m={m} boxedSigs />
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   )
 }
 

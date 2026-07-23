@@ -154,17 +154,50 @@
   .doc-banner h1 { font-size: 19px; }
 }
 
+/* Modern skin: individual signature box never splits across a page break
+   (screen + print). Grand blocks are kept together too. */
+.doc-sig-box,
+.doc-keep {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
 /* ── Print rules — SRS section 14 ─────────────────────────── */
 @media print {
-  @page { size: A4 portrait; margin: 14mm; }
+  @page { size: A4 portrait; margin: 12mm; }
   body { background: #fff; }
   .no-print { display: none !important; }
   .app-shell .sidebar, .topbar, .preview-toolbar { display: none !important; }
   .content { padding: 0 !important; }
-  .doc-paper { box-shadow: none; max-width: 100%; margin: 0; border-radius: 0; }
-  .doc-banner, .doc-items th, .doc-totals .dt-row.grand, .doc-words, .doc-footer, .doc-section-label {
+  .doc-paper { box-shadow: none; max-width: 100%; margin: 0; border-radius: 0; overflow: visible; }
+
+  /* Every colour in the printable document must render (navy header, teal
+     accents, zebra rows, coloured totals) — the skins use inline styles, so
+     force exact colour on the whole paper. */
+  .doc-paper,
+  .doc-paper * {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
-  .doc-items tr, .doc-sigs, .doc-notes, .doc-words, .doc-totals { page-break-inside: avoid; }
+
+  /* Modern skin — repeat the branded header and company footer on EVERY page.
+     A table-header-group / table-footer-group is reprinted on each page and its
+     height is reserved per page, so content can never overlap the footer. */
+  .doc-running-head { display: table-header-group; }
+  .doc-running-foot { display: table-footer-group; }
+  /* Line-item table header repeats when items flow onto another page. */
+  .doc-running thead,
+  table thead { display: table-header-group; }
+
+  /* Keep atomic blocks intact across page breaks. */
+  .doc-items tr,
+  .doc-sigs,
+  .doc-sig-box,
+  .doc-keep,
+  .doc-notes,
+  .doc-words,
+  .doc-totals {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
 }
