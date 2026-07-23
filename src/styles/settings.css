@@ -96,6 +96,28 @@
 }
 .list-item-card:hover { border-color: #cdd3e0; }
 .user-status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+
+/* ── Service / Item Library ──────────────────────────────────── */
+.svc-search { position: relative; display: flex; align-items: center; }
+.svc-search > svg { position: absolute; left: 10px; color: var(--text-faint); pointer-events: none; }
+.svc-search .input { padding-left: 32px; padding-right: 30px; width: 100%; }
+.svc-search-clear {
+  position: absolute; right: 6px; border: none; background: transparent;
+  color: var(--text-faint); cursor: pointer; display: inline-flex;
+  align-items: center; justify-content: center; padding: 4px; border-radius: 4px;
+}
+.svc-search-clear:hover { color: var(--text-secondary); background: var(--surface-muted); }
+.svc-desc-clip {
+  margin-top: 3px; max-width: 640px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.svc-inactive {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+  color: var(--text-muted); background: var(--surface-muted);
+  border-radius: 4px; padding: 1px 7px;
+}
+.svc-active-toggle { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; }
+.svc-active-toggle input { width: 16px; height: 16px; }
 .user-row.deactivated { opacity: 0.55; }
 
 /* ── Responsive: stack the tab rail above the panel ──────────── */

@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext.jsx'
 import { can } from '../lib/roles.js'
 import CompanyManager from './settings/CompanyManager.jsx'
 import PartyList from './settings/PartyList.jsx'
+import ServiceLibrary from './settings/ServiceLibrary.jsx'
 import DocumentStyle from './settings/DocumentStyle.jsx'
 import DataBackup from './settings/DataBackup.jsx'
 import UsersManager from './settings/UsersManager.jsx'
@@ -29,6 +30,7 @@ export default function Settings() {
     { id: 'company', label: 'Companies', show: true },
     { id: 'clients', label: 'Client List', show: true },
     { id: 'vendors', label: 'Vendor List', show: true },
+    { id: 'services', label: 'Service / Item Library', show: true },
     { id: 'style', label: 'Document Style', show: true },
     { id: 'accounts', label: 'Cash / Bank Accounts', show: can(role, 'manageFinanceMasters') },
     { id: 'heads', label: 'Account Heads', show: can(role, 'manageFinanceMasters') },
@@ -64,6 +66,7 @@ export default function Settings() {
           {active === 'company' && <CompanyManager />}
           {active === 'clients' && <PartyList kind="client" />}
           {active === 'vendors' && <PartyList kind="vendor" />}
+          {active === 'services' && <ServiceLibrary />}
           {active === 'style' && <DocumentStyle />}
           {active === 'accounts' && <FinanceAccounts />}
           {active === 'heads' && <FinanceHeads />}

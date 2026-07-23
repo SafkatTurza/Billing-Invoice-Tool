@@ -59,6 +59,9 @@ export function AppProvider({ children }) {
   const [docs, setDocs] = useState(() => ls.get(KEYS.docs, []))
   const [clients, setClients] = useState(() => ls.get(KEYS.clients, []))
   const [vendors, setVendors] = useState(() => ls.get(KEYS.vendors, []))
+  // Service / Item Library — reusable master data (name + description only, no
+  // pricing). Documents copy a snapshot of the name/description on selection.
+  const [services, setServices] = useState(() => ls.get(KEYS.services, []))
   const [style, setStyleState] = useState(() => ls.get(KEYS.style, DEFAULT_STYLE))
   const [users, setUsers] = useState(() => ls.get(KEYS.users, []))
   const [security, setSecurity] = useState(() =>
@@ -91,6 +94,9 @@ export function AppProvider({ children }) {
   useEffect(() => {
     ls.set(KEYS.vendors, vendors)
   }, [vendors])
+  useEffect(() => {
+    ls.set(KEYS.services, services)
+  }, [services])
 
   // One-time backfill: give every existing client/vendor a human-readable ID.
   // Runs once (flag-guarded); assigns codes only to records that lack one, so
@@ -626,6 +632,29 @@ export function AppProvider({ children }) {
     [addAudit],
   )
 
+  // ── Service / Item Library ───────────────────────────────────────────
+  // Create a reusable service (name + description only — never pricing) and
+  // return the stored record. Used by the on-document "Create New Service /
+  // Item" quick-add so a newly typed service is saved to the Library and can be
+  // selected immediately. Editing a document's copied name/description later
+  // never flows back here — documents hold independent snapshots.
+  const addService = useCallback(
+    ({ name, description = '', category = '' }) => {
+      const record = {
+        id: uid(),
+        name: (name || '').trim(),
+        description: (description || '').trim(),
+        category: (category || '').trim(),
+        active: true,
+        createdAt: new Date().toISOString(),
+      }
+      setServices((prev) => [...prev, record])
+      addAudit('Service / Item added', record.name, 'Service Library')
+      return record
+    },
+    [addAudit],
+  )
+
   const setStyle = useCallback(
     (next) => {
       setStyleState(next)
@@ -644,6 +673,7 @@ export function AppProvider({ children }) {
       docs,
       clients,
       vendors,
+      services,
       style,
       users,
       security,
@@ -664,7 +694,7 @@ export function AppProvider({ children }) {
         settings: ls.get(KEYS.assetSettings, {}),
       },
     }
-  }, [companies, docs, clients, vendors, style, users, security])
+  }, [companies, docs, clients, vendors, services, style, users, security])
 
   const importAll = useCallback(
     (data) => {
@@ -673,6 +703,7 @@ export function AppProvider({ children }) {
       if (data.docs) setDocs(data.docs)
       if (data.clients) setClients(data.clients)
       if (data.vendors) setVendors(data.vendors)
+      if (data.services) setServices(data.services)
       if (data.style) setStyleState(data.style)
       if (data.users) setUsers(data.users)
       if (data.security) setSecurity(data.security)
@@ -708,6 +739,7 @@ export function AppProvider({ children }) {
     docs,
     clients,
     vendors,
+    services,
     style,
     users,
     security,
@@ -725,6 +757,8 @@ export function AppProvider({ children }) {
     findCompany,
     setClients,
     setVendors,
+    setServices,
+    addService,
     setStyle,
     setSecurity,
     // auth

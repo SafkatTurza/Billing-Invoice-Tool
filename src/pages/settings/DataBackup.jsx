@@ -98,7 +98,7 @@ export default function DataBackup() {
           <h4 style={{ color: 'var(--brand-dark)' }}>Export All Data</h4>
           <p className="small muted mt-8">
             Downloads a single JSON file containing company profile, all documents, clients, vendors,
-            users, and style settings.
+            the Service / Item Library, users, and style settings.
           </p>
           <button className="btn btn-primary mt-16" onClick={doExport}>
             <Icon.download width={16} height={16} /> Export All Data

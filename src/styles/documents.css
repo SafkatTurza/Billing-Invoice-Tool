@@ -670,6 +670,65 @@
 /* Line-item tables keep column alignment and scroll inside their wrapper. */
 .items-table-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .items-table-scroll .items-table { min-width: 620px; }
+
+/* ── Service / Item type-ahead dropdown ──────────────────────────────
+   Rendered in a portal on <body> with fixed positioning, so it floats above
+   the horizontally-scrolling items table (which clips absolute children). */
+.svc-menu {
+  z-index: 1200;
+  max-height: 300px;
+  overflow-y: auto;
+  background: var(--surface-raised, #fff);
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: 4px;
+}
+.svc-menu-empty { padding: 12px 12px; color: var(--text-faint); font-size: var(--fs-secondary); }
+.svc-opt {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  cursor: pointer;
+}
+.svc-opt:hover, .svc-opt.active { background: var(--brand-blue-50); }
+.svc-opt-name {
+  display: block;
+  font-weight: var(--fw-semibold);
+  color: var(--text-primary);
+  font-size: var(--fs-secondary);
+}
+.svc-opt-desc {
+  display: block;
+  color: var(--text-muted);
+  font-size: var(--fs-caption);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.svc-create {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  border: none;
+  border-top: 1px solid var(--border-primary);
+  margin-top: 4px;
+  background: transparent;
+  color: var(--brand-blue);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-secondary);
+  border-radius: var(--radius-sm);
+  padding: 9px 10px;
+  cursor: pointer;
+}
+.svc-create:hover, .svc-create.active { background: var(--brand-blue-50); }
 @media (max-width: 600px) {
   .form-section { padding: 16px; }
   .lock-actions .btn { flex: 1 1 auto; }

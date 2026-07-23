@@ -20,6 +20,7 @@ export const KEYS = {
   notifs: 'dcs_notifs',
   counters: 'dcs_counters',
   docColumns: 'dcs_doc_columns', // saved line-item column default ("apply to all future")
+  services: 'dcs_services', // reusable Service / Item Library (name + description master data, no pricing)
   session: 'dcs_session', // localStorage token (30-day)
   // ── Finance module ──
   finAccounts: 'dcs_fin_accounts', // cash/bank/MFS accounts

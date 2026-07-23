@@ -13,6 +13,7 @@ import {
   clearColumnDefault,
 } from '../../lib/columns.js'
 import AutoTextarea from '../AutoTextarea.jsx'
+import ServiceCombobox from './ServiceCombobox.jsx'
 import { Icon } from '../Icons.jsx'
 
 // Columns shown in the "Column Visibility & Headers" panel, in display order.
@@ -83,6 +84,17 @@ export default function LineItems({ doc, patch }) {
   const showUnit = colVisible(doc, 'unit')
   const showRate = colVisible(doc, 'rate')
   const firstKey = nameColKey(doc)
+
+  // The shared Sales Service / Item Library powers the name-field type-ahead on
+  // sales documents (Invoice, Estimate, Work Order). Purchase Orders buy goods
+  // from vendors, not sell services, so they keep a plain name input.
+  const libraryEnabled = doc.type !== 'purchase-orders'
+
+  // Copy an independent snapshot of a selected/created service into THIS line
+  // item only (name + description). Quantity, unit, rate and amount are left for
+  // the user to enter — and editing these fields never touches the Library.
+  const pickService = (id, { name, description }) =>
+    updateItem(id, { name, description })
 
   // A column card in the customization panel: hide toggle + preset titles +
   // Other. Rendered via a plain function call (not <ColCard/>) so the Other
@@ -231,12 +243,20 @@ export default function LineItems({ doc, patch }) {
                     <td>
                       {showName ? (
                         <>
-                          <input
-                            className="li-name"
-                            placeholder="Item name"
-                            value={it.name}
-                            onChange={(e) => updateItem(it.id, { name: e.target.value })}
-                          />
+                          {libraryEnabled ? (
+                            <ServiceCombobox
+                              value={it.name}
+                              onNameChange={(v) => updateItem(it.id, { name: v })}
+                              onPick={(sel) => pickService(it.id, sel)}
+                            />
+                          ) : (
+                            <input
+                              className="li-name"
+                              placeholder="Item name"
+                              value={it.name}
+                              onChange={(e) => updateItem(it.id, { name: e.target.value })}
+                            />
+                          )}
                           {showDesc && (
                             <AutoTextarea
                               placeholder={`${colLabel(doc, 'description')} (optional)`}
