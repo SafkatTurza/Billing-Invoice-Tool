@@ -253,7 +253,19 @@
   .plain .lbl, .tech .lbl { font-family: var(--font-display); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
   .plain .lbl { color: var(--tip-ink); }
   .tech .lbl { color: var(--navy); }
-  @media print { .formula { background: #f5f6f8 !important; color: #14283f !important; border: 1px solid var(--rule); } .formula .c { color: var(--gold); } .formula .k { color: var(--navy); } }
+  @media print {
+    /* Paper can't scroll: formula blocks must fit the page, not clip behind a
+       scrollbar. Use the full width, wrap long lines, and shrink the font so
+       the longest lines fit without wrapping in the first place. */
+    .formula {
+      background: #f5f6f8 !important; color: #14283f !important; border: 1px solid var(--rule);
+      max-width: none; width: 100%;
+      overflow: visible; white-space: pre-wrap; overflow-wrap: anywhere;
+      font-size: 8.6pt; line-height: 1.5; break-inside: avoid;
+    }
+    .formula .c { color: var(--gold); }
+    .formula .k { color: var(--navy); }
+  }
 
   hr.soft { border: none; border-top: 1px solid var(--rule); margin: 40px 0 0; max-width: var(--measure); }
 
