@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import { isAmountLocked, lineAmount } from '../../lib/pricing.js'
 import { newLineItem } from '../../lib/newDocument.js'
 import {
@@ -22,16 +22,11 @@ const PANEL_COLS = ['name', 'description', 'spec', 'qty', 'unit', 'rate', 'amoun
 // untouched; hiding a column only hides its input, stored values are preserved.
 export default function LineItems({ doc, patch }) {
   const items = doc.items || []
+  // Inline expander — opened/closed only via the button. (No click-away
+  // handler: the panel sits below the button, so a click-away listener would
+  // treat clicks on the panel's own toggles/inputs as "outside" and collapse
+  // it on every interaction.)
   const [panelOpen, setPanelOpen] = useState(false)
-  const menuRef = useRef(null)
-
-  useEffect(() => {
-    const onClick = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setPanelOpen(false)
-    }
-    document.addEventListener('mousedown', onClick)
-    return () => document.removeEventListener('mousedown', onClick)
-  }, [])
 
   const updateItem = (id, changes) => {
     patch({
@@ -66,7 +61,7 @@ export default function LineItems({ doc, patch }) {
         <h3>
           <Icon.invoice width={16} height={16} /> Line Items
         </h3>
-        <div className="customize-cols" ref={menuRef}>
+        <div className="customize-cols">
           <button
             type="button"
             className={`btn btn-ghost btn-sm ${panelOpen ? 'is-active' : ''}`}

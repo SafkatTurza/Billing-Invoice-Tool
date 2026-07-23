@@ -44,7 +44,7 @@ export function newDocument(type, company) {
       website: company?.website || '',
     },
     notes: '',
-    signatures: [{ id: uid(), label: 'Authorized Signature', name: '', designation: '', date: '' }],
+    signatures: [{ id: uid(), label: 'Prepared By', name: '', designation: '', date: '' }],
     grandTotal: 0,
   }
 

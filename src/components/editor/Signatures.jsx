@@ -9,9 +9,10 @@ const SIG_LABELS = [
   'Checked By',
   'Received By',
   'Verified By',
-  'Authorized Signature',
   'Custom',
 ]
+// Preset labels only (everything except the trailing "Custom" sentinel).
+const SIG_PRESETS = SIG_LABELS.slice(0, -1)
 
 // Dynamic signature blocks (SRS 4.4) — reference layout: numbered block,
 // Label/Name and Designation/Date pairs, and optional Company / Phone / Email
@@ -24,7 +25,7 @@ export default function Signatures({ doc, patch }) {
     patch({ signatures: sigs.map((s) => (s.id === id ? { ...s, ...changes } : s)) })
   const add = () =>
     patch({
-      signatures: [...sigs, { id: uid(), label: 'Signature', name: '', designation: '', date: '' }],
+      signatures: [...sigs, { id: uid(), label: 'Prepared By', name: '', designation: '', date: '' }],
     })
   const remove = (id) => patch({ signatures: sigs.filter((s) => s.id !== id) })
 
@@ -71,7 +72,7 @@ export default function Signatures({ doc, patch }) {
                 <label>Label</label>
                 <select
                   className="select"
-                  value={SIG_LABELS.includes(s.label) ? s.label : 'Custom'}
+                  value={SIG_PRESETS.includes(s.label) ? s.label : 'Custom'}
                   onChange={(e) => {
                     const v = e.target.value
                     update(s.id, { label: v === 'Custom' ? '' : v })
@@ -83,16 +84,18 @@ export default function Signatures({ doc, patch }) {
                     </option>
                   ))}
                 </select>
-                {!SIG_LABELS.slice(0, -1).includes(s.label) && (
+              </div>
+              {!SIG_PRESETS.includes(s.label) && (
+                <div className="field">
+                  <label>Custom Label</label>
                   <input
                     className="input"
-                    style={{ marginTop: 6 }}
-                    placeholder="Custom label"
+                    placeholder="Label"
                     value={s.label}
                     onChange={(e) => update(s.id, { label: e.target.value })}
                   />
-                )}
-              </div>
+                </div>
+              )}
               <div className="field">
                 <label>Name</label>
                 <input className="input" placeholder="Full name" value={s.name} onChange={(e) => update(s.id, { name: e.target.value })} />
