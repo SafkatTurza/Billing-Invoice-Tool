@@ -235,9 +235,9 @@ const DocFooter = ({ m }) => {
         </div>
       </div>
       <div style={{ textAlign: 'right', fontSize: 9.5, color: '#64748b' }}>
-        {f.email && <div>{f.email}</div>}
-        {f.phone && <div>{f.phone}</div>}
-        {f.website && <div>{f.website}</div>}
+        {f.email && <div><span style={{ fontWeight: 600, color: '#475569' }}>Email:</span> {f.email}</div>}
+        {f.phone && <div><span style={{ fontWeight: 600, color: '#475569' }}>Phone:</span> {f.phone}</div>}
+        {f.website && <div><span style={{ fontWeight: 600, color: '#475569' }}>Visit:</span> {f.website}</div>}
       </div>
     </div>
   )
