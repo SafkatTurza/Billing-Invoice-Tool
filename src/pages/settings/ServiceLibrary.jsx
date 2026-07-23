@@ -5,6 +5,7 @@ import { useConfirm } from '../../components/ConfirmDialog.jsx'
 import Modal from '../../components/Modal.jsx'
 import { Icon } from '../../components/Icons.jsx'
 import { uid } from '../../lib/format.js'
+import { STANDARD_SERVICES } from '../../lib/serviceCatalog.js'
 
 const EMPTY = { name: '', description: '', category: '', active: true }
 
@@ -90,6 +91,39 @@ export default function ServiceLibrary() {
     setServices(list.filter((x) => x.id !== s.id))
   }
 
+  // Append the standard catalog, skipping any whose name already exists
+  // (case-insensitive). Non-destructive: existing records — and anything the
+  // user added, edited, or deleted — are never touched. Not demo data, so a
+  // "Reset Demo Data" never removes these.
+  const loadStandard = async () => {
+    const existing = new Set(list.map((s) => s.name.trim().toLowerCase()))
+    const missing = STANDARD_SERVICES.filter((s) => !existing.has(s.name.trim().toLowerCase()))
+    if (missing.length === 0) {
+      toast.info('All standard services are already in your Library.')
+      return
+    }
+    const ok = await confirm({
+      title: 'Load standard services?',
+      message: `This adds ${missing.length} standard service${
+        missing.length === 1 ? '' : 's'
+      } (name, category, and description — no pricing) to your Library. Services you already have are skipped, and nothing existing is changed.`,
+      confirmLabel: `Add ${missing.length}`,
+      danger: false,
+    })
+    if (!ok) return
+    const now = new Date().toISOString()
+    const records = missing.map((s) => ({
+      id: uid(),
+      name: s.name,
+      description: s.description || '',
+      category: s.category || '',
+      active: true,
+      createdAt: now,
+    }))
+    setServices([...list, ...records])
+    toast.success(`Added ${records.length} standard service${records.length === 1 ? '' : 's'}.`)
+  }
+
   const editingExists = editing && list.some((s) => s.id === editing.id)
 
   return (
@@ -105,9 +139,14 @@ export default function ServiceLibrary() {
             document.
           </p>
         </div>
-        <button className="btn btn-primary" onClick={startAdd}>
-          <Icon.plus width={16} height={16} /> Add Service / Item
-        </button>
+        <div className="row gap-8 center">
+          <button className="btn btn-ghost" onClick={loadStandard}>
+            <Icon.download width={16} height={16} /> Load Standard Services
+          </button>
+          <button className="btn btn-primary" onClick={startAdd}>
+            <Icon.plus width={16} height={16} /> Add Service / Item
+          </button>
+        </div>
       </div>
 
       <div className="divider" />
@@ -131,7 +170,8 @@ export default function ServiceLibrary() {
 
       {list.length === 0 ? (
         <div className="empty">
-          No services yet. Add reusable services here, or create them on the fly from a document.
+          No services yet. Use <strong>Load Standard Services</strong> to add the standard catalog, add
+          your own here, or create them on the fly from a document.
         </div>
       ) : filtered.length === 0 ? (
         <div className="empty">No Services / Items match “{query}”.</div>
