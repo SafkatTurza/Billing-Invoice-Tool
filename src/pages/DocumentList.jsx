@@ -6,6 +6,7 @@ import { metaFor } from '../lib/docmeta.js'
 import { formatMoney, formatDate } from '../lib/format.js'
 import StatusBadge, { STATUS_OPTIONS } from '../components/StatusBadge.jsx'
 import { Icon } from '../components/Icons.jsx'
+import { useConfirm } from '../components/ConfirmDialog.jsx'
 import '../styles/documents.css'
 
 // Statuses that count as "unpaid but issued" (invoice dashboard tab).
@@ -14,6 +15,7 @@ const isUnpaid = (s) => UNPAID_STATUSES.includes(s)
 
 export default function DocumentList({ type }) {
   const { docs, currentUser, deleteDocument } = useApp()
+  const confirm = useConfirm()
   const navigate = useNavigate()
   const meta = metaFor(type)
   const isInvoice = type === 'invoices'
@@ -231,8 +233,15 @@ export default function DocumentList({ type }) {
                         <button
                           className="btn btn-danger btn-sm"
                           title="Delete"
-                          onClick={() => {
-                            if (confirm(`Move ${d.docNumber} to Recycle Bin?`)) deleteDocument(d.id)
+                          onClick={async () => {
+                            if (
+                              await confirm({
+                                title: 'Move to Recycle Bin?',
+                                message: `${d.docNumber} will be moved to the Recycle Bin. You can restore it later.`,
+                                confirmLabel: 'Move to Recycle Bin',
+                              })
+                            )
+                              deleteDocument(d.id)
                           }}
                         >
                           <Icon.trash width={14} height={14} />

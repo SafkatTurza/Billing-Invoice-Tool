@@ -12,6 +12,7 @@ import StatusBadge from '../components/StatusBadge.jsx'
 import Modal from '../components/Modal.jsx'
 import DocSkin from '../components/preview/DocSkin.jsx'
 import { useToast } from '../components/Toast.jsx'
+import { useConfirm } from '../components/ConfirmDialog.jsx'
 import { Icon } from '../components/Icons.jsx'
 import '../styles/preview.css'
 
@@ -20,6 +21,7 @@ export default function DocumentPreview({ type }) {
   const navigate = useNavigate()
   const { docs, company, style, currentUser, saveDocument, deleteDocument, findCompany, addAudit, notify } = useApp()
   const toast = useToast()
+  const confirm = useConfirm()
   const meta = metaFor(type)
 
   const doc = docs.find((d) => d.id === id)
@@ -171,8 +173,14 @@ export default function DocumentPreview({ type }) {
           {canDelete && (
             <button
               className="btn btn-danger"
-              onClick={() => {
-                if (confirm(`Move ${doc.docNumber} to Recycle Bin?`)) {
+              onClick={async () => {
+                if (
+                  await confirm({
+                    title: 'Move to Recycle Bin?',
+                    message: `${doc.docNumber} will be moved to the Recycle Bin. You can restore it later.`,
+                    confirmLabel: 'Move to Recycle Bin',
+                  })
+                ) {
                   deleteDocument(doc.id)
                   navigate(`/${type}`)
                 }

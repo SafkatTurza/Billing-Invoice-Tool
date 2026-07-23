@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useToast } from '../../components/Toast.jsx'
+import { useConfirm } from '../../components/ConfirmDialog.jsx'
 import Modal from '../../components/Modal.jsx'
 import { Icon } from '../../components/Icons.jsx'
 
@@ -24,6 +25,7 @@ const BLANK = { name: '', kind: 'expense' }
 export default function FinanceHeads() {
   const { heads, saveHead, deleteHead } = useFinance()
   const toast = useToast()
+  const confirm = useConfirm()
   const [editing, setEditing] = useState(null)
 
   const save = () => {
@@ -65,7 +67,7 @@ export default function FinanceHeads() {
                 <button className="btn btn-ghost btn-sm" onClick={() => setEditing({ ...h })}>
                   <Icon.edit width={14} height={14} /> Edit
                 </button>
-                <button className="btn btn-danger btn-sm" onClick={() => confirm(`Remove ${h.name}?`) && deleteHead(h.id)}>
+                <button className="btn btn-danger btn-sm" onClick={async () => { if (await confirm({ title: `Remove ${h.name}?`, confirmLabel: 'Remove' })) deleteHead(h.id) }}>
                   <Icon.trash width={14} height={14} />
                 </button>
               </div>

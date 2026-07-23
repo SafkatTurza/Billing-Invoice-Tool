@@ -4,6 +4,7 @@ import { useAssets } from '../../context/AssetContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { useToast } from '../../components/Toast.jsx'
+import { useConfirm } from '../../components/ConfirmDialog.jsx'
 import { can } from '../../lib/roles.js'
 import Modal from '../../components/Modal.jsx'
 import { Icon } from '../../components/Icons.jsx'
@@ -560,9 +561,10 @@ function IncidentModal({ asset, onClose }) {
 function DisposeModal({ asset, onClose }) {
   const { disposeAsset } = useAssets()
   const toast = useToast()
+  const confirm = useConfirm()
   const [f, setF] = useState({ date: todayISO(), type: 'Sold', reason: '', value: '', currency: asset.purchase?.currency || 'BDT', buyer: '', approval: '', financialRef: '', notes: '', attachments: [] })
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }))
-  const save = () => { if (!confirm(`Mark ${asset.assetId} as ${f.type}? The record is kept permanently.`)) return; disposeAsset(asset.id, f); toast.success(`Asset ${f.type.toLowerCase()}.`); onClose() }
+  const save = async () => { if (!(await confirm({ title: `Mark ${asset.assetId} as ${f.type}?`, message: 'This is a terminal action — the record is kept permanently.', confirmLabel: 'Confirm' }))) return; disposeAsset(asset.id, f); toast.success(`Asset ${f.type.toLowerCase()}.`); onClose() }
   return (
     <Modal title={`Dispose / Write-Off — ${asset.assetId}`} width={620} onClose={onClose} footer={<Foot onClose={onClose} onSave={save} label="Confirm" />}>
       <div className="clearance-banner mb-16">This is a terminal action — the asset stays permanently searchable but can no longer change hands.</div>

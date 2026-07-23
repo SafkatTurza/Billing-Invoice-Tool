@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
 import { useToast } from '../../components/Toast.jsx'
+import { useConfirm } from '../../components/ConfirmDialog.jsx'
 import Modal from '../../components/Modal.jsx'
 import { Icon } from '../../components/Icons.jsx'
 import { uid } from '../../lib/format.js'
@@ -29,6 +30,7 @@ const EMPTY = {
 export default function PartyList({ kind }) {
   const app = useApp()
   const toast = useToast()
+  const confirm = useConfirm()
   const isClient = kind === 'client'
   const list = isClient ? app.clients : app.vendors
   const setList = isClient ? app.setClients : app.setVendors
@@ -97,8 +99,8 @@ export default function PartyList({ kind }) {
     setEditing(null)
   }
 
-  const remove = (id) => {
-    if (!confirm(`Remove this ${label.toLowerCase()}?`)) return
+  const remove = async (id) => {
+    if (!(await confirm({ title: `Remove this ${label.toLowerCase()}?`, confirmLabel: 'Remove' }))) return
     setList(list.filter((p) => p.id !== id))
   }
 

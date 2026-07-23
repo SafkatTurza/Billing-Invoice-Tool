@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useFinance } from '../../context/FinanceContext.jsx'
 import { CURRENCIES } from '../../lib/format.js'
 import { useToast } from '../../components/Toast.jsx'
+import { useConfirm } from '../../components/ConfirmDialog.jsx'
 import Modal from '../../components/Modal.jsx'
 import { Icon } from '../../components/Icons.jsx'
 
@@ -12,6 +13,7 @@ const BLANK = { name: '', type: 'Cash', currency: 'BDT', openingBalance: 0 }
 export default function FinanceAccounts() {
   const { accounts, saveAccount, deleteAccount, ledger } = useFinance()
   const toast = useToast()
+  const confirm = useConfirm()
   const [editing, setEditing] = useState(null)
 
   const balanceOf = (acc) => {
@@ -75,8 +77,8 @@ export default function FinanceAccounts() {
                     </button>
                     <button
                       className="btn btn-danger btn-sm"
-                      onClick={() => {
-                        if (confirm(`Remove ${a.name}?`)) deleteAccount(a.id)
+                      onClick={async () => {
+                        if (await confirm({ title: `Remove ${a.name}?`, confirmLabel: 'Remove' })) deleteAccount(a.id)
                       }}
                     >
                       <Icon.trash width={14} height={14} />

@@ -13,6 +13,7 @@ import {
 } from '../../lib/loans.js'
 import { CURRENCIES, formatMoney, formatDate, formatDateTime, todayISO } from '../../lib/format.js'
 import { useToast } from '../../components/Toast.jsx'
+import { useConfirm } from '../../components/ConfirmDialog.jsx'
 import Modal from '../../components/Modal.jsx'
 import AttachmentField, { AttachmentList } from '../../components/AttachmentField.jsx'
 import { Icon } from '../../components/Icons.jsx'
@@ -30,6 +31,7 @@ export default function Loans() {
   } = useFinance()
   const { currentUser } = useApp()
   const toast = useToast()
+  const confirm = useConfirm()
   const canManage = can(currentUser.role, 'financeManage')
   const [editing, setEditing] = useState(null)
   const [showSettled, setShowSettled] = useState(false)
@@ -199,7 +201,7 @@ export default function Loans() {
                       <Icon.edit width={14} height={14} /> {canManage ? 'Manage' : 'View'}
                     </button>
                     {canManage && (
-                      <button className="btn btn-danger btn-sm" onClick={() => confirm(`Delete this ${l.type.toLowerCase()}?`) && deleteLoan(l.id)}>
+                      <button className="btn btn-danger btn-sm" onClick={async () => { if (await confirm({ title: `Delete this ${l.type.toLowerCase()}?`, confirmLabel: 'Delete' })) deleteLoan(l.id) }}>
                         <Icon.trash width={14} height={14} />
                       </button>
                     )}

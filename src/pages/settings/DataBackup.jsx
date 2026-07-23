@@ -1,12 +1,14 @@
 import { useRef } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
 import { useToast } from '../../components/Toast.jsx'
+import { useConfirm } from '../../components/ConfirmDialog.jsx'
 import { Icon } from '../../components/Icons.jsx'
 import { todayISO } from '../../lib/format.js'
 
 export default function DataBackup() {
   const { exportAll, importAll } = useApp()
   const toast = useToast()
+  const confirm = useConfirm()
   const fileRef = useRef(null)
 
   const doExport = () => {
@@ -21,10 +23,16 @@ export default function DataBackup() {
     toast.success('Backup exported.')
   }
 
-  const doImport = (e) => {
+  const doImport = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
-    if (!confirm('Importing REPLACES all current data with the backup file. Continue?')) {
+    if (
+      !(await confirm({
+        title: 'Replace all data?',
+        message: 'Importing REPLACES all current data with the backup file. This cannot be undone.',
+        confirmLabel: 'Import & replace',
+      }))
+    ) {
       e.target.value = ''
       return
     }

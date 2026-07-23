@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useApp } from '../context/AppContext.jsx'
 import { useFinance } from '../context/FinanceContext.jsx'
 import { useToast } from '../components/Toast.jsx'
+import { useConfirm } from '../components/ConfirmDialog.jsx'
 import { formatDate, formatMoney } from '../lib/format.js'
 import { FIN_TYPES, voucherTotal, isVoucherType, voucherLabel } from '../lib/finance.js'
 import { Icon } from '../components/Icons.jsx'
@@ -12,6 +13,7 @@ export default function RecycleBin() {
   const { docs, restoreDocument, permanentDelete } = useApp()
   const { finDocs, restoreFinDoc, permanentDeleteFinDoc } = useFinance()
   const toast = useToast()
+  const confirm = useConfirm()
 
   const deleted = useMemo(() => docs.filter((d) => d.deleted), [docs])
   const finDeleted = useMemo(() => finDocs.filter((d) => d.deleted), [finDocs])
@@ -74,8 +76,14 @@ export default function RecycleBin() {
                         </button>
                         <button
                           className="btn btn-danger btn-sm"
-                          onClick={() => {
-                            if (confirm('Permanently delete this document? This cannot be undone.')) {
+                          onClick={async () => {
+                            if (
+                              await confirm({
+                                title: 'Permanently delete?',
+                                message: 'This document will be permanently deleted. This cannot be undone.',
+                                confirmLabel: 'Delete permanently',
+                              })
+                            ) {
                               permanentDelete(d.id)
                               toast.success('Permanently deleted.')
                             }
@@ -138,8 +146,14 @@ export default function RecycleBin() {
                           </button>
                           <button
                             className="btn btn-danger btn-sm"
-                            onClick={() => {
-                              if (confirm('Permanently delete this finance document? This cannot be undone.')) {
+                            onClick={async () => {
+                              if (
+                                await confirm({
+                                  title: 'Permanently delete?',
+                                  message: 'This finance document will be permanently deleted. This cannot be undone.',
+                                  confirmLabel: 'Delete permanently',
+                                })
+                              ) {
                                 permanentDeleteFinDoc(d.id)
                                 toast.success('Permanently deleted.')
                               }

@@ -5,6 +5,7 @@ import { can } from '../../lib/roles.js'
 import { CURRENCIES, formatMoney } from '../../lib/format.js'
 import Modal from '../../components/Modal.jsx'
 import { useToast } from '../../components/Toast.jsx'
+import { useConfirm } from '../../components/ConfirmDialog.jsx'
 import { Icon } from '../../components/Icons.jsx'
 
 // Phase E — Recurring entries. Templates that spawn a Daily Expense or a Bill
@@ -26,6 +27,7 @@ export default function Recurring() {
   const { heads, accounts, recurring, saveRecurring, deleteRecurring, runRecurring } = useFinance()
   const { company, currentUser } = useApp()
   const toast = useToast()
+  const confirm = useConfirm()
   const canManage = can(currentUser.role, 'financeManage')
   const expenseHeads = heads.filter((h) => h.kind === 'expense')
 
@@ -144,8 +146,8 @@ export default function Recurring() {
                           <button
                             className="btn btn-ghost btn-sm"
                             style={{ color: 'var(--red)' }}
-                            onClick={() => {
-                              if (confirm(`Delete recurring entry "${r.name}"?`)) {
+                            onClick={async () => {
+                              if (await confirm({ title: `Delete recurring entry "${r.name}"?`, confirmLabel: 'Delete' })) {
                                 deleteRecurring(r.id)
                                 toast.success('Deleted.')
                               }

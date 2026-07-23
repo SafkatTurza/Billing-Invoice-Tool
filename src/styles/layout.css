@@ -426,6 +426,38 @@
   background: #fafbfc;
 }
 
+/* ── Confirm dialog ───────────────────────────────────────── */
+.confirm-modal { border-radius: 14px; }
+.confirm-body {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 24px 22px 20px;
+}
+.confirm-icon {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.confirm-icon.danger { background: #fdecec; color: var(--danger, #d92d20); }
+.confirm-icon.info { background: #eaf1fd; color: var(--brand-dark, #1d4ed8); }
+.confirm-text h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--brand-dark);
+  margin: 3px 0 6px;
+}
+.confirm-text p {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin: 0;
+}
+
 /* ── Toasts ───────────────────────────────────────────────── */
 .toast-wrap {
   position: fixed;

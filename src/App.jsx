@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useApp } from './context/AppContext.jsx'
 import { ToastProvider } from './components/Toast.jsx'
+import { ConfirmProvider } from './components/ConfirmDialog.jsx'
 
 import SetupWizard from './pages/SetupWizard.jsx'
 import Login from './pages/Login.jsx'
@@ -54,7 +55,9 @@ export default function App() {
   // adapts via breakpoints and an off-canvas sidebar drawer on small screens.
   return (
     <ToastProvider>
-      <AppRoutes isSetupComplete={isSetupComplete} currentUser={currentUser} />
+      <ConfirmProvider>
+        <AppRoutes isSetupComplete={isSetupComplete} currentUser={currentUser} />
+      </ConfirmProvider>
     </ToastProvider>
   )
 }

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
 import { can } from '../../lib/roles.js'
 import { useToast } from '../../components/Toast.jsx'
+import { useConfirm } from '../../components/ConfirmDialog.jsx'
 import Modal from '../../components/Modal.jsx'
 import { Icon } from '../../components/Icons.jsx'
 
@@ -21,6 +22,7 @@ const BLANK = {
 export default function CompanyManager() {
   const { companies, addCompany, updateCompany, deleteCompany, currentUser } = useApp()
   const toast = useToast()
+  const confirm = useConfirm()
   const editable = can(currentUser.role, 'changeCompany')
 
   const [editing, setEditing] = useState(null)
@@ -108,8 +110,14 @@ export default function CompanyManager() {
               {companies.length > 1 && (
                 <button
                   className="btn btn-danger btn-sm"
-                  onClick={() => {
-                    if (confirm(`Remove ${c.name}? Documents already issued keep their details.`)) {
+                  onClick={async () => {
+                    if (
+                      await confirm({
+                        title: `Remove ${c.name}?`,
+                        message: 'Documents already issued keep their details.',
+                        confirmLabel: 'Remove',
+                      })
+                    ) {
                       deleteCompany(c.id)
                       toast.success('Company removed.')
                     }

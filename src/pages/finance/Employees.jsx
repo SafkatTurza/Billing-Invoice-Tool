@@ -6,6 +6,7 @@ import { can } from '../../lib/roles.js'
 import { newEmployee, commitEmpId, EMPLOYMENT_TYPES, EMP_STATUSES } from '../../lib/salary.js'
 import { CURRENCIES, formatMoney } from '../../lib/format.js'
 import { useToast } from '../../components/Toast.jsx'
+import { useConfirm } from '../../components/ConfirmDialog.jsx'
 import Modal from '../../components/Modal.jsx'
 import { Icon } from '../../components/Icons.jsx'
 
@@ -23,6 +24,7 @@ export default function Employees() {
   const { currentUser } = useApp()
   const navigate = useNavigate()
   const toast = useToast()
+  const confirm = useConfirm()
   const canManage = can(currentUser.role, 'financeManage')
   const [editing, setEditing] = useState(null)
 
@@ -99,7 +101,7 @@ export default function Employees() {
                         <Icon.edit width={14} height={14} /> {canManage ? 'Edit' : 'View'}
                       </button>
                       {canManage && (
-                        <button className="btn btn-danger btn-sm" onClick={() => confirm(`Remove ${e.name}?`) && deleteEmployee(e.id)}>
+                        <button className="btn btn-danger btn-sm" onClick={async () => { if (await confirm({ title: `Remove ${e.name}?`, confirmLabel: 'Remove' })) deleteEmployee(e.id) }}>
                           <Icon.trash width={14} height={14} />
                         </button>
                       )}

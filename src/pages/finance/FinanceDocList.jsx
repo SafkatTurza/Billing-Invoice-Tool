@@ -6,6 +6,7 @@ import { can } from '../../lib/roles.js'
 import { FIN_TYPES, FIN_STATUS, isVoucherType, isPrimary, voucherLabel, voucherTotal } from '../../lib/finance.js'
 import { formatMoney, formatDate } from '../../lib/format.js'
 import { Icon } from '../../components/Icons.jsx'
+import { useConfirm } from '../../components/ConfirmDialog.jsx'
 import '../../styles/documents.css'
 
 const STATUS_BADGE = {
@@ -20,6 +21,7 @@ export default function FinanceDocList({ type }) {
   const { finDocs, deleteFinDoc, duplicateFinDoc } = useFinance()
   const { currentUser } = useApp()
   const navigate = useNavigate()
+  const confirm = useConfirm()
   const meta = FIN_TYPES[type]
 
   const onDuplicate = (id) => {
@@ -168,7 +170,7 @@ export default function FinanceDocList({ type }) {
                       {can(currentUser.role, 'manageFinanceMasters') && (
                         <button
                           className="btn btn-danger btn-sm"
-                          onClick={() => confirm(`Delete ${d.docNumber}?`) && deleteFinDoc(d.id)}
+                          onClick={async () => { if (await confirm({ title: `Delete ${d.docNumber}?`, confirmLabel: 'Delete' })) deleteFinDoc(d.id) }}
                           title="Delete"
                         >
                           <Icon.trash width={14} height={14} />

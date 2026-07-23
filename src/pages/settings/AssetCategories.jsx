@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAssets } from '../../context/AssetContext.jsx'
 import { useApp } from '../../context/AppContext.jsx'
 import { useToast } from '../../components/Toast.jsx'
+import { useConfirm } from '../../components/ConfirmDialog.jsx'
 import { can } from '../../lib/roles.js'
 import Modal from '../../components/Modal.jsx'
 import { Icon } from '../../components/Icons.jsx'
@@ -13,6 +14,7 @@ export default function AssetCategories() {
   const { categories, saveCategory, deleteCategory, settings, saveSettings } = useAssets()
   const { currentUser } = useApp()
   const toast = useToast()
+  const confirm = useConfirm()
   const canEdit = can(currentUser.role, 'manageAssetCategories')
   const [editing, setEditing] = useState(null)
 
@@ -64,7 +66,7 @@ export default function AssetCategories() {
           {canEdit && (
             <div className="row gap-8">
               <button className="btn btn-ghost btn-sm" onClick={() => startEdit(c)}><Icon.edit width={14} height={14} /> Edit</button>
-              <button className="btn btn-danger btn-sm" onClick={() => confirm(`Remove ${c.name}? Existing assets keep their recorded category.`) && deleteCategory(c.id)}><Icon.trash width={14} height={14} /></button>
+              <button className="btn btn-danger btn-sm" onClick={async () => { if (await confirm({ title: `Remove ${c.name}?`, message: 'Existing assets keep their recorded category.', confirmLabel: 'Remove' })) deleteCategory(c.id) }}><Icon.trash width={14} height={14} /></button>
             </div>
           )}
         </div>
