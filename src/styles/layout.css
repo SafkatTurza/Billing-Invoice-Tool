@@ -468,6 +468,11 @@
   gap: 10px;
   z-index: 200;
 }
+/* Never let a transient toast (e.g. "Invoice saved.") appear in a printed
+   page or exported PDF — it is fixed-position UI, not document content. */
+@media print {
+  .toast-wrap { display: none !important; }
+}
 .toast {
   display: flex;
   align-items: center;

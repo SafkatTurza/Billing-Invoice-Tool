@@ -24,7 +24,7 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={api}>
       {children}
-      <div className="toast-wrap">
+      <div className="toast-wrap no-print">
         {toasts.map((t) => (
           <div key={t.id} className={`toast toast-${t.type}`}>
             {t.type === 'success' && <Icon.check width={16} height={16} />}
