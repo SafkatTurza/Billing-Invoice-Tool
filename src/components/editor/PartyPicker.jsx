@@ -63,82 +63,88 @@ export default function PartyPicker({ type, doc, patch }) {
     }
   }
 
-  return (
-    <div className="form-section">
-      <h3>{meta.partyLabel}</h3>
+  const partyWord = isVendor ? 'Vendor' : 'Client'
 
-      <div className="grid grid-2">
-        <div className="field">
-          <label>Select {isVendor ? 'Vendor' : 'Client'}</label>
-          <div className="row gap-8">
-            <select
-              className="select grow"
-              value={doc.partyId || ''}
-              onChange={(e) => selectParty(e.target.value)}
-            >
-              <option value="">— Select or type manually —</option>
-              {list.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-            <button className="btn btn-ghost btn-sm" type="button" onClick={() => setQuickOpen(true)}>
-              <Icon.plus width={14} height={14} /> New
-            </button>
-          </div>
+  return (
+    <div className="bill-to-box">
+      <span className="bill-to-label">
+        <Icon.users width={13} height={13} /> {meta.partyLabel}
+      </span>
+
+      <div className="client-select-shell">
+        <span className="csi">
+          <Icon.users width={14} height={14} />
+        </span>
+        <div className="row gap-8">
+          <select
+            className="select grow"
+            value={doc.partyId || ''}
+            onChange={(e) => selectParty(e.target.value)}
+            aria-label={`Select ${partyWord}`}
+          >
+            <option value="">Select {partyWord}</option>
+            {list.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+          <button className="btn btn-ghost btn-sm" type="button" onClick={() => setQuickOpen(true)}>
+            <Icon.plus width={14} height={14} /> New
+          </button>
         </div>
-        {selected?.contacts?.length > 0 && (
-          <div className="field">
-            <label>Contact Person</label>
-            <select className="select" value={contactIdx} onChange={(e) => selectContact(Number(e.target.value))}>
-              <option value="">— Select contact —</option>
-              {selected.contacts.map((c, i) => (
-                <option key={c.id} value={i}>
-                  {c.name} {c.designation ? `(${c.designation})` : ''}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
       </div>
 
+      {selected?.contacts?.length > 0 && (
+        <div className="field">
+          <label>Saved Contact</label>
+          <select className="select" value={contactIdx} onChange={(e) => selectContact(Number(e.target.value))}>
+            <option value="">— Select contact —</option>
+            {selected.contacts.map((c, i) => (
+              <option key={c.id} value={i}>
+                {c.name} {c.designation ? `(${c.designation})` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       <div className="grid grid-2">
         <div className="field">
-          <label>{meta.partySource === 'vendors' ? 'Vendor' : 'Client'} Name</label>
-          <input className="input" value={doc.partyName} onChange={(e) => patch({ partyName: e.target.value })} />
+          <label>{partyWord} Name</label>
+          <input className="input" placeholder="Company name" value={doc.partyName} onChange={(e) => patch({ partyName: e.target.value })} />
         </div>
         <div className="field">
           <label>Contact Person</label>
-          <input className="input" value={doc.contactPerson} onChange={(e) => patch({ contactPerson: e.target.value })} />
+          <input className="input" placeholder="Name" value={doc.contactPerson} onChange={(e) => patch({ contactPerson: e.target.value })} />
         </div>
         <div className="field">
           <label>Designation</label>
-          <input className="input" value={doc.designation} onChange={(e) => patch({ designation: e.target.value })} />
+          <input className="input" placeholder="Title" value={doc.designation} onChange={(e) => patch({ designation: e.target.value })} />
         </div>
         <div className="field">
           <label>Phone</label>
-          <input className="input" value={doc.partyPhone} onChange={(e) => patch({ partyPhone: e.target.value })} />
+          <input className="input" placeholder="+880…" value={doc.partyPhone} onChange={(e) => patch({ partyPhone: e.target.value })} />
         </div>
+      </div>
+      <div className="field">
+        <label>Address</label>
+        <input className="input" placeholder="Full address" value={doc.partyAddress} onChange={(e) => patch({ partyAddress: e.target.value })} />
+      </div>
+      <div className="grid grid-2">
         <div className="field">
           <label>Email</label>
-          <input className="input" value={doc.partyEmail} onChange={(e) => patch({ partyEmail: e.target.value })} />
+          <input className="input" placeholder="email@…" value={doc.partyEmail} onChange={(e) => patch({ partyEmail: e.target.value })} />
         </div>
         <div className="field">
           <label>VAT No</label>
           <input className="input" value={doc.vatNo} onChange={(e) => patch({ vatNo: e.target.value })} />
         </div>
-      </div>
-      <div className="field">
-        <label>Address</label>
-        <textarea className="textarea" value={doc.partyAddress} onChange={(e) => patch({ partyAddress: e.target.value })} />
-      </div>
-      <div className="grid grid-2">
-        <div className="field">
+        <div className="field" style={{ marginBottom: 0 }}>
           <label>Tax ID / TIN</label>
           <input className="input" value={doc.taxId} onChange={(e) => patch({ taxId: e.target.value })} />
         </div>
-        <div className="field">
+        <div className="field" style={{ marginBottom: 0 }}>
           <label>Trade License</label>
           <input className="input" value={doc.tradeLicense} onChange={(e) => patch({ tradeLicense: e.target.value })} />
         </div>

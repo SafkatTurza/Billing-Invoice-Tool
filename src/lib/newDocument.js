@@ -51,7 +51,9 @@ export function newDocument(type, company) {
   if (meta.kind === 'invoice') {
     return {
       ...base,
-      items: [newLineItem()],
+      // Start empty so a new invoice/estimate shows the "No items yet" state
+      // and the user adds the first line via + Add Item (reference behaviour).
+      items: [],
       discountOn: false,
       discountRate: '',
       aitOn: false,

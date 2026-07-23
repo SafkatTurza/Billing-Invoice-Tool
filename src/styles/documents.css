@@ -9,7 +9,120 @@
 .list-toolbar .global-search { max-width: 320px; margin: 0; }
 .list-toolbar .global-search input { background: #fff; }
 
-/* ── Editor ───────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════
+   Document editor — reference-matched single-workspace layout.
+   New .doc-editor* classes are used by the invoice/estimate/PO/WO/
+   receipt editor. The older .editor-head / .form-section remain for
+   the finance & salary editors, untouched.
+   ══════════════════════════════════════════════════════════════ */
+
+/* Sticky action header: ‹ Back  ·  New/Edit Invoice  ·  Saved ✓   [Preview][Save] */
+.doc-editor-head {
+  position: sticky;
+  top: 60px; /* below the app topbar */
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 4px;
+  margin: -8px 0 18px;
+  background: var(--background-secondary);
+  border-bottom: 1px solid transparent;
+}
+.doc-editor-head.stuck { border-bottom-color: var(--border-primary); }
+.doc-editor-head .back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-medium);
+  padding: 6px 8px 6px 4px;
+  border-radius: var(--radius-sm);
+}
+.doc-editor-head .back-link:hover { color: var(--text-primary); background: var(--surface-muted); }
+.doc-editor-head .back-link svg { transform: rotate(180deg); }
+.doc-editor-head .deh-title { font-size: 19px; font-weight: var(--fw-semibold); color: var(--text-primary); letter-spacing: -0.01em; }
+.doc-editor-head .deh-num { font-family: var(--font-mono); font-weight: var(--fw-semibold); }
+.doc-editor-head .deh-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+
+/* One clean workspace container that holds every section. */
+.doc-editor {
+  background: var(--surface-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  padding: 4px 26px;
+}
+/* Sections are separated by a subtle rule — never individual heavy cards. */
+.doc-section { padding: 22px 0; border-top: 1px solid var(--border-primary); }
+.doc-section:first-child { border-top: none; }
+/* Any legacy .form-section dropped inside the container (Milestones, PO spec
+   toggle) adopts the flat section look instead of a nested card. */
+.doc-editor .form-section {
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--border-primary);
+  border-radius: 0;
+  box-shadow: none;
+  padding: 22px 0;
+  margin: 0;
+}
+.doc-editor .form-section > h3 { color: var(--text-primary); font-size: var(--fs-card-title); font-weight: var(--fw-semibold); }
+.doc-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.doc-section-head h3 {
+  font-size: var(--fs-card-title);
+  font-weight: var(--fw-semibold);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.doc-section-head h3 svg { color: var(--text-muted); }
+
+/* Bill To (left) + Invoice Details (right). */
+.editor-two-col {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr);
+  gap: 30px;
+  align-items: start;
+}
+.bill-to-box {
+  border: 1px dashed var(--border-secondary);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+}
+.bill-to-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--brand-primary-strong);
+  margin-bottom: 12px;
+}
+/* The styled "Select Client" control at the top of Bill To. */
+.client-select-shell { position: relative; margin-bottom: 14px; }
+.client-select-shell .csi {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--brand-blue-100); color: var(--brand-primary-strong);
+  display: flex; align-items: center; justify-content: center; pointer-events: none;
+}
+.client-select-shell select { padding-left: 46px; height: 44px; font-weight: var(--fw-medium); }
+.doc-details .field:last-child { margin-bottom: 0; }
+
+/* ── Editor legacy head (finance/salary editors) ─────────────── */
 .editor-head {
   display: flex;
   justify-content: space-between;
@@ -75,59 +188,135 @@
 
 .toggle-row { display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 600; }
 
-/* Line items table */
+/* ── Line items ──────────────────────────────────────────────── */
+.customize-cols { position: relative; }
+.customize-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 15;
+  background: #fff;
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: 6px;
+  min-width: 200px;
+}
+.customize-menu .cm-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-secondary);
+  font-weight: var(--fw-medium);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.customize-menu .cm-item:hover { background: var(--surface-muted); }
+.customize-menu .cm-item input { accent-color: var(--brand-primary); width: 15px; height: 15px; }
+
 .items-table { width: 100%; border-collapse: collapse; }
-.items-table th {
-  font-size: 11px;
+.items-table thead th {
+  font-size: var(--fs-caption);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: var(--text-muted);
   text-align: left;
-  padding: 8px 8px;
-  font-weight: 700;
+  padding: 9px 10px;
+  font-weight: var(--fw-semibold);
+  background: var(--surface-muted);
+  border-bottom: 1px solid var(--border-primary);
 }
-.items-table td { padding: 6px 8px; vertical-align: top; }
+.items-table thead th:first-child { border-top-left-radius: var(--radius-sm); }
+.items-table thead th:last-child { border-top-right-radius: var(--radius-sm); }
+.items-table td { padding: 8px 10px; vertical-align: top; border-bottom: 1px solid var(--border-primary); }
+.items-table .li-idx { color: var(--text-faint); font-weight: var(--fw-semibold); font-size: var(--fs-secondary); padding-top: 16px; text-align: center; }
+.items-table .num, .items-table th.num { text-align: right; }
 .items-table input,
 .items-table textarea {
   width: 100%;
-  padding: 7px 9px;
-  border: 1px solid var(--border-primary);
-  border-radius: 7px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--radius-sm);
   outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .items-table input:focus,
-.items-table textarea:focus { border-color: var(--brand-blue); }
-.items-table input:disabled { background: #f4f5f8; color: var(--text-muted); }
-.items-table .col-amount input { text-align: right; font-weight: 600; }
-.lock-hint { font-size: 10px; color: var(--text-faint); margin-top: 2px; }
+.items-table textarea:focus { border-color: var(--brand-blue); box-shadow: 0 0 0 3px rgba(51, 85, 204, 0.12); }
+.items-table input:disabled { background: var(--surface-muted); color: var(--text-muted); }
+.items-table .li-name { font-weight: var(--fw-medium); }
+.items-table .col-amount input { text-align: right; font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; }
+.lock-hint { font-size: 10px; color: var(--text-faint); margin-top: 3px; }
+.li-remove {
+  border: none; background: transparent; color: var(--text-faint);
+  width: 30px; height: 30px; border-radius: var(--radius-sm);
+  display: inline-flex; align-items: center; justify-content: center; margin-top: 4px;
+}
+.li-remove:hover:not(:disabled) { background: #fbe4e4; color: var(--red); }
+.li-remove:disabled { opacity: 0.35; cursor: not-allowed; }
 
-.totals-box {
-  margin-left: auto;
+.li-empty {
+  text-align: center;
+  padding: 30px 16px;
+  color: var(--text-faint);
+  font-size: var(--fs-secondary);
+  border: 1px dashed var(--border-secondary);
+  border-radius: var(--radius);
+}
+.add-item-btn {
+  width: 100%;
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px;
+  border: 1px dashed var(--border-secondary);
+  border-radius: var(--radius);
+  background: var(--surface-muted);
+  color: var(--brand-primary-strong);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-secondary);
+  transition: border-color 0.13s, background 0.13s;
+}
+.add-item-btn:hover { border-color: var(--brand-blue); background: var(--brand-blue-50); }
+
+/* ── Compact calculation summary (right-aligned, matches reference) ── */
+.summary-wrap { display: flex; justify-content: flex-end; }
+.summary {
+  width: 100%;
   max-width: 380px;
 }
-.totals-row {
+.summary-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
-  font-size: 13.5px;
+  gap: 12px;
+  padding: 9px 0;
+  font-size: var(--fs-table);
 }
-.totals-row + .totals-row { border-top: 1px dashed var(--border-primary); }
-.totals-row.grand {
-  border-top: 2px solid var(--brand-dark);
-  font-size: 17px;
-  font-weight: 800;
-  color: var(--brand-dark);
-  padding-top: 12px;
-  margin-top: 4px;
+.summary-row .sum-label { color: var(--text-secondary); }
+.summary-row .sum-val { font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.summary-toggle { display: flex; align-items: center; gap: 10px; color: var(--text-secondary); font-weight: var(--fw-medium); }
+.summary-toggle .rate-input { margin-left: 2px; }
+.summary-row.grand {
+  border-top: 2px solid var(--brand-primary);
+  margin-top: 6px;
+  padding-top: 13px;
+  font-size: 16px;
 }
+.summary-row.grand .sum-label { font-weight: var(--fw-bold); color: var(--text-primary); }
+.summary-row.grand .sum-val { font-weight: var(--fw-bold); font-size: 19px; color: var(--brand-primary-strong); letter-spacing: -0.01em; }
 .rate-input {
-  width: 62px;
-  padding: 4px 7px;
-  border: 1px solid var(--border-primary);
-  border-radius: 6px;
+  width: 66px;
+  padding: 5px 8px;
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--radius-sm);
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
+.rate-suffix { font-size: var(--fs-secondary); color: var(--text-muted); min-width: 14px; }
 
 .milestone-status {
   padding: 8px 12px;
@@ -213,23 +402,85 @@
 }
 .banner-x:hover { opacity: 1; }
 
-.sig-grid { display: grid; gap: 14px; }
-.sig-block {
+/* ── Bank information (two-column, matches reference) ─────────── */
+.bank-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 24px; }
+
+/* ── Signature blocks (numbered, single column, optional toggles) ── */
+.sig-list { display: flex; flex-direction: column; gap: 14px; }
+.sig-card {
   border: 1px solid var(--border-primary);
-  border-radius: 10px;
-  padding: 14px;
-  background: #fafbfc;
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  background: var(--surface-muted);
 }
+.sig-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.sig-card-title { display: flex; align-items: center; gap: 9px; font-weight: var(--fw-semibold); font-size: var(--fs-secondary); color: var(--text-secondary); }
+.sig-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--brand-primary); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: var(--fw-bold);
+}
+.sig-two { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+.sig-toggles { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin: 4px 0 14px; }
+.sig-toggle { display: inline-flex; align-items: center; gap: 8px; font-size: var(--fs-secondary); font-weight: var(--fw-medium); color: var(--text-secondary); }
+.sig-toggle .toggle { width: 34px; height: 19px; }
+.sig-toggle .toggle::after { width: 15px; height: 15px; }
+.sig-toggle .toggle.on::after { transform: translateX(15px); }
+.add-sig-btn {
+  width: 100%;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 11px;
+  border: 1px dashed var(--border-secondary);
+  border-radius: var(--radius);
+  background: var(--surface-muted);
+  color: var(--brand-primary-strong);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-secondary);
+}
+.add-sig-btn:hover { border-color: var(--brand-blue); background: var(--brand-blue-50); }
+
+/* ── Collapsible footer (company info) ───────────────────────── */
+.doc-collapse-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  cursor: pointer; user-select: none;
+}
+.doc-collapse-head .dch-right { display: flex; align-items: center; gap: 12px; }
+.doc-collapse-head .arr { display: inline-flex; transition: transform 0.18s ease; color: var(--text-muted); }
+.doc-collapse-head .arr.open { transform: rotate(180deg); }
+.reset-link {
+  display: inline-flex; align-items: center; gap: 5px;
+  border: none; background: transparent; color: var(--text-muted);
+  font-size: var(--fs-secondary); font-weight: var(--fw-medium); padding: 4px 6px; border-radius: var(--radius-sm);
+}
+.reset-link:hover { color: var(--brand-primary-strong); background: var(--brand-blue-50); }
+
+/* ── Legacy totals box (kept for any non-invoice usage) ──────── */
+.totals-box { margin-left: auto; max-width: 380px; }
+.totals-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; font-size: 13.5px; }
+.totals-row + .totals-row { border-top: 1px dashed var(--border-primary); }
+.totals-row.grand { border-top: 2px solid var(--brand-primary); font-size: 17px; font-weight: 800; color: var(--brand-primary-strong); padding-top: 12px; margin-top: 4px; }
+
+.sig-grid { display: grid; gap: 14px; }
+.sig-block { border: 1px solid var(--border-primary); border-radius: 10px; padding: 14px; background: #fafbfc; }
 
 /* ── Responsive: editors ─────────────────────────────────────── */
+@media (max-width: 900px) {
+  .editor-two-col { grid-template-columns: 1fr; gap: 22px; }
+}
 @media (max-width: 768px) {
   .editor-head { flex-direction: column; align-items: stretch; gap: 12px; }
-  .totals-box { max-width: none; margin-left: 0; }
+  .totals-box, .summary { max-width: none; }
+  .summary-wrap { justify-content: stretch; }
+  .bank-grid, .sig-two { grid-template-columns: 1fr; }
+  .doc-editor { padding: 4px 16px; }
+  .doc-editor-head { top: 58px; }
 }
 /* Line-item tables keep column alignment and scroll inside their wrapper. */
 .items-table-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.items-table-scroll .items-table { min-width: 560px; }
+.items-table-scroll .items-table { min-width: 620px; }
 @media (max-width: 600px) {
   .form-section { padding: 16px; }
   .lock-actions .btn { flex: 1 1 auto; }
+  .doc-editor-head .deh-title { font-size: 17px; }
 }
