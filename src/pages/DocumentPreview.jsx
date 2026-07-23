@@ -6,7 +6,7 @@ import { metaFor } from '../lib/docmeta.js'
 import { calcTotals } from '../lib/pricing.js'
 import { amountInWords } from '../lib/amountInWords.js'
 import { formatMoney, formatDate, todayISO } from '../lib/format.js'
-import { generateReceiptRef } from '../lib/numbering.js'
+import { newDocument, companyFooter } from '../lib/newDocument.js'
 import { exportExcel, exportDocx } from '../lib/exporters.js'
 import StatusBadge from '../components/StatusBadge.jsx'
 import Modal from '../components/Modal.jsx'
@@ -45,8 +45,21 @@ export default function DocumentPreview({ type }) {
 
   const totals = meta.kind === 'receipt' ? { grandTotal: Number(doc.receivedAmount) || 0 } : calcTotals(doc)
   const isInvoice = type === 'invoices'
-  const canMarkPaid = isInvoice && can(currentUser.role, 'markPaid') && doc.status !== 'Paid'
-  const canDelete = can(currentUser.role, 'deleteDocuments')
+  const role = currentUser.role
+  const status = doc.status
+  // Approval → payment workflow (invoices only):
+  //  Draft/Sent → Approve or Reject → Approved → Record Payment → Paid/Partial.
+  const canApproveInv = isInvoice && can(role, 'approveInvoice') && (status === 'Draft' || status === 'Sent')
+  const canRecordPayment = isInvoice && can(role, 'markPaid') && (status === 'Approved' || status === 'Partial')
+  const canReopen = isInvoice && can(role, 'approveInvoice') && status === 'Rejected'
+  const canDelete = can(role, 'deleteDocuments')
+
+  const setStatus = (next, verb) => {
+    saveDocument({ ...doc, status: next })
+    addAudit(verb, doc.docNumber, doc.partyName || '')
+    notify(`Invoice ${doc.docNumber} ${verb.toLowerCase()}`, doc.createdBy, `/invoices/${doc.id}`)
+    toast.success(`Invoice ${verb.toLowerCase()}.`)
+  }
 
   const runExport = async (fn, kind) => {
     setBusy(true)
@@ -60,13 +73,38 @@ export default function DocumentPreview({ type }) {
     }
   }
 
-  const confirmPaid = (payload) => {
-    const receiptRef = generateReceiptRef()
-    const updated = {
+  // Record a payment: auto-create a Money Receipt pre-filled from the invoice,
+  // mark the invoice Paid/Partial, and open the receipt so the user can add a
+  // signature and any other detail (att. 4 workflow).
+  const confirmPayment = (payload) => {
+    const base = newDocument('money-receipt', docCompany)
+    const receipt = {
+      ...base,
+      companyId: doc.companyId || base.companyId,
+      partyId: doc.partyId || '',
+      partyName: doc.partyName || '',
+      contactPerson: doc.contactPerson || '',
+      partyPhone: doc.partyPhone || '',
+      partyEmail: doc.partyEmail || '',
+      partyAddress: doc.partyAddress || '',
+      currency: doc.currency,
+      date: payload.date,
+      transactionDate: payload.date,
+      receivedAmount: payload.amount,
+      paymentMethod: payload.method,
+      paymentPurpose: `Payment received against Invoice ${doc.docNumber}`,
+      reference: doc.docNumber,
+      relatedInvoiceId: doc.id,
+      footer: companyFooter(docCompany),
+    }
+    const savedReceipt = saveDocument(receipt) // commits the MR number
+    const fullyPaid = Number(payload.amount) >= Number(totals.grandTotal || 0)
+    saveDocument({
       ...doc,
-      status: 'Paid',
+      status: fullyPaid ? 'Paid' : 'Partial',
       paidInfo: {
-        receiptRef,
+        receiptRef: savedReceipt.docNumber,
+        receiptId: savedReceipt.id,
         amount: payload.amount,
         currency: doc.currency,
         date: payload.date,
@@ -74,12 +112,12 @@ export default function DocumentPreview({ type }) {
         notes: payload.notes,
         markedBy: currentUser.fullName,
       },
-    }
-    saveDocument(updated)
-    addAudit('Mark as Paid', doc.docNumber, `${formatMoney(payload.amount, doc.currency)} — auto-receipt ${receiptRef}`)
-    notify(`Invoice ${doc.docNumber} marked as Paid`, doc.createdBy, `/invoices/${doc.id}`)
-    toast.success(`Marked as Paid. Auto-receipt ${receiptRef} created.`)
+    })
+    addAudit('Payment recorded', doc.docNumber, `${formatMoney(payload.amount, doc.currency)} → receipt ${savedReceipt.docNumber}`)
+    notify(`Payment recorded for ${doc.docNumber} → ${savedReceipt.docNumber}`, doc.createdBy, `/money-receipt/${savedReceipt.id}`)
+    toast.success(`Money Receipt ${savedReceipt.docNumber} created — add signature & any details.`)
     setPayOpen(false)
+    navigate(`/money-receipt/${savedReceipt.id}/edit`)
   }
 
   return (
@@ -101,9 +139,24 @@ export default function DocumentPreview({ type }) {
           <button className="btn btn-ghost" onClick={() => navigate(`/${type}/${doc.id}/edit`)}>
             <Icon.edit width={15} height={15} /> Edit
           </button>
-          {canMarkPaid && (
+          {canApproveInv && (
+            <>
+              <button className="btn btn-teal" onClick={() => setStatus('Approved', 'Approved')}>
+                <Icon.check width={15} height={15} /> Approve
+              </button>
+              <button className="btn btn-danger" onClick={() => setStatus('Rejected', 'Rejected')}>
+                <Icon.x width={15} height={15} /> Reject
+              </button>
+            </>
+          )}
+          {canReopen && (
+            <button className="btn btn-ghost" onClick={() => setStatus('Draft', 'Reopened')}>
+              <Icon.edit width={15} height={15} /> Reopen
+            </button>
+          )}
+          {canRecordPayment && (
             <button className="btn btn-teal" onClick={() => setPayOpen(true)}>
-              <Icon.check width={15} height={15} /> Mark as Paid
+              <Icon.check width={15} height={15} /> Record Payment
             </button>
           )}
           <button className="btn btn-ghost" disabled={busy} onClick={() => runExport(() => exportExcel(doc), 'Excel')}>
@@ -151,7 +204,7 @@ export default function DocumentPreview({ type }) {
         </div>
       </div>
 
-      {payOpen && <MarkPaidModal doc={doc} totals={totals} onClose={() => setPayOpen(false)} onConfirm={confirmPaid} />}
+      {payOpen && <RecordPaymentModal doc={doc} totals={totals} onClose={() => setPayOpen(false)} onConfirm={confirmPayment} />}
     </div>
   )
 }
@@ -232,15 +285,17 @@ function Line({ k, v }) {
   )
 }
 
-function MarkPaidModal({ doc, totals, onClose, onConfirm }) {
+// Record a payment against an approved invoice. Confirming generates a Money
+// Receipt (pre-filled) and opens it for final edits (signature, etc.).
+function RecordPaymentModal({ doc, totals, onClose, onConfirm }) {
   const [amount, setAmount] = useState(totals.grandTotal)
   const [date, setDate] = useState(todayISO())
-  const [method, setMethod] = useState('Bank Transfer')
+  const [method, setMethod] = useState('Cash')
   const [notes, setNotes] = useState('')
 
   return (
     <Modal
-      title="Mark Invoice as Paid"
+      title="Record Payment"
       onClose={onClose}
       footer={
         <>
@@ -248,7 +303,7 @@ function MarkPaidModal({ doc, totals, onClose, onConfirm }) {
             Cancel
           </button>
           <button className="btn btn-teal" onClick={() => onConfirm({ amount, date, method, notes })}>
-            <Icon.check width={16} height={16} /> Confirm Payment
+            <Icon.check width={16} height={16} /> Create Money Receipt
           </button>
         </>
       }
@@ -269,7 +324,7 @@ function MarkPaidModal({ doc, totals, onClose, onConfirm }) {
         <div className="field">
           <label>Payment Method</label>
           <select className="select" value={method} onChange={(e) => setMethod(e.target.value)}>
-            {['Cash', 'Bank Transfer', 'BEFTN', 'Cheque', 'Other'].map((m) => (
+            {['Cash', 'Cheque', 'Other', 'BEFTN Payment'].map((m) => (
               <option key={m} value={m}>
                 {m}
               </option>
@@ -281,7 +336,10 @@ function MarkPaidModal({ doc, totals, onClose, onConfirm }) {
         <label>Notes (optional)</label>
         <textarea className="textarea" value={notes} onChange={(e) => setNotes(e.target.value)} />
       </div>
-      <div className="small muted">A short auto-receipt will be generated automatically and recorded in the Audit Log.</div>
+      <div className="small muted">
+        A Money Receipt will be created and pre-filled from this invoice. You can then add the signature and
+        any other details before saving.
+      </div>
     </Modal>
   )
 }

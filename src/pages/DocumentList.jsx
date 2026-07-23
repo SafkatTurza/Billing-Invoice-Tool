@@ -8,14 +8,20 @@ import StatusBadge, { STATUS_OPTIONS } from '../components/StatusBadge.jsx'
 import { Icon } from '../components/Icons.jsx'
 import '../styles/documents.css'
 
+// Statuses that count as "unpaid but issued" (invoice dashboard tab).
+const UNPAID_STATUSES = ['Sent', 'Approved', 'Partial', 'Overdue']
+const isUnpaid = (s) => UNPAID_STATUSES.includes(s)
+
 export default function DocumentList({ type }) {
   const { docs, currentUser, deleteDocument } = useApp()
   const navigate = useNavigate()
   const meta = metaFor(type)
+  const isInvoice = type === 'invoices'
 
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [sort, setSort] = useState('date-new')
+  const [tab, setTab] = useState('all') // invoices: all | unpaid | draft
 
   const mine = useMemo(
     () =>
@@ -30,6 +36,43 @@ export default function DocumentList({ type }) {
     return Array.from(set)
   }, [mine])
 
+  // Invoice-only KPIs + tab counts.
+  const inv = useMemo(() => {
+    if (!isInvoice) return null
+    const now = new Date()
+    const in30 = new Date(now.getTime() + 30 * 864e5)
+    let overdue = 0
+    let due30 = 0
+    const paidDays = []
+    const curCount = {}
+    for (const d of mine) {
+      const amt = Number(d.grandTotal) || 0
+      if (d.currency) curCount[d.currency] = (curCount[d.currency] || 0) + 1
+      const due = d.dueDate ? new Date(d.dueDate) : null
+      if (isUnpaid(d.status)) {
+        if (d.status === 'Overdue' || (due && due < now)) overdue += amt
+        else if (due && due <= in30) due30 += amt
+      }
+      if (d.status === 'Paid' && d.paidInfo?.date && d.date) {
+        const days = (new Date(d.paidInfo.date) - new Date(d.date)) / 864e5
+        if (days >= 0) paidDays.push(days)
+      }
+    }
+    const avg = paidDays.length ? Math.round(paidDays.reduce((a, b) => a + b, 0) / paidDays.length) : null
+    const cur = Object.entries(curCount).sort((a, b) => b[1] - a[1])[0]?.[0] || 'BDT'
+    return {
+      overdue,
+      due30,
+      avg,
+      cur,
+      counts: {
+        all: mine.length,
+        unpaid: mine.filter((d) => isUnpaid(d.status)).length,
+        draft: mine.filter((d) => d.status === 'Draft').length,
+      },
+    }
+  }, [mine, isInvoice])
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     let list = mine.filter((d) => {
@@ -39,7 +82,12 @@ export default function DocumentList({ type }) {
         (d.partyName || '').toLowerCase().includes(q) ||
         (d.reference || '').toLowerCase().includes(q)
       const matchStatus = statusFilter === 'all' || d.status === statusFilter
-      return matchQ && matchStatus
+      const matchTab =
+        !isInvoice ||
+        tab === 'all' ||
+        (tab === 'unpaid' && isUnpaid(d.status)) ||
+        (tab === 'draft' && d.status === 'Draft')
+      return matchQ && matchStatus && matchTab
     })
     list = [...list].sort((a, b) => {
       switch (sort) {
@@ -56,7 +104,7 @@ export default function DocumentList({ type }) {
       }
     })
     return list
-  }, [mine, query, statusFilter, sort])
+  }, [mine, query, statusFilter, sort, tab, isInvoice])
 
   const canDelete = can(currentUser.role, 'deleteDocuments')
 
@@ -74,7 +122,43 @@ export default function DocumentList({ type }) {
         </button>
       </div>
 
+      {inv && (
+        <div className="inv-kpis mt-16">
+          <div className="inv-kpi">
+            <span className="ik-label">Overdue</span>
+            <span className="ik-value overdue">{formatMoney(inv.overdue, inv.cur)}</span>
+          </div>
+          <div className="inv-kpi">
+            <span className="ik-label">Due within next 30 days</span>
+            <span className="ik-value">{formatMoney(inv.due30, inv.cur)}</span>
+          </div>
+          <div className="inv-kpi">
+            <span className="ik-label">Average time to get paid</span>
+            <span className="ik-value">{inv.avg == null ? '—' : `${inv.avg} days`}</span>
+          </div>
+        </div>
+      )}
+
       <div className="card mt-24">
+        {inv && (
+          <div className="inv-tabs">
+            {[
+              ['unpaid', 'Unpaid', inv.counts.unpaid],
+              ['draft', 'Draft', inv.counts.draft],
+              ['all', 'All invoices', null],
+            ].map(([id, label, count]) => (
+              <button
+                key={id}
+                className={`inv-tab ${tab === id ? 'on' : ''}`}
+                onClick={() => setTab(id)}
+              >
+                {label}
+                {count != null ? <span className="inv-tab-count">{count}</span> : null}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="list-toolbar">
           <div className="global-search">
             <span className="icon">

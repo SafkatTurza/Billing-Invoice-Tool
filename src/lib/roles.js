@@ -32,6 +32,7 @@ const MATRIX = {
     forceUnlock: true,
     fullDashboard: true,
     approveEstimate: true,
+    approveInvoice: true, // approve/reject invoices before payment is recorded
     // Finance
     financeView: true,
     financeManage: true, // create/edit finance docs, record expenses
@@ -66,6 +67,7 @@ const MATRIX = {
     forceUnlock: true,
     fullDashboard: true,
     approveEstimate: true,
+    approveInvoice: true, // approve/reject invoices before payment is recorded
     // Finance — Admin is management (final approver) ONLY. Per the client's
     // finance-privacy rule, all finance data-entry (requisitions, PRs,
     // vouchers, salary, payslips, employees, income/investment) is reserved
@@ -103,6 +105,7 @@ const MATRIX = {
     forceUnlock: false,
     fullDashboard: true,
     approveEstimate: false,
+    approveInvoice: false,
     // Finance — Accounts prepares & records, but is NOT the final approver
     financeView: true,
     financeManage: true,
@@ -139,6 +142,7 @@ const MATRIX = {
     forceUnlock: false,
     fullDashboard: false, // limited
     approveEstimate: false,
+    approveInvoice: false,
     // Finance — hidden for Business Team
     financeView: false,
     financeManage: false,

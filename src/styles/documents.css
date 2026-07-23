@@ -539,6 +539,51 @@
 }
 .add-sig-btn:hover { border-color: var(--brand-blue); background: var(--brand-blue-50); }
 
+/* ── Invoice list dashboard (KPIs + tabs) ────────────────────── */
+.inv-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.inv-kpi {
+  background: var(--surface-1, #fff);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.inv-kpi .ik-label { font-size: var(--fs-secondary); color: var(--text-muted); font-weight: var(--fw-medium); }
+.inv-kpi .ik-value { font-size: 22px; font-weight: var(--fw-bold); color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.inv-kpi .ik-value.overdue { color: var(--red); }
+@media (max-width: 780px) { .inv-kpis { grid-template-columns: 1fr; } }
+
+.inv-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 6px 6px 0;
+  border-bottom: 1px solid var(--border-primary);
+}
+.inv-tab {
+  display: inline-flex; align-items: center; gap: 8px;
+  border: none; background: transparent;
+  padding: 10px 16px;
+  font-size: var(--fs-body); font-weight: var(--fw-medium);
+  color: var(--text-secondary); cursor: pointer;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.inv-tab:hover { color: var(--text-primary); }
+.inv-tab.on { color: var(--brand-primary-strong); border-bottom-color: var(--brand-primary); font-weight: var(--fw-semibold); }
+.inv-tab-count {
+  min-width: 20px; height: 20px; padding: 0 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surface-muted); color: var(--text-secondary);
+  border-radius: var(--radius-pill); font-size: var(--fs-caption); font-weight: var(--fw-semibold);
+}
+.inv-tab.on .inv-tab-count { background: var(--brand-blue-50); color: var(--brand-primary-strong); }
+
 /* ── Money Receipt editor ────────────────────────────────────── */
 .receipt-editor { max-width: 640px; }
 .receipt-divider { height: 1px; background: var(--border-primary); margin: 18px 0; }

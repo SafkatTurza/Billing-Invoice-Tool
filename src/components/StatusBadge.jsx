@@ -16,7 +16,7 @@ export default function StatusBadge({ status }) {
 
 // Status options per document type (SRS 4.1).
 export const STATUS_OPTIONS = {
-  invoices: ['Draft', 'Sent', 'Paid', 'Partial', 'Overdue'],
+  invoices: ['Draft', 'Approved', 'Rejected', 'Sent', 'Paid', 'Partial', 'Overdue'],
   estimates: ['Draft', 'Sent', 'Approved', 'Rejected'],
   'purchase-orders': ['Draft', 'Sent', 'Approved', 'Rejected'],
   'work-orders': ['Draft', 'Sent', 'Approved', 'Rejected'],
