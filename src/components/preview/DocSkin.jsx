@@ -116,7 +116,7 @@ const WordsBox = ({ m }) => (
 
 const NotesBlock = ({ m, accent }) => (
   <div>
-    <div style={{ fontSize: 10, fontWeight: 700, color: accent || m.BC, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
+    <div className="doc-sec-head" style={{ fontSize: 10, fontWeight: 700, color: accent || m.BC, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
       {m.isPO ? 'Notes / Terms' : 'Terms & Conditions'}
     </div>
     <div style={{ fontSize: 11, color: '#374151', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{m.doc.notes}</div>
@@ -125,7 +125,7 @@ const NotesBlock = ({ m, accent }) => (
 
 const BankBlock = ({ m, accent }) => (
   <div>
-    <div style={{ fontSize: 10, fontWeight: 700, color: accent || m.BC, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
+    <div className="doc-sec-head" style={{ fontSize: 10, fontWeight: 700, color: accent || m.BC, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
       Bank Information
     </div>
     {[
@@ -148,7 +148,7 @@ const BankBlock = ({ m, accent }) => (
 
 const MilestonesBlock = ({ m, accent }) => (
   <div style={{ marginBottom: 14 }}>
-    <div style={{ fontSize: 10, fontWeight: 700, color: accent || m.BC, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
+    <div className="doc-sec-head" style={{ fontSize: 10, fontWeight: 700, color: accent || m.BC, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
       Payment Milestones
     </div>
     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
@@ -189,7 +189,7 @@ const SigsBoxed = ({ m, accent = ACC }) => {
   const cols = sigs.length === 1 ? 1 : 2
   return (
     <div className="doc-sig-section" style={{ marginTop: 24 }}>
-      <div style={{ fontSize: 10, fontWeight: 700, color: accent, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10 }}>
+      <div className="doc-sec-head" style={{ fontSize: 10, fontWeight: 700, color: accent, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10 }}>
         Authorized Signatures
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 16 }}>

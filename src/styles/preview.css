@@ -154,12 +154,22 @@
   .doc-banner h1 { font-size: 19px; }
 }
 
-/* All skins: individual signature box never splits across a page break
-   (screen + print). Grand blocks are kept together too. */
+/* All skins: individual signature box never splits across a page break, and the
+   whole Authorized-Signatures block (heading + boxes) stays together so the
+   heading is never orphaned from its boxes — if it doesn't fit, the entire
+   block moves to the next page. Grand blocks are kept together too. */
 .doc-sig-box,
+.doc-sig-section,
 .doc-keep {
   break-inside: avoid;
   page-break-inside: avoid;
+}
+
+/* A section heading is never left stranded at the bottom of a page — it always
+   travels to the next page together with the content that follows it. */
+.doc-sec-head {
+  break-after: avoid;
+  page-break-after: avoid;
 }
 
 /* The pinned print footer only exists while printing — hidden on screen
@@ -169,7 +179,13 @@
 /* ── Print rules — SRS section 14 ─────────────────────────── */
 @media print {
   @page { size: A4 portrait; margin: 12mm; }
-  body { background: #fff; }
+  /* Force the whole print surface white. The app's theme paints a light-grey
+     body background (--bg); on a short last page the document paper doesn't
+     reach the page bottom, so that grey would otherwise show through below the
+     content. Blank space on a printed invoice must be plain white. */
+  html, body, #root, .app-shell, .main, .content, .doc-paper {
+    background: #fff !important;
+  }
   .no-print { display: none !important; }
   .app-shell .sidebar, .topbar, .preview-toolbar { display: none !important; }
   .content { padding: 0 !important; }
