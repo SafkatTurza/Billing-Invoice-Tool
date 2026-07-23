@@ -162,6 +162,10 @@
   page-break-inside: avoid;
 }
 
+/* The pinned print footer only exists while printing — hidden on screen
+   (the on-screen document already shows the footer once, via the tfoot). */
+.doc-print-footer { display: none; }
+
 /* ── Print rules — SRS section 14 ─────────────────────────── */
 @media print {
   @page { size: A4 portrait; margin: 12mm; }
@@ -180,14 +184,31 @@
     print-color-adjust: exact;
   }
 
-  /* Modern skin — repeat the branded header and company footer on EVERY page.
-     A table-header-group / table-footer-group is reprinted on each page and its
-     height is reserved per page, so content can never overlap the footer. */
+  /* Modern skin — repeat the branded header on EVERY page. A table-header-group
+     is reprinted on each page and its height is reserved per page, so body
+     content can never ride under the header. */
   .doc-running-head { display: table-header-group; }
-  .doc-running-foot { display: table-footer-group; }
   /* Line-item table header repeats when items flow onto another page. */
   .doc-running thead,
   table thead { display: table-header-group; }
+
+  /* The tfoot stays a table-footer-group so it still repeats and RESERVES a
+     footer-height band at the bottom of every page (keeping content out of the
+     footer zone). We hide it visually but keep its reserved height … */
+  .doc-running-foot { display: table-footer-group; visibility: hidden; }
+  /* … and paint the real footer with a fixed element pinned to the bottom of
+     every printed page. Chromium repeats fixed elements on each page, and the
+     reserved tfoot band guarantees no overlap with body content. */
+  .doc-modern { position: relative; }
+  .doc-print-footer {
+    display: block;
+    visibility: visible;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #fff;
+  }
 
   /* Keep atomic blocks intact across page breaks. */
   .doc-items tr,

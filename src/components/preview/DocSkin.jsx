@@ -477,38 +477,51 @@ const ModernParties = ({ m }) => {
 function SkinModern({ m }) {
   const { BC, DF } = m
   return (
-    <table className="doc-running" style={{ width: '100%', borderCollapse: 'collapse', fontFamily: `"${DF}", sans-serif`, fontSize: 12, color: '#1e293b', background: '#fff' }}>
-      {/* repeats at the top of every printed page */}
-      <thead className="doc-running-head">
-        <tr>
-          <td style={{ padding: 0 }}>
-            <ModernHeader m={m} />
-          </td>
-        </tr>
-      </thead>
-      {/* repeats at the bottom of every printed page */}
-      <tfoot className="doc-running-foot">
-        <tr>
-          <td style={{ padding: 0 }}>
-            <ModernFooter m={m} />
-          </td>
-        </tr>
-      </tfoot>
-      <tbody>
-        <tr>
-          <td style={{ padding: 0, verticalAlign: 'top' }}>
-            <div style={{ padding: '20px 24px 8px' }}>
-              <ModernParties m={m} />
-              <Items m={m} headBg={BC} headColor="#fff" zebra="#fafafa" />
-              <div className="doc-keep" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-                <Totals m={m} />
+    <div className="doc-modern">
+      <table className="doc-running" style={{ width: '100%', borderCollapse: 'collapse', fontFamily: `"${DF}", sans-serif`, fontSize: 12, color: '#1e293b', background: '#fff' }}>
+        {/* The <thead> is reprinted at the top of every printed page and its
+            height is reserved per page, so the branded header appears on every
+            page and body content never rides under it. */}
+        <thead className="doc-running-head">
+          <tr>
+            <td style={{ padding: 0 }}>
+              <ModernHeader m={m} />
+            </td>
+          </tr>
+        </thead>
+        {/* The <tfoot> reprints on every page too and reserves a fixed band at
+            the bottom of each page. In print it is made invisible (its height is
+            kept) and the real footer is painted by `.doc-print-footer` pinned to
+            the physical page bottom — so the footer sits flush at the bottom of
+            EVERY page instead of floating directly under the last line. On
+            screen the tfoot shows the footer once, at the end of the document. */}
+        <tfoot className="doc-running-foot">
+          <tr>
+            <td style={{ padding: 0 }}>
+              <ModernFooter m={m} />
+            </td>
+          </tr>
+        </tfoot>
+        <tbody>
+          <tr>
+            <td style={{ padding: 0, verticalAlign: 'top' }}>
+              <div style={{ padding: '18px 24px 6px' }}>
+                <ModernParties m={m} />
+                <Items m={m} headBg={BC} headColor="#fff" zebra="#fafafa" />
+                <div className="doc-keep" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+                  <Totals m={m} />
+                </div>
+                <SkinBlocks m={m} boxedSigs />
               </div>
-              <SkinBlocks m={m} boxedSigs />
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      {/* Print-only: the real footer pinned to the bottom of every printed page. */}
+      <div className="doc-print-footer">
+        <ModernFooter m={m} />
+      </div>
+    </div>
   )
 }
 
