@@ -154,7 +154,7 @@
   .doc-banner h1 { font-size: 19px; }
 }
 
-/* Modern skin: individual signature box never splits across a page break
+/* All skins: individual signature box never splits across a page break
    (screen + print). Grand blocks are kept together too. */
 .doc-sig-box,
 .doc-keep {
@@ -184,9 +184,9 @@
     print-color-adjust: exact;
   }
 
-  /* Modern skin — repeat the branded header on EVERY page. A table-header-group
-     is reprinted on each page and its height is reserved per page, so body
-     content can never ride under the header. */
+  /* All document skins — repeat the branded header on EVERY page. A
+     table-header-group is reprinted on each page and its height is reserved per
+     page, so body content can never ride under the header. */
   .doc-running-head { display: table-header-group; }
   /* Line-item table header repeats when items flow onto another page. */
   .doc-running thead,
@@ -199,7 +199,7 @@
   /* … and paint the real footer with a fixed element pinned to the bottom of
      every printed page. Chromium repeats fixed elements on each page, and the
      reserved tfoot band guarantees no overlap with body content. */
-  .doc-modern { position: relative; }
+  .doc-shell { position: relative; }
   .doc-print-footer {
     display: block;
     visibility: visible;
