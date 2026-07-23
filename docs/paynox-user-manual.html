@@ -232,6 +232,29 @@
   .rolecard ul { margin: 0; font-size: 14px; }
   .rolecard ul li { font-family: var(--font-display); }
 
+  /* Formula blocks (Calculations appendix) */
+  .formula {
+    font-family: var(--font-mono); font-size: 13.5px; line-height: 1.7;
+    background: var(--navy-deep); color: #eaf0f7;
+    border-radius: 10px; padding: 14px 18px; margin: 14px 0; max-width: var(--measure);
+    overflow-x: auto; white-space: pre; -webkit-font-smoothing: auto;
+  }
+  :root[data-theme="dark"] .formula { background: #0c1521; border: 1px solid var(--rule); }
+  .formula .c { color: var(--gold-bright); }        /* comment / label */
+  .formula .k { color: #8fd0ff; }                    /* key term */
+  .fn-tag {
+    display: inline-block; font-family: var(--font-mono); font-size: 12px;
+    color: var(--navy); background: var(--surface); border: 1px solid var(--rule-strong);
+    border-radius: 6px; padding: 2px 8px; margin: 2px 0;
+  }
+  :root[data-theme="dark"] .fn-tag { color: var(--navy); }
+  .dual { display: grid; grid-template-columns: 1fr; gap: 0; }
+  .plain { color: var(--ink); }
+  .plain .lbl, .tech .lbl { font-family: var(--font-display); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+  .plain .lbl { color: var(--tip-ink); }
+  .tech .lbl { color: var(--navy); }
+  @media print { .formula { background: #f5f6f8 !important; color: #14283f !important; border: 1px solid var(--rule); } .formula .c { color: var(--gold); } .formula .k { color: var(--navy); } }
+
   hr.soft { border: none; border-top: 1px solid var(--rule); margin: 40px 0 0; max-width: var(--measure); }
 
   .foot { max-width: 1140px; margin: 0 auto; padding: 30px 40px 60px; color: var(--ink-faint); font-family: var(--font-display); font-size: 12.5px; }
@@ -295,8 +318,8 @@
     <h1 class="cover-title">Everything you can do in Paynox.</h1>
     <p class="cover-lede">A working guide to the whole system — from first-launch setup and signing in, through invoices and the full finance module, approvals, payroll, and reports. Written for the people who use it every day.</p>
     <div class="cover-meta">
-      <span>Version <b>1.0</b></span>
-      <span>Updated <b>22 July 2026</b></span>
+      <span>Version <b>1.1</b></span>
+      <span>Updated <b>23 July 2026</b></span>
       <span>Audience <b>All roles</b></span>
       <span>Runs entirely in your browser — <b>no server, no cloud</b></span>
     </div>
@@ -322,6 +345,7 @@
       <li><a href="#settings">12 · Settings</a></li>
       <li><a href="#data">13 · Data, backup &amp; safety</a></li>
       <li><a href="#reference">14 · Quick reference</a></li>
+      <li><a href="#formulas">15 · Calculations &amp; formulas</a></li>
     </ol>
   </nav>
 
@@ -330,7 +354,7 @@
     <nav class="inline-contents callout" aria-label="Contents">
       <span class="tag" style="color:var(--gold)">Contents</span>
       <ol class="steps" style="counter-reset:none; margin-top:8px">
-        <li style="padding-left:0"><a class="xref" href="#about">About Paynox</a> · <a class="xref" href="#roles">Roles &amp; permissions</a> · <a class="xref" href="#setup">First-time setup</a> · <a class="xref" href="#signin">Signing in &amp; recovery</a> · <a class="xref" href="#dashboard">The dashboard</a> · <a class="xref" href="#documents">Billing documents</a> · <a class="xref" href="#finance">The finance module</a> · <a class="xref" href="#approvals">Approvals &amp; signatures</a> · <a class="xref" href="#payroll">Payroll &amp; salary</a> · <a class="xref" href="#loans">Loans &amp; advances</a> · <a class="xref" href="#reports">Reports &amp; insight</a> · <a class="xref" href="#settings">Settings</a> · <a class="xref" href="#data">Data, backup &amp; safety</a> · <a class="xref" href="#reference">Quick reference</a></li>
+        <li style="padding-left:0"><a class="xref" href="#about">About Paynox</a> · <a class="xref" href="#roles">Roles &amp; permissions</a> · <a class="xref" href="#setup">First-time setup</a> · <a class="xref" href="#signin">Signing in &amp; recovery</a> · <a class="xref" href="#dashboard">The dashboard</a> · <a class="xref" href="#documents">Billing documents</a> · <a class="xref" href="#finance">The finance module</a> · <a class="xref" href="#approvals">Approvals &amp; signatures</a> · <a class="xref" href="#payroll">Payroll &amp; salary</a> · <a class="xref" href="#loans">Loans &amp; advances</a> · <a class="xref" href="#reports">Reports &amp; insight</a> · <a class="xref" href="#settings">Settings</a> · <a class="xref" href="#data">Data, backup &amp; safety</a> · <a class="xref" href="#reference">Quick reference</a> · <a class="xref" href="#formulas">Calculations &amp; formulas</a></li>
       </ol>
     </nav>
 
@@ -720,12 +744,147 @@
       </ul>
     </section>
 
+    <!-- 15 -->
+    <section id="formulas" class="major">
+      <div class="sec-head"><span class="sec-num">15</span><h2 class="sec-title">Calculations &amp; formulas</h2></div>
+      <p class="lede">This appendix documents <strong>every calculation Paynox performs</strong> — from the tax and VAT on an invoice to the numbers behind each report. It's written for two readers at once: a <strong>plain-language</strong> explanation for everyday users, and the exact <strong>formula and the code function</strong> that produces it for technical staff and auditors.</p>
+      <div class="callout note"><span class="tag">How to read this section</span>
+        <p>Every calculation shows a <span class="fn-tag">function() · file</span> tag naming the exact function in the source and the file it lives in. All calculations run <strong>in your browser</strong>; nothing is sent anywhere. Every currency is kept separate — figures are <strong>never auto-converted or mixed</strong> across currencies.</p>
+      </div>
+
+      <h4>Two rules used everywhere</h4>
+      <ul>
+        <li><strong>Safe numbers.</strong> Any blank or non-numeric field is read as <code>0</code> before it enters a formula (<code>Number(value) || 0</code>), so an empty box never breaks a total.</li>
+        <li><strong>Two-decimal rounding.</strong> Money results are rounded to two decimals with <code>Math.round(n × 100) / 100</code> (written as <code>round2</code>), so totals don't drift by fractions of a paisa.</li>
+      </ul>
+
+      <!-- 15.1 Tax & VAT -->
+      <h3>15.1 · Invoice &amp; estimate totals — Discount, Tax (AIT) and VAT</h3>
+      <p class="tech"><span class="fn-tag">calcTotals(doc) · lineAmount(item) · isAmountLocked(item) — src/lib/pricing.js</span></p>
+      <p class="plain"><span class="lbl">In plain words</span> — Paynox adds up the line items to a <strong>subtotal</strong>, takes off any <strong>discount</strong>, then applies <strong>Tax (AIT)</strong> and <strong>VAT</strong> on top. VAT is charged on the amount <em>after</em> AIT has been added, which is why the two always travel together — <strong>VAT only appears once AIT is switched on</strong>.</p>
+      <p class="tech"><span class="lbl">The exact math</span></p>
+<div class="formula"><span class="c"># Each line's amount</span>
+lineAmount = (rate &gt; 0) ? (qty &gt; 0 ? qty × rate : rate)   <span class="c"># rate drives &amp; locks the amount</span>
+                         : manualAmount                <span class="c"># no rate → you type the amount</span>
+
+<span class="k">subtotal</span>       = Σ lineAmount              <span class="c"># sum of every line</span>
+discountAmount = subtotal × (discountRate / 100)
+afterDiscount  = subtotal − discountAmount
+
+aitAmount      = afterDiscount × (aitRate / 100)          <span class="c"># Tax / AIT</span>
+vatAmount      = (afterDiscount + aitAmount) × (vatRate / 100)  <span class="c"># VAT is on (base + AIT)</span>
+                 <span class="c"># vatAmount = 0 whenever AIT is off</span>
+
+<span class="k">grandTotal</span>     = afterDiscount + aitAmount + vatAmount</div>
+      <div class="callout important"><span class="tag">Worked example</span>
+        <p>Subtotal <strong>1,000</strong>, Discount <strong>10%</strong>, AIT <strong>5%</strong>, VAT <strong>15%</strong>:</p>
+        <p>Discount = 1,000 × 10% = <strong>100</strong> → After discount = <strong>900</strong><br>
+        AIT = 900 × 5% = <strong>45</strong><br>
+        VAT = (900 + 45) × 15% = 945 × 15% = <strong>141.75</strong><br>
+        <strong>Grand total = 900 + 45 + 141.75 = 1,086.75</strong></p>
+      </div>
+      <div class="callout note"><span class="tag">The amount lock rule</span><p>On each line, if you enter a <strong>rate</strong> the Amount is calculated and locked (<code>isAmountLocked</code> is true); with no rate you type the Amount directly. A rate with a blank/zero quantity is treated as a single unit, so Amount = rate.</p></div>
+      <p class="plain">The grand total is also spelled out as <strong>amount-in-words</strong> in both international and Bangladeshi (Lakh/Crore) styles. <span class="fn-tag">amountInWords.js</span></p>
+
+      <!-- 15.2 Milestones -->
+      <h3>15.2 · Milestone check (Purchase &amp; Work Orders)</h3>
+      <p class="tech"><span class="fn-tag">milestoneStatus(milestones) — src/lib/pricing.js</span></p>
+      <p class="plain"><span class="lbl">In plain words</span> — payment milestones on an order must add up to exactly 100%. Paynox totals the percentages and shows a colour: under 100% (amber), over 100% (red), exactly 100% (green).</p>
+<div class="formula"><span class="k">total</span> = Σ milestone.percentage
+state = total &lt; 100 ? "under"  <span class="c"># amber</span>
+      : total &gt; 100 ? "over"   <span class="c"># red</span>
+      :               "exact"  <span class="c"># green — good to go</span></div>
+
+      <!-- 15.3 Vouchers -->
+      <h3>15.3 · Voucher amount</h3>
+      <p class="tech"><span class="fn-tag">voucherTotal(doc) — src/lib/finance.js</span></p>
+      <p class="plain"><span class="lbl">In plain words</span> — if a voucher is split across several expense heads, its amount is the sum of those lines; otherwise it's the single amount you entered.</p>
+<div class="formula"><span class="k">voucherTotal</span> = lines.length ? Σ line.amount : amount</div>
+
+      <!-- 15.4 Bills -->
+      <h3>15.4 · Bills &amp; payables — paid, due, status &amp; aging</h3>
+      <p class="tech"><span class="fn-tag">billPaid · billDue · billPayStatus · billOverdue · billAgeBucket — src/lib/finance.js</span></p>
+      <p class="plain"><span class="lbl">In plain words</span> — a bill's outstanding balance is what you owe minus what you've already paid against it. From that Paynox derives whether the bill is Open, Partially paid or Paid, whether it's overdue, and how old the debt is.</p>
+<div class="formula"><span class="k">billPaid</span> = Σ payment.amount
+<span class="k">billDue</span>  = max(0, amount − billPaid)
+
+status  = (paid ≥ amount) ? "Paid" : (paid &gt; 0) ? "Partial" : "Open"
+overdue = billDue &gt; 0 AND dueDate &lt; today
+<span class="c"># Aging buckets, by days since the due date:</span>
+<span class="c">#   Not due · 0–30 · 31–60 · 61–90 · 90+</span></div>
+
+      <!-- 15.5 Payroll -->
+      <h3>15.5 · Payroll — gross &amp; net pay</h3>
+      <p class="tech"><span class="fn-tag">lineComputed(line, sheet) · sheetTotals(doc) · ytdForEmployee(...) — src/lib/salary.js</span></p>
+      <p class="plain"><span class="lbl">In plain words</span> — each employee's pay starts from their base salary. Overtime and any earning components are added to make <strong>gross</strong>; unpaid-leave days, deduction components and any loan installment are taken off to make <strong>net</strong> (take-home). Unpaid leave is charged at a per-day rate based on the sheet's working days (26 by default).</p>
+<div class="formula">perDay          = base / workingDays        <span class="c"># workingDays defaults to 26</span>
+unpaidDeduction = perDay × unpaidLeaveDays
+overtimeAmount  = overtimeHours × overtimeRate
+
+<span class="k">gross</span> = base + overtimeAmount + earningComponents
+<span class="k">net</span>   = gross − unpaidDeduction − deductionComponents − loanDeduction</div>
+      <p class="plain">A salary sheet's totals (<code>sheetTotals</code>) simply add every employee's line together; year-to-date figures (<code>ytdForEmployee</code>) sum the approved sheets across the year.</p>
+
+      <!-- 15.6 Loans -->
+      <h3>15.6 · Loans &amp; advances — outstanding &amp; installment</h3>
+      <p class="tech"><span class="fn-tag">loanRepaid · loanOutstanding · suggestedInstallment — src/lib/loans.js</span></p>
+      <p class="plain"><span class="lbl">In plain words</span> — the balance still owed is the principal minus everything repaid. The installment auto-filled onto a salary sheet is the loan's monthly figure, but never more than the balance that's left.</p>
+<div class="formula"><span class="k">loanRepaid</span>      = Σ repayment.amount
+<span class="k">loanOutstanding</span> = round2( max(0, principal − loanRepaid) )
+settled         = status == "closed" OR loanOutstanding ≤ 0
+
+<span class="k">suggestedInstallment</span> = min(loan.installment, loanOutstanding)</div>
+
+      <!-- 15.7 Reports -->
+      <h3>15.7 · Reports — the ledger math</h3>
+      <p class="plain">Every report is built from the <strong>posted ledger</strong> — only approved, money-moving entries. Paynox uses simple single-entry cash accounting: money-in adds to an account and credits an income head; money-out subtracts from an account and debits an expense head; internal transfers move cash between your own accounts and touch no head.</p>
+
+      <h4>Account statement (bank-statement style)</h4>
+      <p class="tech"><span class="fn-tag">accountStatement(ledger, account, {from, to}) — src/lib/reports.js</span></p>
+      <p class="plain">Starts from the account's opening balance plus everything posted before the date range, then adds each movement to give a running balance and a closing figure.</p>
+<div class="formula">opening = account.openingBalance + Σ (movements before "from")
+running balance += (direction == "in" ? +amount : −amount)   <span class="c"># row by row</span>
+<span class="k">closing</span> = opening + Σ (in-range movements)</div>
+
+      <h4>Ledger by head</h4>
+      <p class="tech"><span class="fn-tag">ledgerByHead(ledger, headId, {from, to}) — src/lib/reports.js</span></p>
+      <p class="plain">Lists every posting against one category (head) in a date range with a running net.</p>
+<div class="formula"><span class="k">runningNet</span> = Σ in − Σ out   <span class="c"># per currency</span></div>
+
+      <h4>Trial balance</h4>
+      <p class="tech"><span class="fn-tag">trialBalance(ledger, accounts, heads, asOf) — src/lib/reports.js</span></p>
+      <p class="plain">A debit/credit sheet as of any date. Cash/bank balances and expenses sit on the debit side; income, investment and opening-balance equity on the credit side. The sheet is <strong>balanced</strong> when the two sides match (to within half a paisa).</p>
+<div class="formula">accounts &amp; expenses → <span class="k">debit</span>
+income, investment &amp; opening equity → <span class="k">credit</span>
+balanced = |totalDebit − totalCredit| &lt; 0.05</div>
+
+      <h4>Monthly trends</h4>
+      <p class="tech"><span class="fn-tag">monthlyTrends(ledger, invoices, currency, months) — src/lib/reports.js</span></p>
+      <p class="plain">Income, investment and expense per month over the last 6 or 12 months, with a net line. Income counts real money-in <em>plus</em> paid billing invoices; investment is tracked separately from revenue.</p>
+<div class="formula">per month: <span class="k">net</span> = income + investment − expense
+income  = (money-in that isn't investment) + paid invoices' grandTotal
+expense = Σ money-out</div>
+
+      <h4>Cash-flow forecast</h4>
+      <p class="tech"><span class="fn-tag">cashFlowForecast({ledger, accounts, recurring, bills, invoices}, currency, months) — src/lib/reports.js</span></p>
+      <p class="plain">A <em>planning view only</em> — it projects your cash balance forward and posts nothing. It starts from today's real cash, then each future month adds expected inflows (unpaid invoices in their due month) and subtracts expected outflows (recurring templates every month + open bills in their due month).</p>
+<div class="formula">startBalance = Σ account openings + Σ posted (in − out)
+per month: <span class="k">net</span> = inflow − outflow
+           runningBalance += net
+outflow = recurring templates + open bills due that month
+inflow  = unpaid invoices due that month</div>
+
+      <div class="callout tip"><span class="tag">Where the report figures come from</span><p>The <strong>Profit &amp; Loss</strong>, <strong>Cash Flow Statement</strong> and <strong>Expense Summary</strong> in the Financial Reports pack (<a class="xref" href="#reports">§11</a>) are all built on these same posted-ledger sums — revenue minus expenses for P&amp;L, inflows minus outflows for cash flow, and expense-by-head for the summary. Investment is treated as financing and kept out of the profit figure.</p></div>
+
+      <div class="callout note"><span class="tag">For auditors &amp; developers</span><p>Every function named here is a <strong>pure calculation</strong> — same inputs always give the same result, with no hidden state — which makes each one straightforward to verify or unit-test in isolation. The pricing math lives in <code>src/lib/pricing.js</code>, finance document math in <code>src/lib/finance.js</code>, payroll in <code>src/lib/salary.js</code>, loans in <code>src/lib/loans.js</code>, and all report math in <code>src/lib/reports.js</code>.</p></div>
+    </section>
+
     <hr class="soft" />
   </article>
 </div>
 
 <footer class="foot">
-  Paynox — Billing &amp; Finance · by Safkat Turza for DreamCore Studio · User Manual v1.0 · 22 July 2026.
+  Paynox — Billing &amp; Finance · by Safkat Turza for DreamCore Studio · User Manual v1.1 · 23 July 2026.
   This guide describes the shipped system; screens may vary with your role and settings. For setup and configuration, see <a class="xref" href="#settings">Settings</a> and <a class="xref" href="#data">Data, backup &amp; safety</a>.
 </footer>
 
