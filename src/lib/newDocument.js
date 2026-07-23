@@ -1,6 +1,7 @@
 import { uid, todayISO } from './format.js'
 import { previewDocNumber } from './numbering.js'
 import { metaFor } from './docmeta.js'
+import { getColumnDefault } from './columns.js'
 
 function newLineItem() {
   return { id: uid(), name: '', description: '', spec: '', qty: '', unit: '', rate: '', manualAmount: '' }
@@ -48,6 +49,10 @@ export function newDocument(type, company) {
     grandTotal: 0,
   }
 
+  // Saved "apply to all future documents" column layout, if the user set one.
+  const colDefault = getColumnDefault()
+  const colFields = colDefault ? { cols: colDefault.cols, colLabels: colDefault.colLabels } : {}
+
   if (meta.kind === 'invoice') {
     return {
       ...base,
@@ -61,6 +66,7 @@ export function newDocument(type, company) {
       vatRate: '',
       bankOn: false,
       bank: { bankName: '', accountName: '', accountNumber: '', branch: '', routing: '', swift: '' },
+      ...colFields,
     }
   }
 
@@ -77,6 +83,7 @@ export function newDocument(type, company) {
       aitRate: '',
       vatRate: '',
       milestones: [{ id: uid(), description: '', percentage: '' }],
+      ...colFields,
     }
   }
 

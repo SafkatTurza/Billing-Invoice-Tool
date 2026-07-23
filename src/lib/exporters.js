@@ -8,7 +8,7 @@ import { calcTotals, lineAmount } from './pricing.js'
 import { amountInWords } from './amountInWords.js'
 import { formatMoney, formatDate } from './format.js'
 import { metaFor } from './docmeta.js'
-import { colVisible, colLabel } from './columns.js'
+import { colVisible, colLabel, nameColKey } from './columns.js'
 
 function num(v) {
   return Number(v) || 0
@@ -69,12 +69,14 @@ export async function exportExcel(doc) {
 
   // Sheet 2 — Line Items (respects the document's column visibility + custom
   // header labels so the export matches the on-screen / printed document).
-  const showDesc = colVisible(doc, 'description')
-  const showSpec = colVisible(doc, 'spec')
+  const showName = colVisible(doc, 'name')
+  const firstKey = nameColKey(doc)
+  const showDesc = showName && colVisible(doc, 'description') // separate desc column only when name is the primary
+  const showSpec = showName && colVisible(doc, 'spec')
   const showQty = colVisible(doc, 'qty')
   const showUnit = colVisible(doc, 'unit')
   const showRate = colVisible(doc, 'rate')
-  const itemHead = ['#', colLabel(doc, 'name')]
+  const itemHead = ['#', colLabel(doc, firstKey)]
   const itemWidths = [{ wch: 5 }, { wch: 28 }]
   if (showDesc) { itemHead.push(colLabel(doc, 'description')); itemWidths.push({ wch: 34 }) }
   if (showSpec) { itemHead.push(colLabel(doc, 'spec')); itemWidths.push({ wch: 24 }) }
@@ -84,7 +86,7 @@ export async function exportExcel(doc) {
   itemHead.push(colLabel(doc, 'amount')); itemWidths.push({ wch: 14 })
   const itemRows = [itemHead]
   ;(doc.items || []).forEach((it, i) => {
-    const row = [i + 1, it.name]
+    const row = [i + 1, showName ? it.name : it.description]
     if (showDesc) row.push(it.description)
     if (showSpec) row.push(it.spec)
     if (showQty) row.push(num(it.qty))
@@ -173,22 +175,22 @@ export async function exportDocx(doc, brand = '#1E2D5A') {
   } else {
     const t = calcTotals(doc)
     // Items table — respects the document's column visibility + custom headers.
-    const showDesc = colVisible(doc, 'description')
+    const showName = colVisible(doc, 'name')
+    const firstKey = nameColKey(doc)
+    const showDesc = showName && colVisible(doc, 'description')
     const showQty = colVisible(doc, 'qty')
     const showRate = colVisible(doc, 'rate')
     const headCells = [
       cell('#', { shading: hex, color: 'FFFFFF', bold: true }),
-      cell(colLabel(doc, 'name'), { shading: hex, color: 'FFFFFF', bold: true }),
+      cell(colLabel(doc, firstKey), { shading: hex, color: 'FFFFFF', bold: true }),
     ]
     if (showQty) headCells.push(cell(colLabel(doc, 'qty'), { shading: hex, color: 'FFFFFF', bold: true, align: AlignmentType.RIGHT }))
     if (showRate) headCells.push(cell(colLabel(doc, 'rate'), { shading: hex, color: 'FFFFFF', bold: true, align: AlignmentType.RIGHT }))
     headCells.push(cell(colLabel(doc, 'amount'), { shading: hex, color: 'FFFFFF', bold: true, align: AlignmentType.RIGHT }))
     const headRow = new TableRow({ children: headCells })
     const itemRows = (doc.items || []).map((it, i) => {
-      const cells = [
-        cell(i + 1),
-        cell(it.name + (showDesc && it.description ? '\n' + it.description : '')),
-      ]
+      const primary = showName ? it.name + (showDesc && it.description ? '\n' + it.description : '') : it.description
+      const cells = [cell(i + 1), cell(primary)]
       if (showQty) cells.push(cell(it.qty || '', { align: AlignmentType.RIGHT }))
       if (showRate) cells.push(cell(Number(it.rate) > 0 ? formatMoney(it.rate, cur) : '—', { align: AlignmentType.RIGHT }))
       cells.push(cell(formatMoney(lineAmount(it), cur), { align: AlignmentType.RIGHT, bold: true }))

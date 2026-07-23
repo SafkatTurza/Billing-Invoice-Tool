@@ -6,7 +6,7 @@ import { calcTotals, lineAmount } from '../../lib/pricing.js'
 import { amountInWords } from '../../lib/amountInWords.js'
 import { formatMoney, formatDate } from '../../lib/format.js'
 import { metaFor } from '../../lib/docmeta.js'
-import { colVisible, colLabel } from '../../lib/columns.js'
+import { colVisible, colLabel, nameColKey } from '../../lib/columns.js'
 
 const ACC = '#0d9488'
 
@@ -263,17 +263,19 @@ const Items = ({ m, headBg, headColor, headBorder, zebra }) => {
   const { doc, cur } = m
   if (!(doc.items && doc.items.length)) return null
   // Respect the same column visibility + custom header labels as the editor.
-  const showSpec = colVisible(doc, 'spec')
+  const showName = colVisible(doc, 'name')
+  const showSpec = showName && colVisible(doc, 'spec')
   const showQty = colVisible(doc, 'qty')
   const showUnit = colVisible(doc, 'unit')
   const showRate = colVisible(doc, 'rate')
   const showDesc = colVisible(doc, 'description')
+  const firstKey = nameColKey(doc)
   return (
     <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 14 }}>
       <thead>
         <tr style={{ background: headBg, color: headColor, borderBottom: headBorder || 'none' }}>
           <th style={{ padding: '8px', textAlign: 'left', fontSize: 11, width: 26 }}>#</th>
-          <th style={{ padding: '8px', textAlign: 'left', fontSize: 11 }}>{colLabel(doc, 'name')}</th>
+          <th style={{ padding: '8px', textAlign: 'left', fontSize: 11 }}>{colLabel(doc, firstKey)}</th>
           {showSpec && <th style={{ padding: '8px', textAlign: 'left', fontSize: 11, width: 90 }}>{colLabel(doc, 'spec')}</th>}
           {showQty && <th style={{ padding: '8px', textAlign: 'center', fontSize: 11, width: 50 }}>{colLabel(doc, 'qty')}</th>}
           {showUnit && <th style={{ padding: '8px', textAlign: 'left', fontSize: 11, width: 50 }}>{colLabel(doc, 'unit')}</th>}
@@ -286,9 +288,15 @@ const Items = ({ m, headBg, headColor, headBorder, zebra }) => {
           <tr key={item.id} style={{ background: zebra && i % 2 === 0 ? zebra : '#fff', borderBottom: '1px solid #eef1f5' }}>
             <td style={{ padding: '7px 8px', color: '#94a3b8', textAlign: 'center' }}>{i + 1}</td>
             <td style={{ padding: '7px 8px' }}>
-              <div style={{ fontWeight: 500 }}>{item.name}</div>
-              {showDesc && item.description && (
-                <div style={{ fontSize: 10, color: '#64748b', marginTop: 2, whiteSpace: 'pre-wrap' }}>{item.description}</div>
+              {showName ? (
+                <>
+                  <div style={{ fontWeight: 500 }}>{item.name}</div>
+                  {showDesc && item.description && (
+                    <div style={{ fontSize: 10, color: '#64748b', marginTop: 2, whiteSpace: 'pre-wrap' }}>{item.description}</div>
+                  )}
+                </>
+              ) : (
+                <div style={{ fontWeight: 500, whiteSpace: 'pre-wrap' }}>{item.description}</div>
               )}
             </td>
             {showSpec && <td style={{ padding: '7px 8px', fontSize: 11 }}>{item.spec}</td>}
