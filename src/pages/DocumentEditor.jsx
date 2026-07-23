@@ -324,17 +324,17 @@ export default function DocumentEditor({ type }) {
         )}
 
 
-        {/* Notes / Terms */}
+        {/* Notes / Terms (shown as "Remarks" on the Money Receipt) */}
         <div className="doc-section">
           <div className="doc-section-head">
             <h3>
-              <Icon.invoice width={16} height={16} /> Notes / Terms
+              <Icon.invoice width={16} height={16} /> {meta.kind === 'receipt' ? 'Remarks' : 'Notes / Terms'}
             </h3>
           </div>
           <textarea
             className="textarea"
             style={{ minHeight: 90 }}
-            placeholder="Add notes or terms…"
+            placeholder={meta.kind === 'receipt' ? 'Add remarks (optional)…' : 'Add notes or terms…'}
             value={doc.notes}
             onChange={(e) => patch({ notes: e.target.value })}
           />

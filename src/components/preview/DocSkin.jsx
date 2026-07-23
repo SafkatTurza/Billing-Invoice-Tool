@@ -183,7 +183,7 @@ const MilestonesBlock = ({ m, accent }) => (
 // 3 → two on the first row and one on the next; 4 → 2×2; and so on. Each box
 // carries `.doc-sig-box` so print rules keep an individual box from splitting
 // across a page break. `accent` tints the section label / box labels per design.
-const SigsBoxed = ({ m, accent = ACC }) => {
+export const SigsBoxed = ({ m, accent = ACC }) => {
   const sigs = m.doc.signatures || []
   if (!sigs.length) return null
   const cols = sigs.length === 1 ? 1 : 2
@@ -223,7 +223,7 @@ const SigsBoxed = ({ m, accent = ACC }) => {
 
 // Company running footer — logo · name · address (left), contact details
 // (right). The top border colour follows the design's brand colour.
-const DocFooter = ({ m }) => {
+export const DocFooter = ({ m }) => {
   const f = m.f
   return (
     <div style={{ borderTop: `2px solid ${m.BC}`, margin: '0 24px', padding: '10px 0 4px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -387,7 +387,7 @@ const HeaderModern = ({ m }) => (
     </div>
     <div style={{ textAlign: 'right', color: '#fff' }}>
       <div style={{ fontSize: 9.5, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,.75)' }}>{m.headerTotalLabel}</div>
-      <div style={{ fontSize: 23, fontWeight: 800, marginTop: 2 }}>{money(m.grand, m.cur)}</div>
+      <div style={{ fontSize: 23, fontWeight: 800, marginTop: 2 }}>{m.headerAmount != null ? m.headerAmount : money(m.grand, m.cur)}</div>
     </div>
   </div>
 )
@@ -404,7 +404,7 @@ const HeaderSimple = ({ m }) => (
     </div>
     <div style={{ textAlign: 'right' }}>
       <div style={{ fontSize: 9.5, letterSpacing: 1, textTransform: 'uppercase', color: '#94a3b8' }}>{m.headerTotalLabel}</div>
-      <div style={{ fontSize: 22, fontWeight: 800, color: m.BC, marginTop: 2 }}>{money(m.grand, m.cur)}</div>
+      <div style={{ fontSize: 22, fontWeight: 800, color: m.BC, marginTop: 2 }}>{m.headerAmount != null ? m.headerAmount : money(m.grand, m.cur)}</div>
     </div>
   </div>
 )
@@ -445,7 +445,7 @@ const HeaderFlexible = ({ m }) => (
 //     line items, financial summary, amount-in-words, terms, signatures).
 // This guarantees the identical information format and correct multi-page PDF
 // output across all three designs.
-function SkinShell({ m, header, itemsProps, totalsBoxed, secLabelStyle, accent }) {
+export function SkinShell({ m, header, body }) {
   const { DF } = m
   return (
     <div className="doc-shell">
@@ -465,14 +465,7 @@ function SkinShell({ m, header, itemsProps, totalsBoxed, secLabelStyle, accent }
         <tbody>
           <tr>
             <td style={{ padding: 0, verticalAlign: 'top' }}>
-              <div style={{ padding: '18px 24px 6px' }}>
-                <Parties m={m} secLabelStyle={secLabelStyle} />
-                <Items m={m} {...itemsProps} />
-                <div className="doc-keep" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-                  <Totals m={m} boxed={totalsBoxed} />
-                </div>
-                <SkinBlocks m={m} accent={accent} />
-              </div>
+              <div style={{ padding: '18px 24px 6px' }}>{body}</div>
             </td>
           </tr>
         </tbody>
@@ -485,9 +478,35 @@ function SkinShell({ m, header, itemsProps, totalsBoxed, secLabelStyle, accent }
   )
 }
 
-// Section-label styles per design (Bill To / Document Details headings).
-const plainLabel = { fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }
-const accentLabel = { fontSize: 10, fontWeight: 700, color: ACC, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 8, paddingBottom: 4, borderBottom: `1.5px solid ${ACC}` }
+// Pick the header design for a given model's template — reused by every document
+// family (Invoice / Estimate / PO / WO / Money Receipt) so the branded header
+// treatment is identical across the whole document family.
+export function SkinHeader({ m }) {
+  if (m.tpl === 'simple') return <HeaderSimple m={m} />
+  if (m.tpl === 'flexible') return <HeaderFlexible m={m} />
+  return <HeaderModern m={m} />
+}
+
+// The invoice/estimate/PO/WO body: parties, line items, totals, then the shared
+// blocks (amount in words, terms, milestones, signatures).
+function InvoiceBody({ m, itemsProps, totalsBoxed, secLabelStyle, accent }) {
+  return (
+    <>
+      <Parties m={m} secLabelStyle={secLabelStyle} />
+      <Items m={m} {...itemsProps} />
+      <div className="doc-keep" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+        <Totals m={m} boxed={totalsBoxed} />
+      </div>
+      <SkinBlocks m={m} accent={accent} />
+    </>
+  )
+}
+
+// Section-label styles per design (Bill To / Document Details headings) — also
+// reused by the Money Receipt skin so its section headings match.
+export const plainLabel = { fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }
+export const accentLabel = { fontSize: 10, fontWeight: 700, color: ACC, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 8, paddingBottom: 4, borderBottom: `1.5px solid ${ACC}` }
+export { ACC }
 
 // ── SKIN 1 · SIMPLE ──  minimal, monochrome brand
 function SkinSimple({ m }) {
@@ -495,10 +514,15 @@ function SkinSimple({ m }) {
     <SkinShell
       m={m}
       header={<HeaderSimple m={m} />}
-      itemsProps={{ headBg: '#fff', headColor: m.BC, headBorder: `2px solid ${m.BC}`, zebra: '#f8fafc' }}
-      totalsBoxed={false}
-      secLabelStyle={plainLabel}
-      accent={m.BC}
+      body={
+        <InvoiceBody
+          m={m}
+          itemsProps={{ headBg: '#fff', headColor: m.BC, headBorder: `2px solid ${m.BC}`, zebra: '#f8fafc' }}
+          totalsBoxed={false}
+          secLabelStyle={plainLabel}
+          accent={m.BC}
+        />
+      }
     />
   )
 }
@@ -509,10 +533,15 @@ function SkinModern({ m }) {
     <SkinShell
       m={m}
       header={<HeaderModern m={m} />}
-      itemsProps={{ headBg: m.BC, headColor: '#fff', zebra: '#fafafa' }}
-      totalsBoxed={false}
-      secLabelStyle={accentLabel}
-      accent={ACC}
+      body={
+        <InvoiceBody
+          m={m}
+          itemsProps={{ headBg: m.BC, headColor: '#fff', zebra: '#fafafa' }}
+          totalsBoxed={false}
+          secLabelStyle={accentLabel}
+          accent={ACC}
+        />
+      }
     />
   )
 }
@@ -523,10 +552,15 @@ function SkinFlexible({ m }) {
     <SkinShell
       m={m}
       header={<HeaderFlexible m={m} />}
-      itemsProps={{ headBg: m.BC, headColor: '#fff', zebra: '#f5f7fa' }}
-      totalsBoxed
-      secLabelStyle={accentLabel}
-      accent={ACC}
+      body={
+        <InvoiceBody
+          m={m}
+          itemsProps={{ headBg: m.BC, headColor: '#fff', zebra: '#f5f7fa' }}
+          totalsBoxed
+          secLabelStyle={accentLabel}
+          accent={ACC}
+        />
+      }
     />
   )
 }

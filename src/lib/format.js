@@ -15,6 +15,17 @@ export function formatMoney(amount, currency = 'USD') {
   return `${currencySymbol(currency)}${formatted}`
 }
 
+// Money formatted with the ISO currency code as a prefix, e.g. "BDT 200,000.00".
+// Used on the Money Receipt where the code-prefixed form is the requested format.
+export function formatMoneyCode(amount, currency = 'USD') {
+  const n = Number(amount) || 0
+  const formatted = n.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+  return `${currency} ${formatted}`
+}
+
 export function todayISO() {
   const d = new Date()
   const y = d.getFullYear()

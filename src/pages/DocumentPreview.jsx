@@ -4,13 +4,13 @@ import { useApp } from '../context/AppContext.jsx'
 import { can } from '../lib/roles.js'
 import { metaFor } from '../lib/docmeta.js'
 import { calcTotals } from '../lib/pricing.js'
-import { amountInWords } from '../lib/amountInWords.js'
-import { formatMoney, formatDate, todayISO } from '../lib/format.js'
+import { formatMoney, todayISO } from '../lib/format.js'
 import { newDocument, companyFooter } from '../lib/newDocument.js'
 import { exportExcel, exportDocx } from '../lib/exporters.js'
 import StatusBadge from '../components/StatusBadge.jsx'
 import Modal from '../components/Modal.jsx'
 import DocSkin from '../components/preview/DocSkin.jsx'
+import ReceiptSkin from '../components/preview/ReceiptSkin.jsx'
 import { useToast } from '../components/Toast.jsx'
 import { useConfirm } from '../components/ConfirmDialog.jsx'
 import { Icon } from '../components/Icons.jsx'
@@ -203,7 +203,7 @@ export default function DocumentPreview({ type }) {
 
       <div className="doc-paper">
         {meta.kind === 'receipt' ? (
-          <ReceiptDoc doc={doc} brand={brand} font={font} totals={totals} company={docCompany} />
+          <ReceiptSkin doc={doc} brand={brand} font={font} template={template} docs={docs} />
         ) : (
           <DocSkin doc={doc} brand={brand} font={font} template={template} />
         )}
@@ -213,82 +213,6 @@ export default function DocumentPreview({ type }) {
       </div>
 
       {payOpen && <RecordPaymentModal doc={doc} totals={totals} onClose={() => setPayOpen(false)} onConfirm={confirmPayment} />}
-    </div>
-  )
-}
-
-// Money Receipt keeps a dedicated layout (no line items / pricing block).
-function ReceiptDoc({ doc, brand, font, totals }) {
-  return (
-    <div style={{ fontFamily: `"${font}", sans-serif`, color: '#1e293b' }}>
-      <div style={{ background: brand, padding: '20px 28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {doc.footer.logo && <img src={doc.footer.logo} style={{ height: 34, objectFit: 'contain' }} alt="" />}
-          <div style={{ color: '#fff', fontSize: 20, fontWeight: 700, letterSpacing: 1 }}>MONEY RECEIPT</div>
-        </div>
-        <div style={{ color: '#fff', textAlign: 'right' }}>
-          <div className="mono" style={{ fontSize: 13 }}>{doc.docNumber}</div>
-          <div style={{ fontSize: 11, opacity: 0.85 }}>{formatDate(doc.date)}</div>
-        </div>
-      </div>
-      <div style={{ padding: '24px 28px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 20 }}>
-          <div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: brand, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Received From</div>
-            <div style={{ fontWeight: 700, fontSize: 15 }}>{doc.partyName || '—'}</div>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 11, color: '#64748b' }}>Amount Received</div>
-            <div style={{ fontSize: 28, fontWeight: 800, color: brand }}>{formatMoney(totals.grandTotal, doc.currency)}</div>
-          </div>
-        </div>
-        <div style={{ background: '#f6faf9', border: `1px solid ${brand}`, borderRadius: 6, padding: '9px 13px', marginBottom: 18, fontSize: 12, fontStyle: 'italic', color: brand }}>
-          {amountInWords(totals.grandTotal, doc.currency)}
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-          <div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: brand, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Payment Details</div>
-            <Line k="Method" v={doc.paymentMethod} />
-            <Line k="Purpose" v={doc.paymentPurpose} />
-            <Line k="Txn Date" v={doc.transactionDate && formatDate(doc.transactionDate)} />
-          </div>
-          <div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: brand, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Bank / Transaction</div>
-            <Line k="Bank" v={doc.bankName} />
-            <Line k="Branch" v={doc.branch} />
-            <Line k="Cheque No" v={doc.chequeNo} />
-            <Line k="Ref No" v={doc.refNo} />
-          </div>
-        </div>
-
-        {doc.signatures?.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(doc.signatures.length, 3)}, 1fr)`, gap: 20, marginTop: 36 }}>
-            {doc.signatures.map((s) => (
-              <div key={s.id} style={{ borderTop: '1.5px solid #333', paddingTop: 6 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: brand }}>{s.label}</div>
-                {s.name && <div style={{ fontWeight: 600, fontSize: 12 }}>{s.name}</div>}
-                {s.designation && <div style={{ fontSize: 11, color: '#666' }}>{s.designation}</div>}
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div style={{ borderTop: `2px solid ${brand}`, marginTop: 30, paddingTop: 14, fontSize: 11, color: '#64748b' }}>
-          <b style={{ color: '#1e293b' }}>{doc.footer.name}</b>
-          {doc.footer.address && <div style={{ whiteSpace: 'pre-wrap' }}>{doc.footer.address}</div>}
-          <div>{[doc.footer.phone, doc.footer.email, doc.footer.website].filter(Boolean).join('  ·  ')}</div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function Line({ k, v }) {
-  if (!v) return null
-  return (
-    <div style={{ fontSize: 12, marginBottom: 3 }}>
-      <span style={{ color: '#64748b' }}>{k}: </span>
-      <span style={{ fontWeight: 500 }}>{v}</span>
     </div>
   )
 }
