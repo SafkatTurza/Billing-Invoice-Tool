@@ -228,7 +228,7 @@ export const DocFooter = ({ m }) => {
   return (
     <div style={{ borderTop: `2px solid ${m.BC}`, margin: '0 24px', padding: '10px 0 4px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        {f.logo && <img src={f.logo} style={{ height: 24, objectFit: 'contain' }} alt="" />}
+        {f.logo && <img src={f.logo} style={{ height: 32, objectFit: 'contain' }} alt="" />}
         <div>
           {f.name && <div style={{ fontWeight: 700, fontSize: 11, color: '#1e293b' }}>{f.name}</div>}
           {f.address && <div style={{ fontSize: 9.5, color: '#64748b', whiteSpace: 'pre-wrap' }}>{f.address}</div>}
@@ -376,11 +376,11 @@ const Totals = ({ m, boxed }) => (
 
 // Modern — solid navy bar with a white logo chip.
 const HeaderModern = ({ m }) => (
-  <div style={{ background: m.BC, padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+  <div style={{ background: m.BC, padding: '18px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
       {m.f.logo && (
-        <span style={{ background: '#fff', borderRadius: 5, padding: '5px 9px', display: 'inline-flex', alignItems: 'center' }}>
-          <img src={m.f.logo} style={{ height: 26, objectFit: 'contain' }} alt="" />
+        <span style={{ background: '#fff', borderRadius: 6, padding: '6px 11px', display: 'inline-flex', alignItems: 'center' }}>
+          <img src={m.f.logo} style={{ height: 42, objectFit: 'contain' }} alt="" />
         </span>
       )}
       <span style={{ color: '#fff', fontSize: 25, fontWeight: 800, letterSpacing: 2 }}>{m.label.toUpperCase()}</span>
@@ -394,12 +394,12 @@ const HeaderModern = ({ m }) => (
 
 // Simple — clean white header with a coloured baseline rule.
 const HeaderSimple = ({ m }) => (
-  <div style={{ background: '#fff', borderBottom: `3px solid ${m.BC}`, padding: '16px 24px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-      {m.f.logo && <img src={m.f.logo} style={{ height: 34, objectFit: 'contain' }} alt="" />}
+  <div style={{ background: '#fff', borderBottom: `3px solid ${m.BC}`, padding: '18px 24px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+      {m.f.logo && <img src={m.f.logo} style={{ height: 48, objectFit: 'contain' }} alt="" />}
       <div>
         <div style={{ fontSize: 27, fontWeight: 800, color: m.BC, letterSpacing: 0.5, lineHeight: 1 }}>{m.label.toUpperCase()}</div>
-        {m.f.name && <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>{m.f.name}</div>}
+        {!m.hideHeaderName && m.f.name && <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>{m.f.name}</div>}
       </div>
     </div>
     <div style={{ textAlign: 'right' }}>
@@ -412,15 +412,15 @@ const HeaderSimple = ({ m }) => (
 // Flexible — bold two-tone diagonal (brand → teal) banner.
 const HeaderFlexible = ({ m }) => (
   <div style={{ background: `linear-gradient(105deg, ${m.BC} 0%, ${m.BC} 50%, ${ACC} 50%, ${ACC} 100%)`, padding: '18px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
       {m.f.logo && (
-        <span style={{ background: '#fff', borderRadius: 5, padding: '5px 9px', display: 'inline-flex', alignItems: 'center' }}>
-          <img src={m.f.logo} style={{ height: 26, objectFit: 'contain' }} alt="" />
+        <span style={{ background: '#fff', borderRadius: 6, padding: '6px 11px', display: 'inline-flex', alignItems: 'center' }}>
+          <img src={m.f.logo} style={{ height: 42, objectFit: 'contain' }} alt="" />
         </span>
       )}
       <div>
         <div style={{ color: '#fff', fontSize: 23, fontWeight: 800, letterSpacing: 1.5, lineHeight: 1.1 }}>{m.label.toUpperCase()}</div>
-        {m.f.name && <div style={{ color: 'rgba(255,255,255,.85)', fontSize: 10.5, marginTop: 2 }}>{m.f.name}</div>}
+        {!m.hideHeaderName && m.f.name && <div style={{ color: 'rgba(255,255,255,.85)', fontSize: 10.5, marginTop: 2 }}>{m.f.name}</div>}
       </div>
     </div>
     <div style={{ textAlign: 'right', color: '#fff' }}>

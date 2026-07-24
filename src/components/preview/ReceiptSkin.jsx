@@ -104,6 +104,11 @@ export function buildReceiptModel(doc, brand, font, template, docs) {
     cur,
     f,
     label: 'Money Receipt',
+    // The logo already carries the company branding in the header, so the
+    // receipt header omits the separate company-name line (avoids the duplicate
+    // that also appears in the footer). Other document families keep their
+    // header subtitle unchanged.
+    hideHeaderName: true,
     // Header top-right shows the received amount (prominent), code-formatted.
     headerTotalLabel: 'Received Amount',
     headerAmount: formatMoneyCode(amount, cur),
