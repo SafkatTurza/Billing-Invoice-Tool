@@ -92,6 +92,11 @@ export function buildDocModel(doc, brand, font, template) {
     // Invoices and Estimates (kind 'invoice') do not print a signature block;
     // Purchase Orders and Work Orders (kind 'po') still do.
     showSignatures: meta.kind !== 'invoice',
+    // Invoice / Estimate / Purchase Order / Work Order headers show neither the
+    // company logo nor the company name — branding lives in the footer instead.
+    // (The Money Receipt builds its own model and keeps its header logo.)
+    hideHeaderLogo: true,
+    hideHeaderName: true,
     partyLabel: meta.partyLabel,
     partyName: doc.partyName,
     partyLines,
@@ -229,15 +234,29 @@ export const SigsBoxed = ({ m, accent = ACC }) => {
 export const DocFooter = ({ m }) => {
   const f = m.f
   return (
-    <div style={{ borderTop: `2px solid ${m.BC}`, margin: '0 24px', padding: '10px 0 4px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        {f.logo && <img src={f.logo} style={{ height: 32, objectFit: 'contain' }} alt="" />}
-        <div>
-          {f.name && <div style={{ fontWeight: 700, fontSize: 11, color: '#1e293b' }}>{f.name}</div>}
-          {f.address && <div style={{ fontSize: 9.5, color: '#64748b', whiteSpace: 'pre-wrap' }}>{f.address}</div>}
+    <div
+      style={{
+        borderTop: `2px solid ${m.BC}`,
+        margin: '0 24px',
+        padding: '12px 0 6px',
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '10px 24px',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+      }}
+    >
+      {/* Company branding — now the primary logo lockup (the header no longer
+          carries a logo). The block grows/shrinks with the available width and
+          wraps above the contact details on narrow output. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: '1 1 260px', minWidth: 0 }}>
+        {f.logo && <img src={f.logo} style={{ height: 52, maxWidth: 200, objectFit: 'contain', flexShrink: 0 }} alt="" />}
+        <div style={{ minWidth: 0 }}>
+          {f.name && <div style={{ fontWeight: 700, fontSize: 12.5, color: '#1e293b' }}>{f.name}</div>}
+          {f.address && <div style={{ fontSize: 10, color: '#64748b', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{f.address}</div>}
         </div>
       </div>
-      <div style={{ textAlign: 'right', fontSize: 9.5, color: '#64748b' }}>
+      <div style={{ textAlign: 'right', fontSize: 10, color: '#64748b', flex: '0 1 auto', minWidth: 0 }}>
         {f.email && <div><span style={{ fontWeight: 600, color: '#475569' }}>Email:</span> {f.email}</div>}
         {f.phone && <div><span style={{ fontWeight: 600, color: '#475569' }}>Phone:</span> {f.phone}</div>}
         {f.website && <div><span style={{ fontWeight: 600, color: '#475569' }}>Visit:</span> {f.website}</div>}
@@ -381,7 +400,7 @@ const Totals = ({ m, boxed }) => (
 const HeaderModern = ({ m }) => (
   <div style={{ background: m.BC, padding: '18px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-      {m.f.logo && (
+      {!m.hideHeaderLogo && m.f.logo && (
         <span style={{ background: '#fff', borderRadius: 6, padding: '6px 11px', display: 'inline-flex', alignItems: 'center' }}>
           <img src={m.f.logo} style={{ height: 42, objectFit: 'contain' }} alt="" />
         </span>
@@ -399,7 +418,7 @@ const HeaderModern = ({ m }) => (
 const HeaderSimple = ({ m }) => (
   <div style={{ background: '#fff', borderBottom: `3px solid ${m.BC}`, padding: '18px 24px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-      {m.f.logo && <img src={m.f.logo} style={{ height: 48, objectFit: 'contain' }} alt="" />}
+      {!m.hideHeaderLogo && m.f.logo && <img src={m.f.logo} style={{ height: 48, objectFit: 'contain' }} alt="" />}
       <div>
         <div style={{ fontSize: 27, fontWeight: 800, color: m.BC, letterSpacing: 0.5, lineHeight: 1 }}>{m.label.toUpperCase()}</div>
         {!m.hideHeaderName && m.f.name && <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>{m.f.name}</div>}
@@ -416,7 +435,7 @@ const HeaderSimple = ({ m }) => (
 const HeaderFlexible = ({ m }) => (
   <div style={{ background: `linear-gradient(105deg, ${m.BC} 0%, ${m.BC} 50%, ${ACC} 50%, ${ACC} 100%)`, padding: '18px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-      {m.f.logo && (
+      {!m.hideHeaderLogo && m.f.logo && (
         <span style={{ background: '#fff', borderRadius: 6, padding: '6px 11px', display: 'inline-flex', alignItems: 'center' }}>
           <img src={m.f.logo} style={{ height: 42, objectFit: 'contain' }} alt="" />
         </span>

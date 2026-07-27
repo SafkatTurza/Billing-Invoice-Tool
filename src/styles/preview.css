@@ -215,7 +215,7 @@
   /* … and paint the real footer with a fixed element pinned to the bottom of
      every printed page. Chromium repeats fixed elements on each page, and the
      reserved tfoot band guarantees no overlap with body content. */
-  .doc-shell { position: relative; }
+  .doc-shell { position: relative; page: docpage; }
   .doc-print-footer {
     display: block;
     visibility: visible;
@@ -224,6 +224,22 @@
     left: 0;
     right: 0;
     background: #fff;
+  }
+
+  /* Page number on EVERY printed page of a billing document. A named page
+     (assigned via `page: docpage` on .doc-shell) scopes this to the document
+     skins only — Invoice / Estimate / PO / WO / Money Receipt — so finance
+     vouchers, payslips and reports (which don't use .doc-shell) are unaffected.
+     Chromium renders @page margin boxes with counter(page)/counter(pages), so a
+     document that flows onto a second A4 page shows "Page 1 of 2" then
+     "Page 2 of 2", and so on for every page. */
+  @page docpage {
+    @bottom-right {
+      content: "Page " counter(page) " of " counter(pages);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 9px;
+      color: #64748b;
+    }
   }
 
   /* Keep atomic blocks intact across page breaks. */
