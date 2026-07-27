@@ -474,7 +474,11 @@ export function SkinShell({ m, header, body }) {
       <table className="doc-running" style={{ width: '100%', borderCollapse: 'collapse', fontFamily: `"${DF}", sans-serif`, fontSize: 12, color: '#1e293b', background: '#fff' }}>
         <thead className="doc-running-head">
           <tr>
-            <td style={{ padding: 0 }}>{header}</td>
+            {/* Bottom padding lives on the header row so the white gap between
+                the banner and the body repeats on EVERY printed page — the
+                <thead> is a table-header-group, so its full box (including this
+                padding) reprints at the top of each page. */}
+            <td style={{ padding: '0 0 22px' }}>{header}</td>
           </tr>
         </thead>
         <tfoot className="doc-running-foot">
@@ -487,7 +491,9 @@ export function SkinShell({ m, header, body }) {
         <tbody>
           <tr>
             <td style={{ padding: 0, verticalAlign: 'top' }}>
-              <div style={{ padding: '18px 24px 6px' }}>{body}</div>
+              {/* Top gap now comes from the running header (above), so it shows
+                  on every page; keep only the horizontal + bottom padding here. */}
+              <div style={{ padding: '0 24px 6px' }}>{body}</div>
             </td>
           </tr>
         </tbody>
