@@ -89,6 +89,9 @@ export function buildDocModel(doc, brand, font, template) {
     f,
     hasBank,
     isPO,
+    // Invoices and Estimates (kind 'invoice') do not print a signature block;
+    // Purchase Orders and Work Orders (kind 'po') still do.
+    showSignatures: meta.kind !== 'invoice',
     partyLabel: meta.partyLabel,
     partyName: doc.partyName,
     partyLines,
@@ -289,7 +292,7 @@ const SkinBlocks = ({ m, accent }) => {
       {m.doc.milestones && m.doc.milestones.some((ms) => ms.description || ms.percentage) && (
         <MilestonesBlock m={m} accent={accent} />
       )}
-      <SigsBoxed m={m} accent={accent || ACC} />
+      {m.showSignatures && <SigsBoxed m={m} accent={accent || ACC} />}
     </div>
   )
 }

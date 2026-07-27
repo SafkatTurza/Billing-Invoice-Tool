@@ -340,8 +340,9 @@ export default function DocumentEditor({ type }) {
           />
         </div>
 
-        {/* Signatures */}
-        <Signatures doc={doc} patch={patch} />
+        {/* Signatures — omitted for Invoices & Estimates (kind 'invoice');
+            Purchase Orders, Work Orders and Money Receipts still use them. */}
+        {meta.kind !== 'invoice' && <Signatures doc={doc} patch={patch} />}
 
         {/* Footer / company info */}
         <FooterSection doc={doc} patch={patch} companies={companies} company={company} />
